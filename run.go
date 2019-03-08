@@ -11,7 +11,6 @@ import (
 	"github.com/faiface/pixel/imdraw"
 	"github.com/faiface/pixel/pixelgl"
 	"github.com/google/uuid"
-	"gogs.wetsnow.com/dant/alphaville/utils"
 	"golang.org/x/image/colornames"
 )
 
@@ -51,8 +50,6 @@ type object struct {
 	currentMass float64
 	// originalMass is the original object mass
 	originalMass float64
-	// direction the object is facing; +1 == right; -1 == left
-	dir float64
 }
 
 // update the object every frame
@@ -159,15 +156,15 @@ func (o *object) update(w *world) {
 
 	// move if on the ground
 	if o.rect.Min.X <= 0 {
-		o.dir = 1 // face right
+		o.vel.X = math.Abs(o.vel.X)
 	}
 	if o.rect.Max.X >= w.X {
-		o.dir = -1
+		o.vel.X = -1 * math.Abs(o.vel.X)
 	}
 
 	// if about to bump into another object, rise up
 	switch {
-	case o.dir == 1: // moving right
+	case o.vel.X > 0: // moving right
 		for _, other := range w.objects {
 			if o.id == other.id {
 				continue // skip yourself
@@ -175,56 +172,45 @@ func (o *object) update(w *world) {
 			if other.rect.Min.Y > o.rect.Max.Y {
 				continue // ignore falling objects higher than you
 			}
-			switch {
-			case other.dir == -1:
-				gap := other.rect.Min.X - o.rect.Max.X
-				// if other is moving towards us
-				if gap >= 0 && gap <= 2 {
-					o.currentMass = 0
-					return
-				}
-			case other.dir == 1:
-				gap := other.rect.Min.X - o.rect.Max.X
-				// if other is moving in the same direction, but is slower, or still coming down
-				if gap >= 0 && gap <= 2 && (o.vel.X > other.vel.X || other.rect.Min.Y < o.rect.Max.Y) {
-					o.currentMass = 0
-					return
-				}
-			}
-		}
-	case o.dir == -1: // moving left
-		for _, other := range w.objects {
-			if o.id == other.id {
-				continue // skip yourself
-			}
-			if other.rect.Min.Y > o.rect.Max.Y {
-				continue // ignore falling objects higher than you
-			}
-			switch {
-			case other.dir == 1:
-				gap := o.rect.Min.X - other.rect.Max.X
-				// if other is moving towards us
-				if gap >= 0 && gap <= 2 {
-					o.currentMass = 0
-					return
-				}
-			case other.dir == -1:
-				gap := o.rect.Min.X - other.rect.Max.X
-				// if other is moving in the same direction, but is slower or still coming down
-				if gap >= 0 && gap <= 2 && (o.vel.X > other.vel.X || other.rect.Min.Y < o.rect.Max.Y) {
-					o.currentMass = 0
-					return
-				}
-			}
-		}
-	}
-	// move
-	// randomly rise up
-	if utils.RandomInt(0, 1000) > 1 {
-		o.currentMass = 0
-	}
 
-	o.rect = o.rect.Moved(pixel.V(o.dir*o.vel.X, 0))
+			// velocity of the other object (may be 0 if it's coming down)
+			var otherVel float64
+			if other.rect.Min.Y < o.rect.Max.Y {
+				otherVel = 0
+			} else {
+				otherVel = other.vel.X
+			}
+			if o.rect.Max.X < other.rect.Min.X && o.rect.Max.X+o.vel.X > other.rect.Min.X+otherVel {
+				o.currentMass = 0
+				return
+			}
+		}
+	case o.vel.X < 0: // moving left
+		for _, other := range w.objects {
+			if o.id == other.id {
+				continue // skip yourself
+			}
+			if other.rect.Min.Y > o.rect.Max.Y {
+				continue // ignore falling objects higher than you
+			}
+			// velocity of the other object (may be 0 if it's coming down)
+			var otherVel float64
+			if other.rect.Min.Y < o.rect.Max.Y {
+				otherVel = 0
+			} else {
+				otherVel = other.vel.X
+			}
+			if o.rect.Min.X > other.rect.Max.X && o.rect.Min.X+o.vel.X < other.rect.Max.X+otherVel {
+				o.currentMass = 0
+				return
+			}
+		}
+	}
+	// if utils.RandomInt(0, 1000) > 1 {
+	// 	o.currentMass = 0
+	// }
+	// move
+	o.rect = o.rect.Moved(pixel.V(o.vel.X, 0))
 
 }
 
@@ -270,10 +256,9 @@ func populate(w *world) {
 			imd:          imdraw.New(nil),
 			W:            60,
 			H:            60,
-			vel:          pixel.V(0, 0),
+			vel:          pixel.V(1, 0),
 			originalMass: 2,
 			currentMass:  2,
-			dir:          +1, // start facing right
 			iX:           200,
 			iY:           700,
 		},
@@ -284,55 +269,116 @@ func populate(w *world) {
 			imd:          imdraw.New(nil),
 			W:            60,
 			H:            60,
-			vel:          pixel.V(0, 0),
+			vel:          pixel.V(2, 0),
 			originalMass: 1,
 			currentMass:  1,
-			dir:          +1, // start facing right
 			iX:           200,
 			iY:           500,
 		},
-		// {
-		// 	name:         "three",
-		// 	id:           uuid.New(),
-		// 	color:        colornames.Yellow,
-		// 	imd:          imdraw.New(nil),
-		// 	W:            60,
-		// 	H:            60,
-		// 	vel:          pixel.V(1.12, 0),
-		// 	originalMass: 0.5,
-		// 	currentMass:  0.5,
-		// 	dir:          +1, // start facing right
-		// 	iX:           200,
-		// 	iY:           700,
-		// },
-		// {
-		// 	name:         "four",
-		// 	id:           uuid.New(),
-		// 	color:        colornames.Green,
-		// 	imd:          imdraw.New(nil),
-		// 	W:            80,
-		// 	H:            80,
-		// 	vel:          pixel.V(.12, 0),
-		// 	originalMass: 0.1,
-		// 	currentMass:  0.1,
-		// 	dir:          +1, // start facing right
-		// 	iX:           400,
-		// 	iY:           700,
-		// },
-		// {
-		// 	name:         "four",
-		// 	id:           uuid.New(),
-		// 	color:        colornames.Green,
-		// 	imd:          imdraw.New(nil),
-		// 	W:            80,
-		// 	H:            80,
-		// 	vel:          pixel.V(.12, 0),
-		// 	originalMass: 0.2,
-		// 	currentMass:  0.2,
-		// 	dir:          +1, // start facing right
-		// 	iX:           500,
-		// 	iY:           700,
-		// },
+		{
+			name:         "three",
+			id:           uuid.New(),
+			color:        colornames.Yellow,
+			imd:          imdraw.New(nil),
+			W:            60,
+			H:            60,
+			vel:          pixel.V(1.12, 0),
+			originalMass: 0.5,
+			currentMass:  0.5,
+			iX:           200,
+			iY:           700,
+		},
+		{
+			name:         "four",
+			id:           uuid.New(),
+			color:        colornames.Green,
+			imd:          imdraw.New(nil),
+			W:            80,
+			H:            80,
+			vel:          pixel.V(.12, 0),
+			originalMass: 0.1,
+			currentMass:  0.1,
+			iX:           400,
+			iY:           700,
+		},
+		{
+			name:         "four",
+			id:           uuid.New(),
+			color:        colornames.Green,
+			imd:          imdraw.New(nil),
+			W:            80,
+			H:            80,
+			vel:          pixel.V(.12, 0),
+			originalMass: 0.2,
+			currentMass:  0.2,
+			iX:           500,
+			iY:           700,
+		},
+		{
+			name:         "five",
+			id:           uuid.New(),
+			color:        colornames.Magenta,
+			imd:          imdraw.New(nil),
+			W:            20,
+			H:            80,
+			vel:          pixel.V(1.2, 0),
+			originalMass: 4.2,
+			currentMass:  4.2,
+			iX:           500,
+			iY:           700,
+		},
+		{
+			name:         "six",
+			id:           uuid.New(),
+			color:        colornames.Violet,
+			imd:          imdraw.New(nil),
+			W:            90,
+			H:            20,
+			vel:          pixel.V(1.5, 0),
+			originalMass: 2.2,
+			currentMass:  2.2,
+			iX:           200,
+			iY:           500,
+		},
+		{
+			name:         "seven",
+			id:           uuid.New(),
+			color:        colornames.Teal,
+			imd:          imdraw.New(nil),
+			W:            30,
+			H:            70,
+			vel:          pixel.V(.5, 0),
+			originalMass: 12,
+			currentMass:  12,
+			iX:           800,
+			iY:           500,
+		},
+		{
+			name:         "eight",
+			id:           uuid.New(),
+			color:        colornames.Whitesmoke,
+			imd:          imdraw.New(nil),
+			W:            300,
+			H:            70,
+			vel:          pixel.V(.1, 0),
+			originalMass: 2,
+			currentMass:  2,
+			iX:           300,
+			iY:           500,
+		},
+		{
+			name:         "nine",
+			id:           uuid.New(),
+			color:        colornames.Tomato,
+			imd:          imdraw.New(nil),
+			W:            10,
+			H:            15,
+			vel:          pixel.V(11, 0),
+			originalMass: .2,
+			currentMass:  .2,
+			iX:           30,
+			iY:           50,
+		},
 	}
 
 	for _, o := range objs {
