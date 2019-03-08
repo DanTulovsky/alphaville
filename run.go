@@ -123,7 +123,6 @@ func (o *object) update(w *world) {
 				o.phys.currentMass = 0
 				o.phys.vel.Y = 0
 				return
-
 			}
 		}
 		if o.phys.rect.Min.Y+o.phys.vel.Y < w.ground.phys.rect.Max.Y {
@@ -381,6 +380,28 @@ func populate(w *world) {
 			H:     15,
 			speed: 11,
 			mass:  .2,
+			phys:  &objectPhys{},
+		},
+		{
+			name:  "ten",
+			id:    uuid.New(),
+			color: colornames.Silver,
+			imd:   imdraw.New(nil),
+			W:     100,
+			H:     5,
+			speed: 1,
+			mass:  4,
+			phys:  &objectPhys{},
+		},
+		{
+			name:  "eleven",
+			id:    uuid.New(),
+			color: colornames.Skyblue,
+			imd:   imdraw.New(nil),
+			W:     2,
+			H:     150,
+			speed: 1,
+			mass:  4,
 			phys:  &objectPhys{},
 		},
 	}
