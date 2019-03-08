@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"image/color"
 	_ "image/png"
+	"log"
 	"math"
 	"time"
 
@@ -70,6 +71,8 @@ type objectPhys struct {
 
 // update the object every frame
 func (o *object) update(w *world) {
+	defer checkIntersectObject(w, o)
+
 	// if above ground, fall based on mass and gravity
 	if o.phys.rect.Min.Y > w.ground.phys.rect.Max.Y {
 		// more massive objects fall faster
@@ -81,51 +84,52 @@ func (o *object) update(w *world) {
 		o.phys.vel.Y = -1 * w.gravity
 	}
 
+	// otherwise move
+	// 	o.phys.rect = o.phys.rect.Moved(pixel.V(o.phys.vel.X, 0))
+
 	// fall
 	if o.phys.vel.Y < 0 {
-		switch {
-		case o.phys.rect.Min.Y+o.phys.vel.Y < w.ground.phys.rect.Max.Y:
-			// would fall below ground
+		// if about to fall on another, rise back up
+		for _, other := range w.objects {
+			if o.id == other.id {
+				continue // skip yourself
+			}
+			if o.phys.rect.Max.X < other.phys.rect.Min.X || o.phys.rect.Min.X > other.phys.rect.Max.X {
+				continue // no intersection in X axis
+			}
+
+			gap := o.phys.rect.Min.Y - other.phys.rect.Max.Y
+			if !(gap >= 0 && o.phys.rect.Min.Y+o.phys.vel.Y-other.phys.rect.Max.Y <= 0) {
+				// too far apart
+				continue
+			}
+
+			// if about to hit another one
+			switch {
+			case other.phys.vel.Y < 0: // falling also
+				if math.Abs(o.phys.vel.Y) > math.Abs(other.phys.vel.Y) {
+					// close and falling faster than what is below
+					o.phys.currentMass = 0
+					o.phys.vel.Y = 0
+					return
+
+				}
+			case other.phys.rect.Min.Y == w.ground.phys.rect.Max.Y:
+				// close and falling on something on the ground
+				o.phys.currentMass = 0
+				o.phys.vel.Y = 0
+				return
+			case other.phys.rect.Min.Y > 0: // rising
+				o.phys.currentMass = 0
+				o.phys.vel.Y = 0
+				return
+
+			}
+		}
+		if o.phys.rect.Min.Y+o.phys.vel.Y < w.ground.phys.rect.Max.Y {
 			o.phys.rect = o.phys.rect.Moved(pixel.V(0, w.ground.phys.rect.Max.Y-o.phys.rect.Min.Y))
 			o.phys.vel.Y = 0
-		default:
-			// if about to fall on another, rise back up
-			for _, other := range w.objects {
-				if o.id == other.id {
-					continue // skip yourself
-				}
-				if o.phys.rect.Max.X < other.phys.rect.Min.X || o.phys.rect.Min.X > other.phys.rect.Max.X {
-					continue // no intersection in X axis
-				}
-
-				gap := o.phys.rect.Min.Y - other.phys.rect.Max.Y
-				if !(gap >= 0 && o.phys.rect.Min.Y+o.phys.vel.Y-other.phys.rect.Max.Y <= 0) {
-					// too far apart
-					continue
-				}
-
-				// if about to hit another one
-				switch {
-				case other.phys.vel.Y < 0: // falling also
-					if math.Abs(o.phys.vel.Y) > math.Abs(other.phys.vel.Y) {
-						// close and falling faster than what is below
-						o.phys.currentMass = 0
-						o.phys.vel.Y = 0
-						return
-
-					}
-				case other.phys.rect.Min.Y == w.ground.phys.rect.Max.Y:
-					// close and falling on something on the ground
-					o.phys.currentMass = 0
-					o.phys.vel.Y = 0
-					return
-				case other.phys.rect.Min.Y > 0: // rising
-					o.phys.currentMass = 0
-					o.phys.vel.Y = 0
-					return
-
-				}
-			}
+		} else {
 			o.phys.rect = o.phys.rect.Moved(pixel.V(0, o.phys.vel.Y))
 		}
 		return
@@ -133,31 +137,32 @@ func (o *object) update(w *world) {
 
 	// rise
 	if o.phys.vel.Y > 0 {
-		switch {
-		case o.phys.rect.Max.Y+o.phys.vel.Y > w.Y:
+		for _, other := range w.objects {
+			if o.id == other.id {
+				continue // skip yourself
+			}
+			if o.phys.rect.Max.X < other.phys.rect.Min.X || o.phys.rect.Min.X > other.phys.rect.Max.X {
+				continue // no intersection in X axis
+			}
+			gap := other.phys.rect.Min.Y - o.phys.rect.Max.Y
+			if gap < 0 {
+				continue
+			}
+			// if about to hit another one
+			if other.phys.rect.Min.Y-(o.phys.rect.Max.Y+o.phys.vel.Y) <= o.phys.vel.Y {
+				o.phys.currentMass = o.mass
+				o.phys.vel.Y = 0
+				return
+			}
+		}
+
+		if o.phys.rect.Max.Y+o.phys.vel.Y > w.Y {
 			// would rise above ceiling
 			o.phys.rect = o.phys.rect.Moved(pixel.V(0, w.Y-o.phys.rect.Max.Y))
 			o.phys.vel.Y = 0
 			o.phys.currentMass = o.mass
-		default:
-			for _, other := range w.objects {
-				if o.id == other.id {
-					continue // skip yourself
-				}
-				if o.phys.rect.Max.X < other.phys.rect.Min.X || o.phys.rect.Min.X > other.phys.rect.Max.X {
-					continue // no intersection in X axis
-				}
-				gap := other.phys.rect.Min.Y - o.phys.rect.Max.Y
-				if gap < 0 {
-					continue
-				}
-				// if about to hit another one
-				if other.phys.rect.Min.Y-(o.phys.rect.Max.Y+o.phys.vel.Y) <= o.phys.vel.Y {
-					o.phys.currentMass = o.mass
-					o.phys.vel.Y = 0
-					return
-				}
-			}
+
+		} else {
 			o.phys.rect = o.phys.rect.Moved(pixel.V(0, o.phys.vel.Y))
 		}
 		return
@@ -190,14 +195,7 @@ func (o *object) update(w *world) {
 				continue // ignore falling objects higher than you
 			}
 
-			// velocity of the other object (may be 0 if it's coming down)
-			var otherVel float64
-			if other.phys.rect.Min.Y < w.ground.phys.rect.Max.Y {
-				otherVel = 0
-			} else {
-				otherVel = other.phys.vel.X
-			}
-			if o.phys.rect.Max.X < other.phys.rect.Min.X && o.phys.rect.Max.X+o.phys.vel.X >= other.phys.rect.Min.X+otherVel {
+			if o.phys.rect.Max.X <= other.phys.rect.Min.X && o.phys.rect.Max.X+o.phys.vel.X >= other.phys.rect.Min.X {
 				o.phys.currentMass = 0
 				return
 			}
@@ -210,14 +208,7 @@ func (o *object) update(w *world) {
 			if other.phys.rect.Min.Y > o.phys.rect.Max.Y {
 				continue // ignore falling objects higher than you
 			}
-			// velocity of the other object (may be 0 if it's coming down)
-			var otherVel float64
-			if other.phys.rect.Min.Y < w.ground.phys.rect.Max.Y {
-				otherVel = 0
-			} else {
-				otherVel = other.phys.vel.X
-			}
-			if o.phys.rect.Min.X > other.phys.rect.Max.X && o.phys.rect.Min.X+o.phys.vel.X <= other.phys.rect.Max.X+otherVel {
+			if o.phys.rect.Min.X >= other.phys.rect.Max.X && o.phys.rect.Min.X+o.phys.vel.X <= other.phys.rect.Max.X {
 				o.phys.currentMass = 0
 				return
 			}
@@ -245,12 +236,39 @@ func processInput() {
 
 }
 
+func checkIntersectObject(w *world, o *object) {
+	for _, other := range w.objects {
+		if o.id == other.id {
+			continue // skip yourself
+		}
+		if o.phys.rect.Intersect(other.phys.rect) != pixel.R(0, 0, 0, 0) {
+			log.Printf("%#v (%v) intersects with %#v (%v)", o.name, o.phys, other.name, other.phys)
+		}
+	}
+}
+func checkIntersect(w *world) {
+	for _, o := range w.objects {
+		for _, other := range w.objects {
+			if o.id == other.id {
+				continue // skip yourself
+			}
+			if o.phys.rect.Intersect(other.phys.rect) != pixel.R(0, 0, 0, 0) {
+				log.Printf("%#v intersects with %#v", o, other)
+			}
+
+		}
+	}
+
+}
+
 // update calls each object's update
 func update(w *world) {
 	// defer utils.Elapsed("update")()
 	for _, o := range w.objects {
 		o.update(w)
 	}
+
+	// checkIntersect(w)
 }
 
 // draw calls each object's update
@@ -280,7 +298,7 @@ func populate(w *world) {
 		{
 			name:  "two",
 			id:    uuid.New(),
-			color: colornames.Burlywood,
+			color: colornames.Blue,
 			imd:   imdraw.New(nil),
 			W:     60,
 			H:     60,
@@ -313,7 +331,7 @@ func populate(w *world) {
 		{
 			name:  "five",
 			id:    uuid.New(),
-			color: colornames.Chartreuse,
+			color: colornames.Orange,
 			imd:   imdraw.New(nil),
 			W:     80,
 			H:     80,
@@ -324,7 +342,7 @@ func populate(w *world) {
 		{
 			name:  "six",
 			id:    uuid.New(),
-			color: colornames.Violet,
+			color: colornames.Pink,
 			imd:   imdraw.New(nil),
 			W:     90,
 			H:     20,
@@ -335,7 +353,7 @@ func populate(w *world) {
 		{
 			name:  "seven",
 			id:    uuid.New(),
-			color: colornames.Teal,
+			color: colornames.Brown,
 			imd:   imdraw.New(nil),
 			W:     30,
 			H:     70,
@@ -357,7 +375,7 @@ func populate(w *world) {
 		{
 			name:  "nine",
 			id:    uuid.New(),
-			color: colornames.Tomato,
+			color: colornames.Gold,
 			imd:   imdraw.New(nil),
 			W:     10,
 			H:     15,
@@ -367,14 +385,16 @@ func populate(w *world) {
 		},
 	}
 
+	var x float64
 	for _, o := range objs {
 		if o.iY == 0 {
-			// place randomly
+			// place randomly, avoid intersection
 			o.iY = utils.RandomFloat64(w.ground.phys.rect.Max.Y, w.Y-o.H)
 		}
 		if o.iX == 0 {
-			// place randomly
-			o.iX = utils.RandomFloat64(0, w.Y-o.W)
+			// place randomly, avoid intersection
+			o.iX = x
+			x += o.W + 1
 		}
 		// set bounding rectangle based on size and location
 		o.phys.rect = pixel.R(o.iX, o.iY, o.W+o.iX, o.H+o.iY)
