@@ -9,7 +9,7 @@ import (
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/imdraw"
 	"github.com/faiface/pixel/pixelgl"
-	"gogs.wetsnow.com/dant/alphaville/utils"
+	"github.com/google/uuid"
 	"golang.org/x/image/colornames"
 )
 
@@ -34,6 +34,7 @@ type world struct {
 // object is an object in the world
 type object struct {
 	name string
+	id   uuid.UUID
 	// this is the location of the object in the world
 	rect  pixel.Rect
 	color color.Color
@@ -67,11 +68,24 @@ func (o *object) update(w *world) {
 
 	// fall
 	if o.vel.Y < 0 {
-		if o.rect.Min.Y+o.vel.Y < w.ground.rect.Max.Y {
+		switch {
+		case o.rect.Min.Y+o.vel.Y < w.ground.rect.Max.Y:
 			// would fall below ground
 			o.rect = o.rect.Moved(pixel.V(0, w.ground.rect.Max.Y-o.rect.Min.Y))
 			o.vel.Y = 0
-		} else {
+		default:
+			// if about to fall on another, rise back up
+			for _, other := range w.objects {
+				if o.id == other.id {
+					continue // skip yourself
+				}
+				if o.rect.Intersect(other.rect) != pixel.R(0, 0, 0, 0) {
+					// if about to hit another one and falling faster than they
+					o.currentMass = 0
+					o.vel.Y = 0
+					return
+				}
+			}
 			o.rect = o.rect.Moved(pixel.V(0, o.vel.Y))
 		}
 		return
@@ -91,10 +105,10 @@ func (o *object) update(w *world) {
 	}
 
 	// jump back up with random probability by setting mass to 0
-	if utils.RandomInt(0, 1000) < 1 {
-		o.currentMass = 0 // make it float
-		return
-	}
+	// if utils.RandomInt(0, 1000) < 1 {
+	// 	o.currentMass = 0 // make it float
+	// 	return
+	// }
 
 	// move if on the ground
 	if o.rect.Min.X <= 0 {
@@ -103,6 +117,61 @@ func (o *object) update(w *world) {
 	if o.rect.Max.X >= w.X {
 		o.dir = -1
 	}
+
+	// if about to bump into another object, rise up
+	switch {
+	case o.dir == 1: // moving right
+		for _, other := range w.objects {
+			if o.id == other.id {
+				continue // skip yourself
+			}
+			if other.rect.Min.Y > o.rect.Max.Y {
+				continue // ignore falling objects higher than you
+			}
+			switch {
+			case other.dir == -1:
+				gap := other.rect.Min.X - o.rect.Max.X
+				// if other is moving towards us
+				if gap >= 0 && gap <= 2 {
+					o.currentMass = 0
+					return
+				}
+			case other.dir == 1:
+				gap := other.rect.Min.X - o.rect.Max.X
+				// if other is moving in the same direction, but is slower, or still coming down
+				if gap >= 0 && gap <= 2 && (o.vel.X > other.vel.X || other.rect.Min.Y < o.rect.Max.Y) {
+					o.currentMass = 0
+					return
+				}
+			}
+		}
+	case o.dir == -1: // moving left
+		for _, other := range w.objects {
+			if o.id == other.id {
+				continue // skip yourself
+			}
+			if other.rect.Min.Y > o.rect.Max.Y {
+				continue // ignore falling objects higher than you
+			}
+			switch {
+			case other.dir == 1:
+				gap := o.rect.Min.X - other.rect.Max.X
+				// if other is moving towards us
+				if gap >= 0 && gap <= 2 {
+					o.currentMass = 0
+					return
+				}
+			case other.dir == -1:
+				gap := o.rect.Min.X - other.rect.Max.X
+				// if other is moving in the same direction, but is slower or still coming down
+				if gap >= 0 && gap <= 2 && (o.vel.X > other.vel.X || other.rect.Min.Y < o.rect.Max.Y) {
+					o.currentMass = 0
+					return
+				}
+			}
+		}
+	}
+	// move
 	o.rect = o.rect.Moved(pixel.V(o.dir*o.vel.X, 0))
 
 }
@@ -143,6 +212,8 @@ func populate(w *world) {
 
 	objs := []*object{
 		{
+			name:         "one",
+			id:           uuid.New(),
 			color:        colornames.Red,
 			imd:          imdraw.New(nil),
 			W:            60,
@@ -155,7 +226,9 @@ func populate(w *world) {
 			iY:           700,
 		},
 		{
-			color:        colornames.Blue,
+			name:         "two",
+			id:           uuid.New(),
+			color:        colornames.Burlywood,
 			imd:          imdraw.New(nil),
 			W:            60,
 			H:            60,
@@ -167,6 +240,8 @@ func populate(w *world) {
 			iY:           700,
 		},
 		{
+			name:         "three",
+			id:           uuid.New(),
 			color:        colornames.Yellow,
 			imd:          imdraw.New(nil),
 			W:            60,
@@ -176,6 +251,34 @@ func populate(w *world) {
 			currentMass:  0.5,
 			dir:          +1, // start facing right
 			iX:           200,
+			iY:           700,
+		},
+		{
+			name:         "four",
+			id:           uuid.New(),
+			color:        colornames.Green,
+			imd:          imdraw.New(nil),
+			W:            80,
+			H:            80,
+			vel:          pixel.V(.12, 0),
+			originalMass: 0.1,
+			currentMass:  0.1,
+			dir:          +1, // start facing right
+			iX:           400,
+			iY:           700,
+		},
+		{
+			name:         "four",
+			id:           uuid.New(),
+			color:        colornames.Green,
+			imd:          imdraw.New(nil),
+			W:            80,
+			H:            80,
+			vel:          pixel.V(.12, 0),
+			originalMass: 0.2,
+			currentMass:  0.2,
+			dir:          +1, // start facing right
+			iX:           500,
 			iY:           700,
 		},
 	}
