@@ -79,8 +79,13 @@ func (o *object) update(w *world) {
 				if o.id == other.id {
 					continue // skip yourself
 				}
-				if o.rect.Intersect(other.rect) != pixel.R(0, 0, 0, 0) {
-					// if about to hit another one and falling faster than they
+				if o.rect.Max.X < other.rect.Min.X || o.rect.Min.X > other.rect.Max.X {
+					continue // no intersection in X axis
+				}
+
+				gap := o.rect.Min.Y - other.rect.Max.Y
+				// if about to hit another one and falling faster than they
+				if gap >= 0 && gap <= 2 {
 					o.currentMass = 0
 					o.vel.Y = 0
 					return
