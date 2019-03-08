@@ -4,12 +4,14 @@ import (
 	"fmt"
 	"image/color"
 	_ "image/png"
+	"math"
 	"time"
 
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/imdraw"
 	"github.com/faiface/pixel/pixelgl"
 	"github.com/google/uuid"
+	"gogs.wetsnow.com/dant/alphaville/utils"
 	"golang.org/x/image/colornames"
 )
 
@@ -84,11 +86,31 @@ func (o *object) update(w *world) {
 				}
 
 				gap := o.rect.Min.Y - other.rect.Max.Y
-				// if about to hit another one and falling faster than they
-				if gap >= 0 && gap <= 2 {
+				if !(gap >= 0 && o.rect.Min.Y+o.vel.Y-other.rect.Max.Y <= 0) {
+					// too far apart
+					continue
+				}
+
+				// if about to hit another one
+				switch {
+				case other.vel.Y < 0: // falling also
+					if math.Abs(o.vel.Y) > math.Abs(other.vel.Y) {
+						// close and falling faster than what is below
+						o.currentMass = 0
+						o.vel.Y = 0
+						return
+
+					}
+				case other.rect.Min.Y == w.ground.rect.Max.Y:
+					// close and falling on something on the ground
 					o.currentMass = 0
 					o.vel.Y = 0
 					return
+				case other.rect.Min.Y > 0: // rising
+					o.currentMass = 0
+					o.vel.Y = 0
+					return
+
 				}
 			}
 			o.rect = o.rect.Moved(pixel.V(0, o.vel.Y))
@@ -98,13 +120,33 @@ func (o *object) update(w *world) {
 
 	// rise
 	if o.vel.Y > 0 {
-		if o.rect.Max.Y+o.vel.Y > w.Y {
+		switch {
+		case o.rect.Max.Y+o.vel.Y > w.Y:
 			// would rise above ceiling
 			o.rect = o.rect.Moved(pixel.V(0, w.Y-o.rect.Max.Y))
 			o.vel.Y = 0
 			o.currentMass = o.originalMass
-		} else {
+		default:
+			for _, other := range w.objects {
+				if o.id == other.id {
+					continue // skip yourself
+				}
+				if o.rect.Max.X < other.rect.Min.X || o.rect.Min.X > other.rect.Max.X {
+					continue // no intersection in X axis
+				}
+				gap := other.rect.Min.Y - o.rect.Max.Y
+				if gap < 0 {
+					continue
+				}
+				// if about to hit another one
+				if other.rect.Min.Y-(o.rect.Max.Y+o.vel.Y) <= o.vel.Y {
+					o.currentMass = o.originalMass
+					o.vel.Y = 0
+					return
+				}
+			}
 			o.rect = o.rect.Moved(pixel.V(0, o.vel.Y))
+
 		}
 		return
 	}
@@ -177,6 +219,11 @@ func (o *object) update(w *world) {
 		}
 	}
 	// move
+	// randomly rise up
+	if utils.RandomInt(0, 1000) > 1 {
+		o.currentMass = 0
+	}
+
 	o.rect = o.rect.Moved(pixel.V(o.dir*o.vel.X, 0))
 
 }
@@ -223,11 +270,11 @@ func populate(w *world) {
 			imd:          imdraw.New(nil),
 			W:            60,
 			H:            60,
-			vel:          pixel.V(1, 0),
+			vel:          pixel.V(0, 0),
 			originalMass: 2,
 			currentMass:  2,
 			dir:          +1, // start facing right
-			iX:           0,
+			iX:           200,
 			iY:           700,
 		},
 		{
@@ -237,55 +284,55 @@ func populate(w *world) {
 			imd:          imdraw.New(nil),
 			W:            60,
 			H:            60,
-			vel:          pixel.V(1.1, 0),
+			vel:          pixel.V(0, 0),
 			originalMass: 1,
 			currentMass:  1,
 			dir:          +1, // start facing right
-			iX:           100,
-			iY:           700,
-		},
-		{
-			name:         "three",
-			id:           uuid.New(),
-			color:        colornames.Yellow,
-			imd:          imdraw.New(nil),
-			W:            60,
-			H:            60,
-			vel:          pixel.V(1.12, 0),
-			originalMass: 0.5,
-			currentMass:  0.5,
-			dir:          +1, // start facing right
 			iX:           200,
-			iY:           700,
+			iY:           500,
 		},
-		{
-			name:         "four",
-			id:           uuid.New(),
-			color:        colornames.Green,
-			imd:          imdraw.New(nil),
-			W:            80,
-			H:            80,
-			vel:          pixel.V(.12, 0),
-			originalMass: 0.1,
-			currentMass:  0.1,
-			dir:          +1, // start facing right
-			iX:           400,
-			iY:           700,
-		},
-		{
-			name:         "four",
-			id:           uuid.New(),
-			color:        colornames.Green,
-			imd:          imdraw.New(nil),
-			W:            80,
-			H:            80,
-			vel:          pixel.V(.12, 0),
-			originalMass: 0.2,
-			currentMass:  0.2,
-			dir:          +1, // start facing right
-			iX:           500,
-			iY:           700,
-		},
+		// {
+		// 	name:         "three",
+		// 	id:           uuid.New(),
+		// 	color:        colornames.Yellow,
+		// 	imd:          imdraw.New(nil),
+		// 	W:            60,
+		// 	H:            60,
+		// 	vel:          pixel.V(1.12, 0),
+		// 	originalMass: 0.5,
+		// 	currentMass:  0.5,
+		// 	dir:          +1, // start facing right
+		// 	iX:           200,
+		// 	iY:           700,
+		// },
+		// {
+		// 	name:         "four",
+		// 	id:           uuid.New(),
+		// 	color:        colornames.Green,
+		// 	imd:          imdraw.New(nil),
+		// 	W:            80,
+		// 	H:            80,
+		// 	vel:          pixel.V(.12, 0),
+		// 	originalMass: 0.1,
+		// 	currentMass:  0.1,
+		// 	dir:          +1, // start facing right
+		// 	iX:           400,
+		// 	iY:           700,
+		// },
+		// {
+		// 	name:         "four",
+		// 	id:           uuid.New(),
+		// 	color:        colornames.Green,
+		// 	imd:          imdraw.New(nil),
+		// 	W:            80,
+		// 	H:            80,
+		// 	vel:          pixel.V(.12, 0),
+		// 	originalMass: 0.2,
+		// 	currentMass:  0.2,
+		// 	dir:          +1, // start facing right
+		// 	iX:           500,
+		// 	iY:           700,
+		// },
 	}
 
 	for _, o := range objs {
