@@ -188,11 +188,11 @@ func (o *Object) Update(w *World) {
 
 	// move if on the Ground
 
-	// switch directions of at the end of screen
-	if o.Phys.Rect.Min.X <= 0 {
+	// switch directions of at the end of screen, if moving towards end
+	if o.Phys.Vel.X < 0 && o.Phys.Rect.Min.X <= 0 {
 		o.ChangeDirection()
 	}
-	if o.Phys.Rect.Max.X >= w.X {
+	if o.Phys.Vel.X > 0 && o.Phys.Rect.Max.X >= w.X {
 		o.ChangeDirection()
 	}
 

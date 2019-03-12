@@ -74,8 +74,8 @@ func Random(w *world.World, n int) {
 			randomColor,
 			utils.RandomFloat64(1, 10)/10, // speed
 			utils.RandomFloat64(1, 10)/10, // mass
-			utils.RandomFloat64(2, 3),     // width
-			utils.RandomFloat64(80, 81),   // height
+			utils.RandomFloat64(10, 81),   // width
+			utils.RandomFloat64(10, 81),   // height
 			world.NewObjectPhys(),
 			w.Atlas,
 		)
