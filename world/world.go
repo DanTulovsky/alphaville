@@ -1,6 +1,7 @@
 package world
 
 import (
+	"fmt"
 	"image/color"
 	"log"
 	"math"
@@ -8,7 +9,11 @@ import (
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/imdraw"
 	"github.com/faiface/pixel/pixelgl"
+	"github.com/faiface/pixel/text"
 	"github.com/google/uuid"
+	"gogs.wetsnow.com/dant/alphaville/utils"
+	"golang.org/x/image/colornames"
+	"golang.org/x/image/font/basicfont"
 )
 
 // World defines the world
@@ -17,6 +22,7 @@ type World struct {
 	Objects []*Object
 	Ground  *Object
 	gravity float64
+	Atlas   *text.Atlas
 }
 
 // NewWorld returns a new world
@@ -27,6 +33,7 @@ func NewWorld(x, y float64, ground *Object, gravity float64) *World {
 		Y:       y,
 		Ground:  ground,
 		gravity: gravity,
+		Atlas:   text.NewAtlas(basicfont.Face7x13, text.ASCII),
 	}
 }
 
@@ -51,10 +58,12 @@ type Object struct {
 
 	// physics properties of the Object
 	Phys *ObjectPhys
+
+	Atlas *text.Atlas
 }
 
 // NewObject return a new object in the world
-func NewObject(name string, color color.Color, speed, mass, W, H float64, phys *ObjectPhys) *Object {
+func NewObject(name string, color color.Color, speed, mass, W, H float64, phys *ObjectPhys, atlas *text.Atlas) *Object {
 	return &Object{
 		name:  name,
 		id:    uuid.New(),
@@ -65,7 +74,13 @@ func NewObject(name string, color color.Color, speed, mass, W, H float64, phys *
 		H:     H,
 		imd:   imdraw.New(nil),
 		Phys:  phys,
+		Atlas: atlas,
 	}
+}
+
+// ChangeDirection changes the horizontal direction of the object to the opposite of current
+func (o *Object) ChangeDirection() {
+	o.Phys.Vel.X *= -1
 }
 
 // ObjectPhys defines the physical (dynamic) object properties
@@ -101,7 +116,7 @@ func (o *Object) Update(w *World) {
 		o.Phys.Vel.Y = -1 * w.gravity * o.Mass
 	}
 
-	// fall
+	// falling
 	if o.Phys.Vel.Y < 0 {
 		// if about to fall on another, rise back up
 		for _, other := range w.Objects {
@@ -113,33 +128,24 @@ func (o *Object) Update(w *World) {
 			}
 
 			gap := o.Phys.Rect.Min.Y - other.Phys.Rect.Max.Y
-			if !(gap >= 0 && o.Phys.Rect.Min.Y+o.Phys.Vel.Y-other.Phys.Rect.Max.Y <= 0) {
+			if gap < 0 {
+				continue
+			}
+
+			if o.Phys.Rect.Min.Y+o.Phys.Vel.Y-other.Phys.Rect.Max.Y > 0 {
 				// too far apart
 				continue
 			}
 
-			// if about to hit another one
-			switch {
-			case other.Phys.Vel.Y < 0: // falling also
-				if math.Abs(o.Phys.Vel.Y) > math.Abs(other.Phys.Vel.Y) {
-					// close and falling faster than what is below
-					o.Phys.CurrentMass = 0
-					o.Phys.Vel.Y = 0
-					return
-
-				}
-			case other.Phys.Rect.Min.Y == w.Ground.Phys.Rect.Max.Y:
-				// close and falling on something on the Ground
-				o.Phys.CurrentMass = 0
-				o.Phys.Vel.Y = 0
-				return
-			case other.Phys.Rect.Min.Y > 0: // rising
-				o.Phys.CurrentMass = 0
-				o.Phys.Vel.Y = 0
-				return
-			}
+			// avoid collision by stopping the fall and rising again
+			o.Phys.CurrentMass = 0
+			o.Phys.Vel.Y = 0
+			return
 		}
+
+		// No collisions with other objects detected, check ground.
 		if o.Phys.Rect.Min.Y+o.Phys.Vel.Y < w.Ground.Phys.Rect.Max.Y {
+			// stop at gorund level
 			o.Phys.Rect = o.Phys.Rect.Moved(pixel.V(0, w.Ground.Phys.Rect.Max.Y-o.Phys.Rect.Min.Y))
 			o.Phys.Vel.Y = 0
 		} else {
@@ -148,7 +154,7 @@ func (o *Object) Update(w *World) {
 		return
 	}
 
-	// rise
+	// rising
 	if o.Phys.Vel.Y > 0 {
 		for _, other := range w.Objects {
 			if o.id == other.id {
@@ -157,11 +163,12 @@ func (o *Object) Update(w *World) {
 			if o.Phys.Rect.Max.X < other.Phys.Rect.Min.X || o.Phys.Rect.Min.X > other.Phys.Rect.Max.X {
 				continue // no intersection in X axis
 			}
+
 			gap := other.Phys.Rect.Min.Y - o.Phys.Rect.Max.Y
 			if gap < 0 {
 				continue
 			}
-			// if about to hit another one
+			// if about to hit another one, stop rising
 			if other.Phys.Rect.Min.Y-(o.Phys.Rect.Max.Y+o.Phys.Vel.Y) <= o.Phys.Vel.Y {
 				o.Phys.CurrentMass = o.Mass
 				o.Phys.Vel.Y = 0
@@ -169,6 +176,7 @@ func (o *Object) Update(w *World) {
 			}
 		}
 
+		// No collision with other objects detected, check ceiling
 		if o.Phys.Rect.Max.Y+o.Phys.Vel.Y > w.Y {
 			// would rise above ceiling
 			o.Phys.Rect = o.Phys.Rect.Moved(pixel.V(0, w.Y-o.Phys.Rect.Max.Y))
@@ -197,7 +205,7 @@ func (o *Object) Update(w *World) {
 		o.Phys.Vel.X = -1 * math.Abs(o.Phys.Vel.X)
 	}
 
-	// if about to bump into another Object, rise up
+	// if about to bump into another Object, rise up or change direction
 	switch {
 	case o.Phys.Vel.X > 0: // moving right
 		for _, other := range w.Objects {
@@ -209,7 +217,12 @@ func (o *Object) Update(w *World) {
 			}
 
 			if o.Phys.Rect.Max.X <= other.Phys.Rect.Min.X && o.Phys.Rect.Max.X+o.Phys.Vel.X >= other.Phys.Rect.Min.X {
-				o.Phys.CurrentMass = 0
+				// 50/50 chance of rising up or changing direction
+				if utils.RandomInt(0, 100) > 50 {
+					o.Phys.CurrentMass = 0
+				} else {
+					o.ChangeDirection()
+				}
 				return
 			}
 		}
@@ -221,8 +234,14 @@ func (o *Object) Update(w *World) {
 			if other.Phys.Rect.Min.Y > o.Phys.Rect.Max.Y {
 				continue // ignore falling Objects higher than you
 			}
+
+			// 50/50 chance of rising up or changing direction
 			if o.Phys.Rect.Min.X >= other.Phys.Rect.Max.X && o.Phys.Rect.Min.X+o.Phys.Vel.X <= other.Phys.Rect.Max.X {
-				o.Phys.CurrentMass = 0
+				if utils.RandomInt(0, 100) > 50 {
+					o.Phys.CurrentMass = 0
+				} else {
+					o.ChangeDirection()
+				}
 				return
 			}
 		}
@@ -235,6 +254,7 @@ func (o *Object) Update(w *World) {
 
 }
 
+// Draw draws the object.
 func (o *Object) Draw(win *pixelgl.Window) {
 	o.imd.Clear()
 	o.imd.Reset()
@@ -243,8 +263,14 @@ func (o *Object) Draw(win *pixelgl.Window) {
 	o.imd.Push(o.Phys.Rect.Max)
 	o.imd.Rectangle(0)
 	o.imd.Draw(win)
+
+	txt := text.New(pixel.V(o.Phys.Rect.Center().XY()), o.Atlas)
+	txt.Color = colornames.Black
+	fmt.Fprintf(txt, "%v", o.name)
+	txt.Draw(win, pixel.IM)
 }
 
+// CheckIntersectObject prints out an error if this object intersects with another one
 func CheckIntersectObject(w *World, o *Object) {
 	for _, other := range w.Objects {
 		if o.id == other.id {
@@ -255,6 +281,8 @@ func CheckIntersectObject(w *World, o *Object) {
 		}
 	}
 }
+
+// CheckIntersect checks if any objects in the world intersect and prints an error.
 func CheckIntersect(w *World) {
 	for _, o := range w.Objects {
 		for _, other := range w.Objects {

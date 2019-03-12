@@ -21,7 +21,8 @@ func Static(w *world.World) {
 			1,
 			20,
 			20,
-			world.NewObjectPhys()))
+			world.NewObjectPhys(),
+			w.Atlas))
 
 	objs = append(objs,
 		world.NewObject(
@@ -31,7 +32,8 @@ func Static(w *world.World) {
 			3,
 			20,
 			20,
-			world.NewObjectPhys()))
+			world.NewObjectPhys(),
+			w.Atlas))
 
 	var x float64
 	for _, o := range objs {
@@ -72,9 +74,10 @@ func Random(w *world.World, n int) {
 			randomColor,
 			utils.RandomFloat64(1, 10)/10, // speed
 			utils.RandomFloat64(1, 10)/10, // mass
-			utils.RandomFloat64(1, 20),    // width
-			utils.RandomFloat64(1, 10),    // height
+			utils.RandomFloat64(80, 81),   // width
+			utils.RandomFloat64(80, 81),   // height
 			world.NewObjectPhys(),
+			w.Atlas,
 		)
 
 		if o.IY == 0 {

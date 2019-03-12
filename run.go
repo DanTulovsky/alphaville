@@ -8,9 +8,11 @@ import (
 
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/pixelgl"
+	"github.com/faiface/pixel/text"
 	"gogs.wetsnow.com/dant/alphaville/populate"
 	"gogs.wetsnow.com/dant/alphaville/world"
 	"golang.org/x/image/colornames"
+	"golang.org/x/image/font/basicfont"
 )
 
 var (
@@ -50,14 +52,17 @@ func draw(w *world.World, win *pixelgl.Window) {
 func run() {
 	rand.Seed(time.Now().UnixNano())
 
-	ground := world.NewObject("ground", colornames.White, 0, 0, 1024, 40, world.NewObjectPhys())
+	// text characters we can use to write text with
+	atlas := text.NewAtlas(basicfont.Face7x13, text.ASCII)
+
+	ground := world.NewObject("ground", colornames.White, 0, 0, 1024, 40, world.NewObjectPhys(), atlas)
 	ground.Phys.Rect = pixel.R(0, 0, 1024, 40)
 
 	world := world.NewWorld(1024, 768, ground, gravity)
 
 	// populate the world
 	// populate.Static(world)
-	populate.Random(world, 300)
+	populate.Random(world, 12)
 
 	cfg := pixelgl.WindowConfig{
 		Title:  "Play!",
