@@ -1,10 +1,8 @@
 package world
 
 import (
-	"fmt"
 	"image/color"
 	"log"
-	"math"
 
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/imdraw"
@@ -12,7 +10,6 @@ import (
 	"github.com/faiface/pixel/text"
 	"github.com/google/uuid"
 	"gogs.wetsnow.com/dant/alphaville/utils"
-	"golang.org/x/image/colornames"
 	"golang.org/x/image/font/basicfont"
 )
 
@@ -189,20 +186,14 @@ func (o *Object) Update(w *World) {
 		return
 	}
 
-	// jump back up with random probability by setting Mass to 0
-	// if utils.RandomInt(0, 1000) < 1 {
-	// 	o.Phys.CurrentMass = 0 // make it float
-	// 	return
-	// }
-
 	// move if on the Ground
 
 	// switch directions of at the end of screen
 	if o.Phys.Rect.Min.X <= 0 {
-		o.Phys.Vel.X = math.Abs(o.Phys.Vel.X)
+		o.ChangeDirection()
 	}
 	if o.Phys.Rect.Max.X >= w.X {
-		o.Phys.Vel.X = -1 * math.Abs(o.Phys.Vel.X)
+		o.ChangeDirection()
 	}
 
 	// if about to bump into another Object, rise up or change direction
@@ -246,10 +237,8 @@ func (o *Object) Update(w *World) {
 			}
 		}
 	}
-	// if utils.RandomInt(0, 1000) > 1 {
-	// 	o.Phys.CurrentMass = 0
-	// }
-	// move
+
+	// move if nothing else to do
 	o.Phys.Rect = o.Phys.Rect.Moved(pixel.V(o.Phys.Vel.X, 0))
 
 }
@@ -264,10 +253,11 @@ func (o *Object) Draw(win *pixelgl.Window) {
 	o.imd.Rectangle(0)
 	o.imd.Draw(win)
 
-	txt := text.New(pixel.V(o.Phys.Rect.Center().XY()), o.Atlas)
-	txt.Color = colornames.Black
-	fmt.Fprintf(txt, "%v", o.name)
-	txt.Draw(win, pixel.IM)
+	// draw name of the object
+	// txt := text.New(pixel.V(o.Phys.Rect.Center().XY()), o.Atlas)
+	// txt.Color = colornames.Black
+	// fmt.Fprintf(txt, "%v", o.name)
+	// txt.Draw(win, pixel.IM)
 }
 
 // CheckIntersectObject prints out an error if this object intersects with another one
