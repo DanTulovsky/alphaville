@@ -131,7 +131,7 @@ func (o *Object) Update(w *World) {
 				continue
 			}
 
-			if o.Phys.Rect.Min.Y-other.Phys.Rect.Max.Y > math.Abs(o.Phys.Vel.Y+other.Phys.Vel.Y) {
+			if o.Phys.Rect.Min.Y-other.Phys.Rect.Max.Y > math.Abs(o.Phys.Vel.Y)+math.Abs(other.Phys.Vel.Y) {
 				// too far apart
 				continue
 			}
@@ -169,7 +169,7 @@ func (o *Object) Update(w *World) {
 				continue
 			}
 
-			if other.Phys.Rect.Min.Y-o.Phys.Rect.Max.Y > math.Abs(o.Phys.Vel.Y+other.Phys.Vel.Y) {
+			if other.Phys.Rect.Min.Y-o.Phys.Rect.Max.Y > math.Abs(o.Phys.Vel.Y)+math.Abs(other.Phys.Vel.Y) {
 				// too far apart
 				continue
 			}
