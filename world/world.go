@@ -3,6 +3,7 @@ package world
 import (
 	"image/color"
 	"log"
+	"math"
 
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/imdraw"
@@ -129,7 +130,8 @@ func (o *Object) Update(w *World) {
 				continue
 			}
 
-			if o.Phys.Rect.Min.Y+o.Phys.Vel.Y-other.Phys.Rect.Max.Y > 0 {
+			// if o.Phys.Rect.Min.Y+o.Phys.Vel.Y-other.Phys.Rect.Max.Y > 0 {
+			if o.Phys.Rect.Min.Y-other.Phys.Rect.Max.Y > math.Abs(o.Phys.Vel.Y)+math.Abs(other.Phys.Vel.Y) {
 				// too far apart
 				continue
 			}
@@ -165,12 +167,15 @@ func (o *Object) Update(w *World) {
 			if gap < 0 {
 				continue
 			}
-			// if about to hit another one, stop rising
-			if other.Phys.Rect.Min.Y-(o.Phys.Rect.Max.Y+o.Phys.Vel.Y) <= o.Phys.Vel.Y {
-				o.Phys.CurrentMass = o.Mass
-				o.Phys.Vel.Y = 0
-				return
+
+			if other.Phys.Rect.Min.Y-o.Phys.Rect.Max.Y > math.Abs(o.Phys.Vel.Y)+math.Abs(other.Phys.Vel.Y) {
+				// too far apart
+				continue
 			}
+
+			o.Phys.CurrentMass = o.Mass
+			o.Phys.Vel.Y = 0
+			return
 		}
 
 		// No collision with other objects detected, check ceiling
