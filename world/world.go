@@ -121,6 +121,7 @@ func (o *Object) Update(w *World) {
 			if o.id == other.id {
 				continue // skip yourself
 			}
+
 			if o.Phys.Rect.Max.X < other.Phys.Rect.Min.X || o.Phys.Rect.Min.X > other.Phys.Rect.Max.X {
 				continue // no intersection in X axis
 			}
@@ -130,7 +131,6 @@ func (o *Object) Update(w *World) {
 				continue
 			}
 
-			// if o.Phys.Rect.Min.Y+o.Phys.Vel.Y-other.Phys.Rect.Max.Y > 0 {
 			if o.Phys.Rect.Min.Y-other.Phys.Rect.Max.Y > math.Abs(o.Phys.Vel.Y)+math.Abs(other.Phys.Vel.Y) {
 				// too far apart
 				continue
@@ -159,6 +159,7 @@ func (o *Object) Update(w *World) {
 			if o.id == other.id {
 				continue // skip yourself
 			}
+
 			if o.Phys.Rect.Max.X < other.Phys.Rect.Min.X || o.Phys.Rect.Min.X > other.Phys.Rect.Max.X {
 				continue // no intersection in X axis
 			}
