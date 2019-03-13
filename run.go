@@ -32,11 +32,16 @@ func processInput() {
 
 // update calls each object's update
 func update(w *world.World) {
+
 	// defer utils.Elapsed("update")()
 	for _, o := range w.Objects {
 		o.Update(w)
 	}
 
+	// After update, swap the state of all objects at once
+	// for _, o := range w.Objects {
+	// 	o.Phys = o.NextPhys
+	// }
 	// checkIntersect(w)
 }
 
@@ -62,7 +67,7 @@ func run() {
 
 	// populate the world
 	// populate.Static(world)
-	populate.Random(world, 20)
+	populate.Random(world, 2)
 
 	cfg := pixelgl.WindowConfig{
 		Title:  "Play!",

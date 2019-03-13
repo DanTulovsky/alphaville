@@ -1,9 +1,9 @@
 package world
 
 import (
+	"fmt"
 	"image/color"
 	"log"
-	"math"
 
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/imdraw"
@@ -55,7 +55,8 @@ type Object struct {
 	IX, IY float64
 
 	// physics properties of the Object
-	Phys *ObjectPhys
+	Phys     *ObjectPhys
+	NextPhys *ObjectPhys // State of the object in the next round
 
 	Atlas *text.Atlas
 }
@@ -99,9 +100,29 @@ func NewObjectPhys() *ObjectPhys {
 	return &ObjectPhys{}
 }
 
+// NewObjectPhysCopy return a new physic object based on an existing one
+func NewObjectPhysCopy(o *ObjectPhys) *ObjectPhys {
+	fmt.Printf("%#+v\n", o)
+	return &ObjectPhys{
+		Vel:         pixel.V(o.Vel.X, o.Vel.Y),
+		CurrentMass: o.CurrentMass,
+		Rect:        o.Rect,
+	}
+}
+
 // Update the Object every frame
 func (o *Object) Update(w *World) {
-	defer CheckIntersectObject(w, o)
+	// defer CheckIntersectObject(w, o)
+
+	fmt.Printf("%#+v\n", o)
+	oldPhys := NewObjectPhysCopy(o.Phys)
+
+	defer func(o *Object) { o.NextPhys = o.Phys }(o)
+	defer func(o *Object) { o.Phys = oldPhys }(o)
+
+	fmt.Printf("old: %v\n", oldPhys.Vel.X)
+	fmt.Printf("current: %v\n", o.Phys.Vel.X)
+	fmt.Println()
 
 	// if above Ground, fall based on Mass and gravity
 	if o.Phys.Rect.Min.Y > w.Ground.Phys.Rect.Max.Y {
@@ -131,7 +152,8 @@ func (o *Object) Update(w *World) {
 				continue
 			}
 
-			if o.Phys.Rect.Min.Y-other.Phys.Rect.Max.Y > math.Abs(o.Phys.Vel.Y)+math.Abs(other.Phys.Vel.Y) {
+			// if o.Phys.Rect.Min.Y-other.Phys.Rect.Max.Y > math.Abs(o.Phys.Vel.Y)+math.Abs(other.Phys.Vel.Y) {
+			if o.Phys.Rect.Min.Y+o.Phys.Vel.Y > other.Phys.Rect.Max.Y+other.Phys.Vel.Y {
 				// too far apart
 				continue
 			}
@@ -169,7 +191,8 @@ func (o *Object) Update(w *World) {
 				continue
 			}
 
-			if other.Phys.Rect.Min.Y-o.Phys.Rect.Max.Y > math.Abs(o.Phys.Vel.Y)+math.Abs(other.Phys.Vel.Y) {
+			// if other.Phys.Rect.Min.Y-o.Phys.Rect.Max.Y > math.Abs(o.Phys.Vel.Y)+math.Abs(other.Phys.Vel.Y) {
+			if other.Phys.Rect.Min.Y+other.Phys.Vel.Y > o.Phys.Rect.Max.Y+o.Phys.Vel.Y {
 				// too far apart
 				continue
 			}
