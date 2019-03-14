@@ -39,9 +39,9 @@ func update(w *world.World) {
 	}
 
 	// After update, swap the state of all objects at once
-	// for _, o := range w.Objects {
-	// 	o.Phys = o.NextPhys
-	// }
+	for _, o := range w.Objects {
+		o.Phys = o.NextPhys
+	}
 	// checkIntersect(w)
 }
 
@@ -67,7 +67,7 @@ func run() {
 
 	// populate the world
 	// populate.Static(world)
-	populate.Random(world, 2)
+	populate.Random(world, 20)
 
 	cfg := pixelgl.WindowConfig{
 		Title:  "Play!",
