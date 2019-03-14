@@ -143,7 +143,7 @@ func (o *Object) Update(w *World) {
 	}
 
 	// if on the ground and X velocity is 0, reset it - this seems to be a bug
-	if o.Phys.Rect.Min.X == w.Ground.Phys.Rect.Max.X {
+	if o.Phys.Rect.Min.Y == w.Ground.Phys.Rect.Max.Y && o.Phys.Vel.X == 0 {
 		o.Phys.Vel.X = o.Phys.PreviousVel.X
 	}
 
