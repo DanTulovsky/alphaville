@@ -155,10 +155,12 @@ func (o *Object) Update(w *World) {
 				continue // skip yourself
 			}
 
-			if o.Phys.Rect.Max.X < other.Phys.Rect.Min.X+other.Phys.Vel.X {
+			if o.Phys.Rect.Max.X < other.Phys.Rect.Min.X+other.Phys.Vel.X &&
+				o.Phys.Rect.Max.X < other.Phys.Rect.Min.X {
 				continue // no intersection in X axis
 			}
-			if o.Phys.Rect.Min.X > other.Phys.Rect.Max.X+other.Phys.Vel.X {
+			if o.Phys.Rect.Min.X > other.Phys.Rect.Max.X+other.Phys.Vel.X &&
+				o.Phys.Rect.Min.X > other.Phys.Rect.Max.X {
 				continue // no intersection in X axis
 			}
 
