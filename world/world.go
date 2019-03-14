@@ -142,6 +142,11 @@ func (o *Object) Update(w *World) {
 		}
 	}
 
+	// if on the ground and X velocity is 0, reset it - this seems to be a bug
+	if o.Phys.Rect.Min.X == w.Ground.Phys.Rect.Max.X {
+		o.Phys.Vel.X = o.Phys.PreviousVel.X
+	}
+
 	// falling
 	if o.Phys.Vel.Y < 0 {
 		// if about to fall on another, rise back up
