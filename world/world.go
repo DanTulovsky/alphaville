@@ -107,6 +107,7 @@ func NewObjectPhys() *ObjectPhys {
 func NewObjectPhysCopy(o *ObjectPhys) *ObjectPhys {
 	return &ObjectPhys{
 		Vel:         pixel.V(o.Vel.X, o.Vel.Y),
+		PreviousVel: pixel.V(o.PreviousVel.X, o.PreviousVel.Y),
 		CurrentMass: o.CurrentMass,
 		Rect:        o.Rect,
 	}
