@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	_ "image/png"
+	"log"
 	"math/rand"
 	"time"
 
@@ -55,6 +56,7 @@ func draw(w *world.World, win *pixelgl.Window) {
 }
 
 func run() {
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	rand.Seed(time.Now().UnixNano())
 
 	// text characters we can use to write text with
@@ -67,7 +69,7 @@ func run() {
 
 	// populate the world
 	// populate.Static(world)
-	populate.Random(world, 40)
+	populate.Random(world, 20)
 
 	cfg := pixelgl.WindowConfig{
 		Title:  "Play!",
