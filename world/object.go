@@ -21,10 +21,11 @@ type Object interface {
 	NextPhys() *RectObjectPhys // returns the NextPhys object
 	Name() string
 	Phys() *RectObjectPhys // returns the Phys object
-	SetNextPhys(*RectObjectPhys)
-	SetPhys(*RectObjectPhys)
 	SwapNextState()
 	Update(*World)
+
+	SetNextPhys(*RectObjectPhys)
+	SetPhys(*RectObjectPhys)
 }
 
 // RectObject is an RectObject in the world

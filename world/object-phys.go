@@ -2,6 +2,19 @@ package world
 
 import "github.com/faiface/pixel"
 
+// ObjectPhys is the physics of an object, these values change as the object moves
+type ObjectPhys interface {
+	CurrentMass() float64
+	Location() pixel.Rect
+	PreviousVel() pixel.Vec
+	Vel() pixel.Vec
+
+	SetCurrentMass(float64)
+	SetLocation(pixel.Rect)
+	SetPreviousVel(pixel.Vec)
+	SetVel(pixel.Vec)
+}
+
 // RectObjectPhys defines the physical (dynamic) object properties
 type RectObjectPhys struct {
 
