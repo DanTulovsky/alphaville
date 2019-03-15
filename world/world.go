@@ -146,6 +146,15 @@ func (o *Object) shouldCheckVerticalCollision(other *Object) bool {
 		return false // skip yourself
 	}
 
+	if o.Phys.Rect.Max.X < other.Phys.Rect.Min.X+other.Phys.Vel.X &&
+		o.Phys.Rect.Max.X < other.Phys.Rect.Min.X {
+		return false // no intersection in X axis
+	}
+
+	if o.Phys.Rect.Min.X > other.Phys.Rect.Max.X+other.Phys.Vel.X &&
+		o.Phys.Rect.Min.X > other.Phys.Rect.Max.X {
+		return false // no intersection in X axis
+	}
 	return true
 }
 
@@ -155,15 +164,6 @@ func (o *Object) avoidCollisionBelow(w *World) bool {
 	for _, other := range w.Objects {
 		if !o.shouldCheckVerticalCollision(other) {
 			continue
-		}
-
-		if o.Phys.Rect.Max.X < other.Phys.Rect.Min.X+other.Phys.Vel.X &&
-			o.Phys.Rect.Max.X < other.Phys.Rect.Min.X {
-			continue // no intersection in X axis
-		}
-		if o.Phys.Rect.Min.X > other.Phys.Rect.Max.X+other.Phys.Vel.X &&
-			o.Phys.Rect.Min.X > other.Phys.Rect.Max.X {
-			continue // no intersection in X axis
 		}
 
 		gap := o.Phys.Rect.Min.Y - other.Phys.Rect.Max.Y
@@ -191,10 +191,6 @@ func (o *Object) avoidCollisionAbove(w *World) bool {
 	for _, other := range w.Objects {
 		if !o.shouldCheckVerticalCollision(other) {
 			continue
-		}
-
-		if o.Phys.Rect.Max.X < other.Phys.Rect.Min.X || o.Phys.Rect.Min.X > other.Phys.Rect.Max.X {
-			continue // no intersection in X axis
 		}
 
 		gap := other.Phys.Rect.Min.Y - o.Phys.Rect.Max.Y
