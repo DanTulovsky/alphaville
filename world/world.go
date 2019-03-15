@@ -83,36 +83,6 @@ func (o *Object) ChangeDirection() {
 	o.Phys.Vel.X *= -1
 }
 
-// ObjectPhys defines the physical (dynamic) object properties
-type ObjectPhys struct {
-
-	// current horizontal and vertical Speed of Object
-	Vel pixel.Vec
-	// previous horizontal and vertical Speed of Object
-	PreviousVel pixel.Vec
-
-	// currentMass of the Object
-	CurrentMass float64
-
-	// this is the location of the Object in the world
-	Rect pixel.Rect
-}
-
-// NewObjectPhys return a new physic object
-func NewObjectPhys() *ObjectPhys {
-	return &ObjectPhys{}
-}
-
-// NewObjectPhysCopy return a new physic object based on an existing one
-func NewObjectPhysCopy(o *ObjectPhys) *ObjectPhys {
-	return &ObjectPhys{
-		Vel:         pixel.V(o.Vel.X, o.Vel.Y),
-		PreviousVel: pixel.V(o.PreviousVel.X, o.PreviousVel.Y),
-		CurrentMass: o.CurrentMass,
-		Rect:        o.Rect,
-	}
-}
-
 // checkFall adjusts the object to fall if it's above ground
 func (o *Object) checkFall(w *World) {
 	if o.Phys.Rect.Min.Y > w.Ground.Phys.Rect.Max.Y {
@@ -137,6 +107,20 @@ func (o *Object) checkRise(w *World) {
 			o.Phys.Vel.X = 0
 		}
 	}
+}
+
+// shouldCheckHorizontalCollision returns true if we need to do a more thourough check of the collision
+func (o *Object) shouldCheckHorizontalCollision(other *Object) bool {
+
+	if o.id == other.id {
+		return false // skip yourself
+	}
+
+	if other.Phys.Rect.Min.Y > o.Phys.Rect.Max.Y {
+		return false // ignore falling Objects higher than you
+	}
+
+	return true
 }
 
 // shouldCheckVerticalCollision returns true if we need to do a more thourough check of the collision
@@ -210,20 +194,6 @@ func (o *Object) avoidCollisionAbove(w *World) bool {
 		return true
 	}
 	return false
-}
-
-// shouldCheckHorizontalCollision returns true if we need to do a more thourough check of the collision
-func (o *Object) shouldCheckHorizontalCollision(other *Object) bool {
-
-	if o.id == other.id {
-		return false // skip yourself
-	}
-
-	if other.Phys.Rect.Min.Y > o.Phys.Rect.Max.Y {
-		return false // ignore falling Objects higher than you
-	}
-
-	return true
 }
 
 // avoidHorizontalCollision changes the object to avoid a horizontal collision
@@ -342,7 +312,7 @@ func (o *Object) move(w *World, v pixel.Vec) {
 
 // Update the Object every frame
 func (o *Object) Update(w *World) {
-	defer CheckIntersectObject(w, o)
+	defer o.CheckIntersect(w)
 
 	oldPhys := NewObjectPhysCopy(o.Phys)
 
@@ -388,8 +358,8 @@ func (o *Object) Draw(win *pixelgl.Window) {
 	txt.Draw(win, pixel.IM)
 }
 
-// CheckIntersectObject prints out an error if this object intersects with another one
-func CheckIntersectObject(w *World, o *Object) {
+// CheckIntersect prints out an error if this object intersects with another one
+func (o *Object) CheckIntersect(w *World) {
 	for _, other := range w.Objects {
 		if o.id == other.id {
 			continue // skip yourself
@@ -401,7 +371,7 @@ func CheckIntersectObject(w *World, o *Object) {
 }
 
 // CheckIntersect checks if any objects in the world intersect and prints an error.
-func CheckIntersect(w *World) {
+func (w *World) CheckIntersect() {
 	for _, o := range w.Objects {
 		for _, other := range w.Objects {
 			if o.id == other.id {
@@ -413,5 +383,34 @@ func CheckIntersect(w *World) {
 
 		}
 	}
+}
 
+// ObjectPhys defines the physical (dynamic) object properties
+type ObjectPhys struct {
+
+	// current horizontal and vertical Speed of Object
+	Vel pixel.Vec
+	// previous horizontal and vertical Speed of Object
+	PreviousVel pixel.Vec
+
+	// currentMass of the Object
+	CurrentMass float64
+
+	// this is the location of the Object in the world
+	Rect pixel.Rect
+}
+
+// NewObjectPhys return a new physic object
+func NewObjectPhys() *ObjectPhys {
+	return &ObjectPhys{}
+}
+
+// NewObjectPhysCopy return a new physic object based on an existing one
+func NewObjectPhysCopy(o *ObjectPhys) *ObjectPhys {
+	return &ObjectPhys{
+		Vel:         pixel.V(o.Vel.X, o.Vel.Y),
+		PreviousVel: pixel.V(o.PreviousVel.X, o.PreviousVel.Y),
+		CurrentMass: o.CurrentMass,
+		Rect:        o.Rect,
+	}
 }
