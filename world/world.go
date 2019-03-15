@@ -187,6 +187,9 @@ func (o *Object) Update(w *World) {
 		if o.Phys.Rect.Min.Y+o.Phys.Vel.Y <= w.Ground.Phys.Rect.Max.Y {
 			// stop at ground level
 			o.Phys.Rect = o.Phys.Rect.Moved(pixel.V(0, w.Ground.Phys.Rect.Max.Y-o.Phys.Rect.Min.Y))
+			if o.Phys.Rect.Min.Y != 40 {
+				fmt.Println(o.Phys.Rect)
+			}
 			o.Phys.Vel.Y = 0
 			o.Phys.Vel.X = o.Phys.PreviousVel.X
 		} else {
