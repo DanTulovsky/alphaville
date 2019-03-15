@@ -33,17 +33,9 @@ func processInput() {
 
 // update calls each object's update
 func update(w *world.World) {
-
 	// defer utils.Elapsed("update")()
-	for _, o := range w.Objects {
-		o.Update(w)
-	}
-
-	// After update, swap the state of all objects at once
-	for _, o := range w.Objects {
-		o.Phys = o.NextPhys
-	}
-	// checkIntersect(w)
+	w.Update()
+	w.NextTick()
 }
 
 // draw calls each object's update
@@ -62,8 +54,9 @@ func run() {
 	// text characters we can use to write text with
 	atlas := text.NewAtlas(basicfont.Face7x13, text.ASCII)
 
-	ground := world.NewObject("ground", colornames.White, 0, 0, 1024, 40, world.NewObjectPhys(), atlas)
-	ground.Phys.Rect = pixel.R(0, 0, 1024, 40)
+	ground := world.NewRectObject(
+		"ground", colornames.White, 0, 0, 1024, 40, world.NewRectObjectPhys(), atlas)
+	ground.Phys().Rect = pixel.R(0, 0, 1024, 40)
 
 	world := world.NewWorld(1024, 768, ground, gravity)
 
