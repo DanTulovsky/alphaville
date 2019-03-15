@@ -78,14 +78,24 @@ func NewObject(name string, color color.Color, speed, mass, W, H float64, phys *
 	}
 }
 
-// ChangeDirection changes the horizontal direction of the object to the opposite of current
-func (o *Object) ChangeDirection() {
+// ChangeHorizontalDirection changes the horizontal direction of the object to the opposite of current
+func (o *Object) ChangeHorizontalDirection() {
 	o.Phys.Vel.X *= -1
 }
 
-// checkFall adjusts the object to fall if it's above ground
-func (o *Object) checkFall(w *World) {
-	if o.Phys.Rect.Min.Y > w.Ground.Phys.Rect.Max.Y {
+// isAboveGround checks if object is above ground
+func (o *Object) isAboveGround(w *World) bool {
+	return o.Phys.Rect.Min.Y > w.Ground.Phys.Rect.Max.Y
+}
+
+// isZeroMass checks if object has no mass
+func (o *Object) isZeroMass() bool {
+	return o.Phys.CurrentMass == 0
+}
+
+// changeVerticalDirection updates the vertical direction if needed
+func (o *Object) changeVerticalDirection(w *World) {
+	if o.isAboveGround(w) {
 		// fall speed based on mass and gravity
 		o.Phys.Vel.Y = w.gravity * o.Phys.CurrentMass
 
@@ -94,11 +104,8 @@ func (o *Object) checkFall(w *World) {
 			o.Phys.Vel.X = 0
 		}
 	}
-}
 
-// checkRise adjusts the object to rise if needed
-func (o *Object) checkRise(w *World) {
-	if o.Phys.CurrentMass == 0 {
+	if o.isZeroMass() {
 		// rise speed based on mass and gravity
 		o.Phys.Vel.Y = -1 * w.gravity * o.Mass
 
@@ -203,7 +210,7 @@ func (o *Object) avoidHorizontalCollision() {
 	if utils.RandomInt(0, 100) > 50 {
 		o.Phys.CurrentMass = 0
 	} else {
-		o.ChangeDirection()
+		o.ChangeHorizontalDirection()
 	}
 }
 
@@ -287,11 +294,11 @@ func (o *Object) move(w *World, v pixel.Vec) {
 	switch {
 	case o.Phys.Vel.X < 0 && o.Phys.Rect.Min.X+o.Phys.Vel.X <= 0:
 		// left border
-		o.ChangeDirection()
+		o.ChangeHorizontalDirection()
 
 	case o.Phys.Vel.X > 0 && o.Phys.Rect.Max.X+o.Phys.Vel.X >= w.X:
 		// right border
-		o.ChangeDirection()
+		o.ChangeHorizontalDirection()
 
 	case o.Phys.Rect.Min.Y+o.Phys.Vel.Y < w.Ground.Phys.Rect.Max.Y:
 		// stop at ground level
@@ -328,8 +335,7 @@ func (o *Object) Update(w *World) {
 	}
 
 	// check if object should rise or fall, these checks not based on collisions
-	o.checkFall(w)
-	o.checkRise(w)
+	o.changeVerticalDirection(w)
 
 	// check collisions and adjust movement parameters
 	// if a collision is detected, no movement happens this round
