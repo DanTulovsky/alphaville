@@ -139,12 +139,22 @@ func (o *Object) checkRise(w *World) {
 	}
 }
 
-// avoidCollisionBelow changes o to avoid collision with an object below
+// shouldCheckVerticalCollision returns true if we need to do a more thourough check of the collision
+func (o *Object) shouldCheckVerticalCollision(other *Object) bool {
+
+	if o.id == other.id {
+		return false // skip yourself
+	}
+
+	return true
+}
+
+// avoidCollisionBelow changes o to avoid collision with an object below while movign down
 func (o *Object) avoidCollisionBelow(w *World) bool {
 	// if about to fall on another, rise back up
 	for _, other := range w.Objects {
-		if o.id == other.id {
-			continue // skip yourself
+		if !o.shouldCheckVerticalCollision(other) {
+			continue
 		}
 
 		if o.Phys.Rect.Max.X < other.Phys.Rect.Min.X+other.Phys.Vel.X &&
@@ -176,11 +186,11 @@ func (o *Object) avoidCollisionBelow(w *World) bool {
 	return false
 }
 
-// avoidCollisionAbove changes o to avoid collision with an object above
+// avoidCollisionAbove changes o to avoid collision with an object above while moving up
 func (o *Object) avoidCollisionAbove(w *World) bool {
 	for _, other := range w.Objects {
-		if o.id == other.id {
-			continue // skip yourself
+		if !o.shouldCheckVerticalCollision(other) {
+			continue
 		}
 
 		if o.Phys.Rect.Max.X < other.Phys.Rect.Min.X || o.Phys.Rect.Min.X > other.Phys.Rect.Max.X {
@@ -289,7 +299,6 @@ func (o *Object) haveCollision(w *World) bool {
 		if o.avoidCollisionAbove(w) {
 			return true
 		}
-	// if about to bump into another Object, rise up or change direction
 	case o.Phys.Vel.X > 0: // moving right
 		if o.avoidCollisionRight(w) {
 			return true
