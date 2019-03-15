@@ -139,8 +139,8 @@ func (o *Object) checkRise(w *World) {
 	}
 }
 
-// shouldRise checks if the object should rise
-func (o *Object) shouldRise(w *World) bool {
+// avoidCollisionBelow changes o to avoid collision with an object below
+func (o *Object) avoidCollisionBelow(w *World) bool {
 	// if about to fall on another, rise back up
 	for _, other := range w.Objects {
 		if o.id == other.id {
@@ -176,8 +176,8 @@ func (o *Object) shouldRise(w *World) bool {
 	return false
 }
 
-// shouldFall checks if the object should fall
-func (o *Object) shouldFall(w *World) bool {
+// avoidCollisionAbove changes o to avoid collision with an object above
+func (o *Object) avoidCollisionAbove(w *World) bool {
 	for _, other := range w.Objects {
 		if o.id == other.id {
 			continue // skip yourself
@@ -202,6 +202,102 @@ func (o *Object) shouldFall(w *World) bool {
 		o.Phys.CurrentMass = o.Mass
 		o.Phys.Vel.Y = 0
 		return true
+	}
+	return false
+}
+
+// shouldCheckHorizontalCollision returns true if we need to do a more thourough check of the collision
+func (o *Object) shouldCheckHorizontalCollision(other *Object) bool {
+
+	if o.id == other.id {
+		return false // skip yourself
+	}
+
+	if other.Phys.Rect.Min.Y > o.Phys.Rect.Max.Y {
+		return false // ignore falling Objects higher than you
+	}
+
+	return true
+}
+
+// avoidHorizontalCollision changes the object to avoid a horizontal collision
+func (o *Object) avoidHorizontalCollision() {
+
+	// Going to bump, 50/50 chance of rising up or changing direction
+	if utils.RandomInt(0, 100) > 50 {
+		o.Phys.CurrentMass = 0
+	} else {
+		o.ChangeDirection()
+	}
+}
+
+// avoidCollisionRight changes o to avoid a collision on the right
+func (o *Object) avoidCollisionRight(w *World) bool {
+	for _, other := range w.Objects {
+		if !o.shouldCheckHorizontalCollision(other) {
+			continue
+		}
+
+		if o.Phys.Rect.Min.X > other.Phys.Rect.Max.X {
+			continue // no intersection in X axis
+		}
+
+		// Check if other moves as expected, or decides to stay in place (due to a third object)
+		if o.Phys.Rect.Max.X+o.Phys.Vel.X < other.Phys.Rect.Min.X+other.Phys.Vel.X &&
+			o.Phys.Rect.Max.X+o.Phys.Vel.X < other.Phys.Rect.Min.X {
+			continue // will not bump
+		}
+
+		o.avoidHorizontalCollision()
+		return true
+	}
+	return false
+}
+
+// avoidCollisionLeft changes o to avoid a collision on the left
+func (o *Object) avoidCollisionLeft(w *World) bool {
+	for _, other := range w.Objects {
+		if !o.shouldCheckHorizontalCollision(other) {
+			continue
+		}
+
+		if o.Phys.Rect.Max.X < other.Phys.Rect.Min.X {
+			continue // no intersection in X axis
+		}
+
+		// Check if other moves as expected, or decides to stay in place (due to a third object)
+		if o.Phys.Rect.Min.X+o.Phys.Vel.X > other.Phys.Rect.Max.X+other.Phys.Vel.X &&
+			o.Phys.Rect.Min.X+o.Phys.Vel.X > other.Phys.Rect.Max.X {
+			continue // will not bump
+		}
+
+		o.avoidHorizontalCollision()
+		return true
+	}
+	return false
+}
+
+// haveCollisions returns true if o has any collisions
+// it adjusts the physical properties of o to avoid the collision
+func (o *Object) haveCollision(w *World) bool {
+	switch {
+	case o.Phys.Vel.Y < 0: // moving down
+		if o.avoidCollisionBelow(w) {
+			return true
+		}
+	case o.Phys.Vel.Y > 0: // moving up
+		if o.avoidCollisionAbove(w) {
+			return true
+		}
+	// if about to bump into another Object, rise up or change direction
+	case o.Phys.Vel.X > 0: // moving right
+		if o.avoidCollisionRight(w) {
+			return true
+		}
+	case o.Phys.Vel.X < 0: // moving left
+		if o.avoidCollisionLeft(w) {
+			return true
+		}
 	}
 	return false
 }
@@ -237,79 +333,6 @@ func (o *Object) move(w *World, v pixel.Vec) {
 	default:
 		o.Phys.Rect = o.Phys.Rect.Moved(pixel.V(v.X, v.Y))
 	}
-}
-
-// haveCollisions returns true if o has any collisions
-// it adjusts the physical properties of o to avoid the collision
-func (o *Object) haveCollision(w *World) bool {
-	switch {
-	case o.Phys.Vel.Y < 0:
-		// moving down
-		if o.shouldRise(w) {
-			return true
-		}
-	case o.Phys.Vel.Y > 0:
-		// moving up
-		if o.shouldFall(w) {
-			return true
-		}
-	// if about to bump into another Object, rise up or change direction
-	case o.Phys.Vel.X > 0: // moving right
-		for _, other := range w.Objects {
-			if o.id == other.id {
-				continue // skip yourself
-			}
-			if other.Phys.Rect.Min.Y > o.Phys.Rect.Max.Y {
-				continue // ignore falling Objects higher than you
-			}
-
-			if o.Phys.Rect.Min.X > other.Phys.Rect.Max.X {
-				continue // no intersection in X axis
-			}
-
-			// Check if other moves as expected, or decides to stay in place (due to a third object)
-			if o.Phys.Rect.Max.X+o.Phys.Vel.X < other.Phys.Rect.Min.X+other.Phys.Vel.X &&
-				o.Phys.Rect.Max.X+o.Phys.Vel.X < other.Phys.Rect.Min.X {
-				continue // will not bump
-			}
-
-			// Going to bump, 50/50 chance of rising up or changing direction
-			if utils.RandomInt(0, 100) > 50 {
-				o.Phys.CurrentMass = 0
-			} else {
-				o.ChangeDirection()
-			}
-			return true
-		}
-	case o.Phys.Vel.X < 0: // moving left
-		for _, other := range w.Objects {
-			if o.id == other.id {
-				continue // skip yourself
-			}
-			if other.Phys.Rect.Min.Y > o.Phys.Rect.Max.Y {
-				continue // ignore falling Objects higher than you
-			}
-
-			if o.Phys.Rect.Max.X < other.Phys.Rect.Min.X {
-				continue // no intersection in X axis
-			}
-
-			// Check if other moves as expected, or decides to stay in place (due to a third object)
-			if o.Phys.Rect.Min.X+o.Phys.Vel.X > other.Phys.Rect.Max.X+other.Phys.Vel.X &&
-				o.Phys.Rect.Min.X+o.Phys.Vel.X > other.Phys.Rect.Max.X {
-				continue // will not bump
-			}
-
-			// Going to bump, 50/50 chance of rising up or changing direction
-			if utils.RandomInt(0, 100) > 50 {
-				o.Phys.CurrentMass = 0
-			} else {
-				o.ChangeDirection()
-			}
-			return true
-		}
-	}
-	return false
 }
 
 // Update the Object every frame
