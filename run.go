@@ -56,7 +56,7 @@ func run() {
 
 	ground := world.NewRectObject(
 		"ground", colornames.White, 0, 0, 1024, 40, world.NewRectObjectPhys(), atlas)
-	ground.Phys().Rect = pixel.R(0, 0, 1024, 40)
+	ground.Phys().SetLocation(pixel.R(0, 0, 1024, 40))
 
 	world := world.NewWorld(1024, 768, ground, gravity)
 

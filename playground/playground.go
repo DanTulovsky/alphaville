@@ -1,27 +1,18 @@
-package world
+package main
 
-import "github.com/faiface/pixel"
+import (
+	"fmt"
 
-// ObjectPhys is the physics of an object, these values change as the object moves
-type ObjectPhys interface {
-	CurrentMass() float64
-	Location() pixel.Rect
-	PreviousVel() pixel.Vec
-	Vel() pixel.Vec
-
-	SetCurrentMass(float64)
-	SetLocation(pixel.Rect)
-	SetPreviousVel(pixel.Vec)
-	SetVel(pixel.Vec)
-}
+	"github.com/faiface/pixel"
+)
 
 // RectObjectPhys defines the physical (dynamic) object properties
 type RectObjectPhys struct {
 
 	// current horizontal and vertical Speed of Object
-	vel pixel.Vec
+	vel *pixel.Vec
 	// previous horizontal and vertical Speed of Object
-	previousVel pixel.Vec
+	previousVel *pixel.Vec
 
 	// currentMass of the Object
 	currentMass float64
@@ -36,20 +27,16 @@ func NewRectObjectPhys() *RectObjectPhys {
 }
 
 // NewRectObjectPhysCopy return a new physic object based on an existing one
-func NewRectObjectPhysCopy(o ObjectPhys) *RectObjectPhys {
+func NewRectObjectPhysCopy(o *RectObjectPhys) *RectObjectPhys {
+	vel := pixel.V(o.vel.X, o.vel.Y)
+	previousVel := pixel.V(o.previousVel.X, o.previousVel.Y)
 
-	op := NewRectObjectPhys()
-	op.SetVel(pixel.V(o.Vel().X, o.Vel().Y))
-	op.SetPreviousVel(pixel.V(o.PreviousVel().X, o.PreviousVel().Y))
-	op.SetCurrentMass(o.CurrentMass())
-	op.SetLocation(o.Location())
-	return op
-	// return &RectObjectPhys{
-	// 	vel:         pixel.V(o.vel.X, o.vel.Y),
-	// 	previousVel: pixel.V(o.previousVel.X, o.previousVel.Y),
-	// 	currentMass: o.currentMass,
-	// 	rect:        o.rect,
-	// }
+	return &RectObjectPhys{
+		vel:         &vel,
+		previousVel: &previousVel,
+		currentMass: o.currentMass,
+		rect:        o.rect,
+	}
 }
 
 // CurrentMass returns the current mass
@@ -63,12 +50,12 @@ func (o *RectObjectPhys) Location() pixel.Rect {
 }
 
 // PreviousVel returns the previous velocity vector
-func (o *RectObjectPhys) PreviousVel() pixel.Vec {
+func (o *RectObjectPhys) PreviousVel() *pixel.Vec {
 	return o.previousVel
 }
 
 // Vel returns the current velocity vecotr
-func (o *RectObjectPhys) Vel() pixel.Vec {
+func (o *RectObjectPhys) Vel() *pixel.Vec {
 	return o.vel
 }
 
@@ -83,11 +70,22 @@ func (o *RectObjectPhys) SetLocation(r pixel.Rect) {
 }
 
 // SetPreviousVel sets the previous velocity vector
-func (o *RectObjectPhys) SetPreviousVel(v pixel.Vec) {
+func (o *RectObjectPhys) SetPreviousVel(v *pixel.Vec) {
 	o.previousVel = v
 }
 
 // SetVel sets the current velocity vector
-func (o *RectObjectPhys) SetVel(v pixel.Vec) {
+func (o *RectObjectPhys) SetVel(v *pixel.Vec) {
 	o.vel = v
+}
+func main() {
+	o := NewRectObjectPhys()
+	o.SetLocation(pixel.R(1, 1, 10, 10))
+	v := pixel.V(2, 2)
+	o.SetVel(&v)
+	fmt.Printf("%#v\n", o.Vel())
+
+	new := o.Vel().ScaledXY(pixel.V(2, 2))
+	o.SetVel(&new)
+	fmt.Printf("%#v\n", o.Vel())
 }

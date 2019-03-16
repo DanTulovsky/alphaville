@@ -57,7 +57,7 @@ func (w *World) CheckIntersect() {
 			if o.ID() == other.ID() {
 				continue // skip yourself
 			}
-			if o.Phys().Rect.Intersect(other.Phys().Rect) != pixel.R(0, 0, 0, 0) {
+			if o.Phys().Location().Intersect(other.Phys().Location()) != pixel.R(0, 0, 0, 0) {
 				log.Printf("%#v intersects with %#v", o, other)
 			}
 

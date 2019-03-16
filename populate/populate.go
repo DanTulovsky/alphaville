@@ -39,7 +39,7 @@ func Static(w *world.World) {
 	for _, o := range objs {
 		if o.IY == 0 {
 			// place randomly, avoid intersection
-			o.IY = utils.RandomFloat64(w.Ground.Phys().Rect.Max.Y, w.Y-o.H)
+			o.IY = utils.RandomFloat64(w.Ground.Phys().Location().Max.Y, w.Y-o.H)
 		}
 		if o.IX == 0 {
 			// place randomly, avoid intersection
@@ -47,13 +47,13 @@ func Static(w *world.World) {
 			x += o.W + 1
 		}
 		// set bounding rectangle based on size and location
-		o.Phys().Rect = pixel.R(o.IX, o.IY, o.W+o.IX, o.H+o.IY)
+		o.Phys().SetLocation(pixel.R(o.IX, o.IY, o.W+o.IX, o.H+o.IY))
 
 		// set velocity vector
-		o.Phys().Vel = pixel.V(o.Speed, 0)
+		o.Phys().SetVel(pixel.V(o.Speed, 0))
 
 		// set current mass based on initial mass
-		o.Phys().CurrentMass = o.Mass
+		o.Phys().SetCurrentMass(o.Mass)
 
 		w.AddObject(o)
 	}
@@ -81,7 +81,7 @@ func Random(w *world.World, n int) {
 
 		if o.IY == 0 {
 			// place randomly, avoid intersection
-			o.IY = utils.RandomFloat64(w.Ground.Phys().Rect.Max.Y, w.Y-o.H)
+			o.IY = utils.RandomFloat64(w.Ground.Phys().Location().Max.Y, w.Y-o.H)
 		}
 		if o.IX == 0 {
 			// place randomly, avoid intersection
@@ -89,13 +89,13 @@ func Random(w *world.World, n int) {
 			x += o.W + 1
 		}
 		// set bounding rectangle based on size and location
-		o.Phys().Rect = pixel.R(o.IX, o.IY, o.W+o.IX, o.H+o.IY)
+		o.Phys().SetLocation(pixel.R(o.IX, o.IY, o.W+o.IX, o.H+o.IY))
 
 		// set velocity vector
-		o.Phys().Vel = pixel.V(o.Speed, 0)
+		o.Phys().SetVel(pixel.V(o.Speed, 0))
 
 		// set current mass based on initial mass
-		o.Phys().CurrentMass = o.Mass
+		o.Phys().SetCurrentMass(o.Mass)
 
 		w.AddObject(o)
 	}
