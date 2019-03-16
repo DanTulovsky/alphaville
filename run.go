@@ -62,7 +62,8 @@ func run() {
 
 	// populate the world
 	// populate.Static(world)
-	populate.Random(world, 20)
+	populate.RandomCircles(world, 20)
+	populate.RandomRectangles(world, 10)
 
 	cfg := pixelgl.WindowConfig{
 		Title:  "Play!",
