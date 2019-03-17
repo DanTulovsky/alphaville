@@ -60,6 +60,49 @@ import (
 
 // }
 
+// RandomEllipses populates the world with N random objects
+// ystart specifies the lowest point these objects appear
+func RandomEllipses(w *world.World, n int, ystart float64) {
+
+	var x, y, minRadius, maxRadius, minMass, maxMass, minSpeed, maxSpeed float64
+
+	if ystart < w.Ground.Phys().Location().Max.Y+200 {
+		ystart = w.Ground.Phys().Location().Max.Y + 200
+	}
+	y = ystart
+
+	minRadius = 10
+	maxRadius = 60
+	minMass, maxMass = 1, 10
+	minSpeed, maxSpeed = 1, 10
+
+	for i := 0; i < n; i++ {
+		randomColor := colornames.Map[colornames.Names[utils.RandomInt(0, len(colornames.Names))]]
+
+		a := utils.RandomFloat64(minRadius, maxRadius+1)
+		b := utils.RandomFloat64(minRadius, maxRadius+1)
+		// place randomly, avoid intersection
+		y += 2*maxRadius + 1
+		// place randomly, avoid intersection
+		x += 2*maxRadius + 1
+
+		location := pixel.R(x-a, y-b, x+a, y+b)
+
+		o := world.NewEllipseObject(
+			fmt.Sprintf("%v", i),
+			randomColor,
+			utils.RandomFloat64(minSpeed, maxSpeed)/10, // speed
+			utils.RandomFloat64(minMass, maxMass)/10,   // mass
+			a, // x radius
+			b, // y radius
+			location,
+			w.Atlas,
+		)
+
+		w.AddObject(o)
+	}
+}
+
 // RandomCircles populates the world with N random objects
 // ystart specifies the lowest point these objects appear
 func RandomCircles(w *world.World, n int, ystart float64) {
