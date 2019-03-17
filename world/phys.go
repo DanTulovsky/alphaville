@@ -28,6 +28,9 @@ type BaseObjectPhys struct {
 
 	// currentMass of the Object
 	currentMass float64
+
+	// this is the bounding rectangle in the world
+	rect pixel.Rect
 }
 
 // CurrentMass returns the current mass
@@ -58,4 +61,32 @@ func (o *BaseObjectPhys) SetPreviousVel(v pixel.Vec) {
 // SetVel sets the current velocity vector
 func (o *BaseObjectPhys) SetVel(v pixel.Vec) {
 	o.vel = v
+}
+
+// NewBaseObjectPhys return a new physic object
+func NewBaseObjectPhys(rect pixel.Rect) ObjectPhys {
+
+	return &BaseObjectPhys{
+		rect: rect,
+	}
+}
+
+// Copy return a new rectangle phys object based on an existing one
+func (o *BaseObjectPhys) Copy() ObjectPhys {
+
+	op := NewBaseObjectPhys(o.Location())
+	op.SetVel(pixel.V(o.Vel().X, o.Vel().Y))
+	op.SetPreviousVel(pixel.V(o.PreviousVel().X, o.PreviousVel().Y))
+	op.SetCurrentMass(o.CurrentMass())
+	return op
+}
+
+// Location returns the current location
+func (o *BaseObjectPhys) Location() pixel.Rect {
+	return o.rect
+}
+
+// SetLocation sets the current location
+func (o *BaseObjectPhys) SetLocation(r pixel.Rect) {
+	o.rect = r
 }

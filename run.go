@@ -55,14 +55,14 @@ func run() {
 	atlas := text.NewAtlas(basicfont.Face7x13, text.ASCII)
 
 	ground := world.NewRectObject(
-		"ground", colornames.White, 0, 0, 1024, 40, world.NewRectObjectPhys(pixel.R(0, 0, 1024, 40)), atlas)
+		"ground", colornames.White, 0, 0, 1024, 40, pixel.R(0, 0, 1024, 40), atlas)
 
 	world := world.NewWorld(1024, 768, ground, gravity)
 
 	// populate the world
 	// populate.Static(world)
-	populate.RandomCircles(world, 5, 2000)
-	populate.RandomRectangles(world, 20, 100)
+	populate.RandomCircles(world, 15, 200)
+	populate.RandomRectangles(world, 20, 1000)
 
 	cfg := pixelgl.WindowConfig{
 		Title:  "Play!",

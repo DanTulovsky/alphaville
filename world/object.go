@@ -1,8 +1,11 @@
 package world
 
 import (
+	"fmt"
 	"image/color"
 	"log"
+
+	"golang.org/x/image/colornames"
 
 	"gogs.wetsnow.com/dant/alphaville/utils"
 
@@ -50,6 +53,32 @@ type BaseObject struct {
 	Atlas *text.Atlas
 }
 
+// NewBaseObject return a new rectangular object
+// phys bounding box is set based on width, height, unless phys is provided
+func NewBaseObject(name string, color color.Color, speed, mass float64, phys ObjectPhys, atlas *text.Atlas) BaseObject {
+	o := BaseObject{}
+
+	if phys == nil {
+		log.Fatal("phys object is required!")
+	}
+
+	o.name = name
+	o.id = uuid.New()
+	o.color = color
+	o.Speed = speed
+	o.Mass = mass
+	o.imd = imdraw.New(nil)
+	o.phys = phys
+	o.Atlas = atlas
+
+	o.phys.SetVel(pixel.V(speed, 0))
+	o.phys.SetCurrentMass(mass)
+
+	o.nextPhys = o.phys.Copy()
+
+	return o
+}
+
 // Name returns the object's ID
 func (o *BaseObject) Name() string {
 	return o.name
@@ -78,6 +107,34 @@ func (o *BaseObject) SetPhys(op ObjectPhys) {
 // SetNextPhys sets the nextPhys object
 func (o *BaseObject) SetNextPhys(op ObjectPhys) {
 	o.nextPhys = op
+}
+
+// Update the RectObject every frame
+// o.NextPhys, coming in, is the same as o.Phys.
+// Make changes and reads to/from o.NextPhys() only
+// When reading properties of other objects, only use other.Phys()
+func (o *BaseObject) Update(w *World) {
+	defer o.CheckIntersect(w)
+
+	// if on the ground and X velocity is 0, reset it - this seems to be a bug
+	if o.NextPhys().Location().Min.Y == w.Ground.Phys().Location().Max.Y && o.NextPhys().Vel().X == 0 {
+		v := o.NextPhys().Vel()
+		v.X = o.NextPhys().PreviousVel().X
+		v.Y = 0
+		o.NextPhys().SetVel(v)
+	}
+
+	// check if object should rise or fall, these checks not based on collisions
+	o.changeVerticalDirection(w)
+
+	// check collisions and adjust movement parameters
+	// if a collision is detected, no movement happens this round
+	if o.handleCollisions(w) {
+		return
+	}
+
+	// no collisions detected, move
+	o.move(w, pixel.V(o.NextPhys().Vel().X, o.NextPhys().Vel().Y))
 }
 
 // SwapNextState swaps the current state for next state of the object
@@ -359,4 +416,14 @@ func (o *BaseObject) CheckIntersect(w *World) {
 			log.Printf("%#+v (%v) intersects with %#v (%v)", o.name, o.NextPhys(), other.Name(), other.Phys())
 		}
 	}
+}
+
+// Draw must be implemented by concrete objects
+func (o *BaseObject) Draw(win *pixelgl.Window) {
+
+	// draw name of the object
+	txt := text.New(pixel.V(o.Phys().Location().Center().XY()), o.Atlas)
+	txt.Color = colornames.Red
+	fmt.Fprintf(txt, "IMPLEMENT ME!")
+	txt.Draw(win, pixel.IM)
 }
