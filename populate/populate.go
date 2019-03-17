@@ -2,7 +2,6 @@ package populate
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/faiface/pixel"
 	"gogs.wetsnow.com/dant/alphaville/utils"
@@ -22,7 +21,7 @@ func Static(w *world.World) {
 			1,
 			20,
 			20,
-			world.NewRectObjectPhys(),
+			world.NewRectObjectPhys(pixel.R(0, 0, 0, 0)),
 			w.Atlas))
 
 	objs = append(objs,
@@ -33,7 +32,7 @@ func Static(w *world.World) {
 			3,
 			20,
 			20,
-			world.NewRectObjectPhys(),
+			world.NewRectObjectPhys(pixel.R(0, 0, 0, 0)),
 			w.Atlas))
 
 	var x float64
@@ -62,46 +61,43 @@ func Static(w *world.World) {
 }
 
 // RandomCircles populates the world with N random objects
-func RandomCircles(w *world.World, n int) {
+// ystart specifies the lowest point these objects appear
+func RandomCircles(w *world.World, n int, ystart float64) {
 
-	var x float64
+	var x, y, minRadius, maxRadius, minMass, maxMass, minSpeed, maxSpeed float64
+
+	if ystart < w.Ground.Phys().Location().Max.Y+200 {
+		ystart = w.Ground.Phys().Location().Max.Y + 200
+	}
+	y = ystart
+
+	minRadius = 10
+	maxRadius = 60
+	minMass, maxMass = 1, 10
+	minSpeed, maxSpeed = 1, 10
 
 	for i := 0; i < n; i++ {
 		randomColor := colornames.Map[colornames.Names[utils.RandomInt(0, len(colornames.Names))]]
 
-		// o := world.NewRectObject(
-		// 	fmt.Sprintf("%v", i),
-		// 	randomColor,
-		// 	utils.RandomFloat64(10, 20)/10, // speed
-		// 	utils.RandomFloat64(1, 10)/10,  // mass
-		// 	utils.RandomFloat64(10, 81),    // width
-		// 	utils.RandomFloat64(10, 81),    // height
-		// 	world.NewRectObjectPhys(),
-		// 	w.Atlas,
-		// )
-
-		radius := utils.RandomFloat64(10, 61)
+		radius := utils.RandomFloat64(minRadius, maxRadius+1)
 		// place randomly, avoid intersection
-		iy := utils.RandomFloat64(w.Ground.Phys().Location().Max.Y+radius, w.Y-radius)
+		y += 2*maxRadius + 1
 		// place randomly, avoid intersection
-		x += 2*radius + 1
-		log.Printf("x: %v\n", x)
+		x += 2*maxRadius + 1
 
-		rect := pixel.R(x-radius, iy-radius, x+radius, iy+radius)
-		log.Printf("start: %#v\n", rect)
+		rect := pixel.R(x-radius, y-radius, x+radius, y+radius)
 
 		phys := world.NewCircleObjectPhys(rect, radius)
 		o := world.NewCircleObject(
 			fmt.Sprintf("%v", i),
 			randomColor,
-			utils.RandomFloat64(10, 20)/10, // speed
-			utils.RandomFloat64(1, 10)/10,  // mass
+			utils.RandomFloat64(minSpeed, maxSpeed)/10, // speed
+			utils.RandomFloat64(minMass, maxMass)/10,   // mass
 			radius, // radius
 			phys,
 			w.Atlas,
 		)
 
-		log.Printf("phys: %#v (radius: %v)\n", o.Phys(), radius)
 		// set velocity vector
 		o.Phys().SetVel(pixel.V(o.Speed, 0))
 
@@ -114,9 +110,20 @@ func RandomCircles(w *world.World, n int) {
 }
 
 // RandomRectangles populates the world with N random rectangular objects
-func RandomRectangles(w *world.World, n int) {
+// ystart specifies the lowest point these objects appear
+func RandomRectangles(w *world.World, n int, ystart float64) {
 
-	var x float64
+	var x, y, minWidth, maxWidth, minHeight, maxHeight, minMass, maxMass, minSpeed, maxSpeed float64
+
+	if ystart < w.Ground.Phys().Location().Max.Y+200 {
+		ystart = w.Ground.Phys().Location().Max.Y + 200
+	}
+	y = ystart
+
+	minWidth, maxWidth = 10, 81
+	minHeight, maxHeight = 10, 81
+	minMass, maxMass = 1, 10
+	minSpeed, maxSpeed = 1, 10
 
 	for i := 0; i < n; i++ {
 		randomColor := colornames.Map[colornames.Names[utils.RandomInt(0, len(colornames.Names))]]
@@ -124,25 +131,21 @@ func RandomRectangles(w *world.World, n int) {
 		o := world.NewRectObject(
 			fmt.Sprintf("%v", i),
 			randomColor,
-			utils.RandomFloat64(10, 20)/10, // speed
-			utils.RandomFloat64(1, 10)/10,  // mass
-			utils.RandomFloat64(10, 81),    // width
-			utils.RandomFloat64(10, 81),    // height
-			world.NewRectObjectPhys(),
+			utils.RandomFloat64(minSpeed, maxSpeed)/10, // speed
+			utils.RandomFloat64(minMass, maxMass)/10,   // mass
+			utils.RandomFloat64(minWidth, maxWidth+1),  // width
+			utils.RandomFloat64(minHeight, maxHeight),  // height
+			nil,
 			w.Atlas,
 		)
 
-		if o.IY == 0 {
-			// place randomly, avoid intersection
-			o.IY = utils.RandomFloat64(w.Ground.Phys().Location().Max.Y, w.Y-o.H)
-		}
-		if o.IX == 0 {
-			// place randomly, avoid intersection
-			o.IX = x
-			x += o.W + 1
-		}
+		x += maxWidth + 1
+		y += maxHeight + 1
+
+		o.SetPhys(world.NewRectObjectPhys(pixel.R(x, y, x+o.W, y+o.H)))
+
 		// set bounding rectangle based on size and location
-		o.Phys().SetLocation(pixel.R(o.IX, o.IY, o.W+o.IX, o.H+o.IY))
+		// o.Phys().SetLocation(pixel.R(x, y, o.W+x, o.H+y))
 
 		// set velocity vector
 		o.Phys().SetVel(pixel.V(o.Speed, 0))

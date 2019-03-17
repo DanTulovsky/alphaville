@@ -78,15 +78,11 @@ func (o *CircleObject) Draw(win *pixelgl.Window) {
 
 	// Push center point
 	v := o.Phys().Location().Min
-	// fmt.Printf("v: %#v\n", o.Phys().Location())
 	v = v.Add(pixel.V(o.Radius, o.Radius))
-	// fmt.Printf("v after: %#v\n", v)
-	// fmt.Println()
 	o.imd.Push(v)
 
 	// draw circle
 	o.imd.Circle(o.Radius, 0)
-
 	o.imd.Draw(win)
 
 	// draw name of the object
@@ -100,7 +96,7 @@ func (o *CircleObject) Draw(win *pixelgl.Window) {
 type CircleObjectPhys struct {
 	BaseObjectPhys
 
-	// this is the location of the Object in the world
+	// this is the circle in in the world
 	circle pixel.Circle
 }
 

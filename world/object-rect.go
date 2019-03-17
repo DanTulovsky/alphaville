@@ -33,7 +33,7 @@ func NewRectObject(name string, color color.Color, speed, mass, W, H float64, ph
 	o.Speed = speed
 	o.Mass = mass
 	o.imd = imdraw.New(nil)
-	o.phys = NewRectObjectPhys()
+	o.phys = phys
 	o.Atlas = atlas
 
 	return o
@@ -44,7 +44,7 @@ func (o *RectObject) Update(w *World) {
 	defer o.CheckIntersect(w)
 
 	// save a copy of the current Phys().object to restore later
-	oldPhys := NewRectObjectPhysCopy(o.Phys())
+	oldPhys := NewRectObjectPhysCopy(o.phys.(*RectObjectPhys))
 
 	defer func(o *RectObject) {
 		o.nextPhys = o.phys
@@ -93,23 +93,25 @@ func (o *RectObject) Draw(win *pixelgl.Window) {
 type RectObjectPhys struct {
 	BaseObjectPhys
 
-	// this is the location of the Object in the world
+	// this is the rectangle in the world
 	rect pixel.Rect
 }
 
 // NewRectObjectPhys return a new physic object
-func NewRectObjectPhys() *RectObjectPhys {
-	return &RectObjectPhys{}
+func NewRectObjectPhys(rect pixel.Rect) *RectObjectPhys {
+
+	return &RectObjectPhys{
+		rect: rect,
+	}
 }
 
 // NewRectObjectPhysCopy return a new rectangle phys object based on an existing one
 func NewRectObjectPhysCopy(o ObjectPhys) *RectObjectPhys {
 
-	op := NewRectObjectPhys()
+	op := NewRectObjectPhys(o.Location())
 	op.SetVel(pixel.V(o.Vel().X, o.Vel().Y))
 	op.SetPreviousVel(pixel.V(o.PreviousVel().X, o.PreviousVel().Y))
 	op.SetCurrentMass(o.CurrentMass())
-	op.SetLocation(o.Location())
 	return op
 }
 

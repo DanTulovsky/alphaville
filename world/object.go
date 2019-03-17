@@ -335,8 +335,8 @@ func (o *BaseObject) move(w *World, v pixel.Vec) {
 		v.X = o.Phys().PreviousVel().X
 		o.Phys().SetVel(v)
 
-	case o.Phys().Location().Max.Y+o.Phys().Vel().Y >= w.Y:
-		// stop at ceiling
+	case o.Phys().Location().Max.Y+o.Phys().Vel().Y >= w.Y && o.Phys().Vel().Y > 0:
+		// stop at ceiling if going up
 		o.Phys().SetLocation(o.Phys().Location().Moved(pixel.V(0, w.Y-o.Phys().Location().Max.Y)))
 		v := o.Phys().Vel()
 		v.Y = 0
