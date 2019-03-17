@@ -4,6 +4,8 @@ import "github.com/faiface/pixel"
 
 // ObjectPhys is the physics of an object, these values change as the object moves
 type ObjectPhys interface {
+	Copy() ObjectPhys
+
 	CurrentMass() float64
 	Location() pixel.Rect
 	PreviousVel() pixel.Vec

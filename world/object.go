@@ -82,59 +82,60 @@ func (o *BaseObject) SetNextPhys(op ObjectPhys) {
 
 // SwapNextState swaps the current state for next state of the object
 func (o *BaseObject) SwapNextState() {
-	o.phys = o.nextPhys
+	// o.phys = o.nextPhys
+	o.phys = o.nextPhys.Copy()
 }
 
 // isAboveGround checks if object is above ground
 func (o *BaseObject) isAboveGround(w *World) bool {
-	return o.Phys().Location().Min.Y > w.Ground.Phys().Location().Max.Y
+	return o.NextPhys().Location().Min.Y > w.Ground.Phys().Location().Max.Y
 }
 
 // isZeroMass checks if object has no mass
 func (o *BaseObject) isZeroMass() bool {
-	return o.Phys().CurrentMass() == 0
+	return o.NextPhys().CurrentMass() == 0
 }
 
 // ChangeHorizontalDirection changes the horizontal direction of the object to the opposite of current
 func (o *BaseObject) ChangeHorizontalDirection() {
-	v := o.Phys().Vel()
+	v := o.NextPhys().Vel()
 	v.X = -1 * v.X
-	o.Phys().SetVel(v)
+	o.NextPhys().SetVel(v)
 }
 
 // changeVerticalDirection updates the vertical direction if needed
 func (o *BaseObject) changeVerticalDirection(w *World) {
 	if o.isAboveGround(w) {
 		// fall speed based on mass and gravity
-		new := o.Phys().Vel()
-		new.Y = w.gravity * o.Phys().CurrentMass()
-		o.Phys().SetVel(new)
+		new := o.NextPhys().Vel()
+		new.Y = w.gravity * o.NextPhys().CurrentMass()
+		o.NextPhys().SetVel(new)
 
-		if o.Phys().Vel().X != 0 {
-			v := o.Phys().PreviousVel()
-			v.X = o.Phys().Vel().X
-			o.Phys().SetPreviousVel(v)
+		if o.NextPhys().Vel().X != 0 {
+			v := o.NextPhys().PreviousVel()
+			v.X = o.NextPhys().Vel().X
+			o.NextPhys().SetPreviousVel(v)
 
-			v = o.Phys().Vel()
+			v = o.NextPhys().Vel()
 			v.X = 0
-			o.Phys().SetVel(v)
+			o.NextPhys().SetVel(v)
 		}
 	}
 
 	if o.isZeroMass() {
 		// rise speed based on mass and gravity
-		v := o.Phys().Vel()
+		v := o.NextPhys().Vel()
 		v.Y = -1 * w.gravity * o.Mass
-		o.Phys().SetVel(v)
+		o.NextPhys().SetVel(v)
 
-		if o.Phys().Vel().X != 0 {
-			v = o.Phys().PreviousVel()
-			v.X = o.Phys().Vel().X
-			o.Phys().SetPreviousVel(v)
+		if o.NextPhys().Vel().X != 0 {
+			v = o.NextPhys().PreviousVel()
+			v.X = o.NextPhys().Vel().X
+			o.NextPhys().SetPreviousVel(v)
 
-			v = o.Phys().Vel()
+			v = o.NextPhys().Vel()
 			v.X = 0
-			o.Phys().SetVel(v)
+			o.NextPhys().SetVel(v)
 		}
 	}
 }
@@ -146,7 +147,7 @@ func (o *BaseObject) shouldCheckHorizontalCollision(other Object) bool {
 		return false // skip yourself
 	}
 
-	if other.Phys().Location().Min.Y > o.Phys().Location().Max.Y {
+	if other.Phys().Location().Min.Y > o.NextPhys().Location().Max.Y {
 		return false // ignore falling BaseObjects higher than you
 	}
 
@@ -160,13 +161,13 @@ func (o *BaseObject) shouldCheckVerticalCollision(other Object) bool {
 		return false // skip yourself
 	}
 
-	if o.Phys().Location().Max.X < other.Phys().Location().Min.X+other.Phys().Vel().X &&
-		o.Phys().Location().Max.X < other.Phys().Location().Min.X {
+	if o.NextPhys().Location().Max.X < other.Phys().Location().Min.X+other.Phys().Vel().X &&
+		o.NextPhys().Location().Max.X < other.Phys().Location().Min.X {
 		return false // no intersection in X axis
 	}
 
-	if o.Phys().Location().Min.X > other.Phys().Location().Max.X+other.Phys().Vel().X &&
-		o.Phys().Location().Min.X > other.Phys().Location().Max.X {
+	if o.NextPhys().Location().Min.X > other.Phys().Location().Max.X+other.Phys().Vel().X &&
+		o.NextPhys().Location().Min.X > other.Phys().Location().Max.X {
 		return false // no intersection in X axis
 	}
 	return true
@@ -180,23 +181,23 @@ func (o *BaseObject) avoidCollisionBelow(w *World) bool {
 			continue
 		}
 
-		gap := o.Phys().Location().Min.Y - other.Phys().Location().Max.Y
+		gap := o.NextPhys().Location().Min.Y - other.Phys().Location().Max.Y
 		if gap < 0 {
 			continue
 		}
 
 		// Check if other moves as expected, or decides to stay in place (due to a third object)
-		if o.Phys().Location().Min.Y+o.Phys().Vel().Y > other.Phys().Location().Max.Y+other.Phys().Vel().Y &&
-			o.Phys().Location().Min.Y+o.Phys().Vel().Y > other.Phys().Location().Max.Y {
+		if o.NextPhys().Location().Min.Y+o.NextPhys().Vel().Y > other.Phys().Location().Max.Y+other.Phys().Vel().Y &&
+			o.NextPhys().Location().Min.Y+o.NextPhys().Vel().Y > other.Phys().Location().Max.Y {
 			// too far apart
 			continue
 		}
 
 		// avoid collision by stopping the fall and rising again
-		o.Phys().SetCurrentMass(0)
-		v := o.Phys().Vel()
+		o.NextPhys().SetCurrentMass(0)
+		v := o.NextPhys().Vel()
 		v.Y = 0
-		o.Phys().SetVel(v)
+		o.NextPhys().SetVel(v)
 		return true
 	}
 	return false
@@ -209,22 +210,22 @@ func (o *BaseObject) avoidCollisionAbove(w *World) bool {
 			continue
 		}
 
-		gap := other.Phys().Location().Min.Y - o.Phys().Location().Max.Y
+		gap := other.Phys().Location().Min.Y - o.NextPhys().Location().Max.Y
 		if gap < 0 {
 			continue
 		}
 
 		// Check if other moves as expected, or decides to stay in place (due to a third object)
-		if other.Phys().Location().Min.Y+other.Phys().Vel().Y > o.Phys().Location().Max.Y+o.Phys().Vel().Y &&
-			other.Phys().Location().Min.Y > o.Phys().Location().Max.Y+o.Phys().Vel().Y {
+		if other.Phys().Location().Min.Y+other.Phys().Vel().Y > o.NextPhys().Location().Max.Y+o.NextPhys().Vel().Y &&
+			other.Phys().Location().Min.Y > o.NextPhys().Location().Max.Y+o.NextPhys().Vel().Y {
 			// too far apart
 			continue
 		}
 
-		o.Phys().SetCurrentMass(o.Mass)
-		v := o.Phys().Vel()
+		o.NextPhys().SetCurrentMass(o.Mass)
+		v := o.NextPhys().Vel()
 		v.Y = 0
-		o.Phys().SetVel(v)
+		o.NextPhys().SetVel(v)
 		return true
 	}
 	return false
@@ -235,7 +236,7 @@ func (o *BaseObject) avoidHorizontalCollision() {
 
 	// Going to bump, 50/50 chance of rising up or changing direction
 	if utils.RandomInt(0, 100) > 50 {
-		o.Phys().SetCurrentMass(0)
+		o.NextPhys().SetCurrentMass(0)
 	} else {
 		o.ChangeHorizontalDirection()
 	}
@@ -248,13 +249,13 @@ func (o *BaseObject) avoidCollisionRight(w *World) bool {
 			continue
 		}
 
-		if o.Phys().Location().Min.X > other.Phys().Location().Max.X {
+		if o.NextPhys().Location().Min.X > other.Phys().Location().Max.X {
 			continue // no intersection in X axis
 		}
 
 		// Check if other moves as expected, or decides to stay in place (due to a third object)
-		if o.Phys().Location().Max.X+o.Phys().Vel().X < other.Phys().Location().Min.X+other.Phys().Vel().X &&
-			o.Phys().Location().Max.X+o.Phys().Vel().X < other.Phys().Location().Min.X {
+		if o.NextPhys().Location().Max.X+o.NextPhys().Vel().X < other.Phys().Location().Min.X+other.Phys().Vel().X &&
+			o.NextPhys().Location().Max.X+o.NextPhys().Vel().X < other.Phys().Location().Min.X {
 			continue // will not bump
 		}
 
@@ -271,13 +272,13 @@ func (o *BaseObject) avoidCollisionLeft(w *World) bool {
 			continue
 		}
 
-		if o.Phys().Location().Max.X < other.Phys().Location().Min.X {
+		if o.NextPhys().Location().Max.X < other.Phys().Location().Min.X {
 			continue // no intersection in X axis
 		}
 
 		// Check if other moves as expected, or decides to stay in place (due to a third object)
-		if o.Phys().Location().Min.X+o.Phys().Vel().X > other.Phys().Location().Max.X+other.Phys().Vel().X &&
-			o.Phys().Location().Min.X+o.Phys().Vel().X > other.Phys().Location().Max.X {
+		if o.NextPhys().Location().Min.X+o.NextPhys().Vel().X > other.Phys().Location().Max.X+other.Phys().Vel().X &&
+			o.NextPhys().Location().Min.X+o.NextPhys().Vel().X > other.Phys().Location().Max.X {
 			continue // will not bump
 		}
 
@@ -291,19 +292,19 @@ func (o *BaseObject) avoidCollisionLeft(w *World) bool {
 // it adjusts the physical properties of o to avoid the collision
 func (o *BaseObject) handleCollisions(w *World) bool {
 	switch {
-	case o.Phys().Vel().Y < 0: // moving down
+	case o.NextPhys().Vel().Y < 0: // moving down
 		if o.avoidCollisionBelow(w) {
 			return true
 		}
-	case o.Phys().Vel().Y > 0: // moving up
+	case o.NextPhys().Vel().Y > 0: // moving up
 		if o.avoidCollisionAbove(w) {
 			return true
 		}
-	case o.Phys().Vel().X > 0: // moving right
+	case o.NextPhys().Vel().X > 0: // moving right
 		if o.avoidCollisionRight(w) {
 			return true
 		}
-	case o.Phys().Vel().X < 0: // moving left
+	case o.NextPhys().Vel().X < 0: // moving left
 		if o.avoidCollisionLeft(w) {
 			return true
 		}
@@ -313,38 +314,38 @@ func (o *BaseObject) handleCollisions(w *World) bool {
 
 // move moves the object by Vector, accounting for world boundaries
 func (o *BaseObject) move(w *World, v pixel.Vec) {
-	if o.Phys().Vel().X != 0 && o.Phys().Vel().Y != 0 {
+	if o.NextPhys().Vel().X != 0 && o.NextPhys().Vel().Y != 0 {
 		// cannot currently move in both X and Y direction
-		log.Fatalf("o:%+#v\nx: %v; y: %v\n", o, o.Phys().Vel().X, o.Phys().Vel().Y)
+		log.Fatalf("o:%+#v\nx: %v; y: %v\n", o, o.NextPhys().Vel().X, o.NextPhys().Vel().Y)
 	}
 
 	switch {
-	case o.Phys().Vel().X < 0 && o.Phys().Location().Min.X+o.Phys().Vel().X <= 0:
+	case o.NextPhys().Vel().X < 0 && o.NextPhys().Location().Min.X+o.NextPhys().Vel().X <= 0:
 		// left border
 		o.ChangeHorizontalDirection()
 
-	case o.Phys().Vel().X > 0 && o.Phys().Location().Max.X+o.Phys().Vel().X >= w.X:
+	case o.NextPhys().Vel().X > 0 && o.NextPhys().Location().Max.X+o.NextPhys().Vel().X >= w.X:
 		// right border
 		o.ChangeHorizontalDirection()
 
-	case o.Phys().Location().Min.Y+o.Phys().Vel().Y < w.Ground.Phys().Location().Max.Y:
+	case o.NextPhys().Location().Min.Y+o.NextPhys().Vel().Y < w.Ground.Phys().Location().Max.Y:
 		// stop at ground level
-		o.Phys().SetLocation(o.Phys().Location().Moved(pixel.V(0, w.Ground.Phys().Location().Max.Y-o.Phys().Location().Min.Y)))
-		v := o.Phys().Vel()
+		o.NextPhys().SetLocation(o.NextPhys().Location().Moved(pixel.V(0, w.Ground.Phys().Location().Max.Y-o.NextPhys().Location().Min.Y)))
+		v := o.NextPhys().Vel()
 		v.Y = 0
-		v.X = o.Phys().PreviousVel().X
-		o.Phys().SetVel(v)
+		v.X = o.NextPhys().PreviousVel().X
+		o.NextPhys().SetVel(v)
 
-	case o.Phys().Location().Max.Y+o.Phys().Vel().Y >= w.Y && o.Phys().Vel().Y > 0:
+	case o.NextPhys().Location().Max.Y+o.NextPhys().Vel().Y >= w.Y && o.NextPhys().Vel().Y > 0:
 		// stop at ceiling if going up
-		o.Phys().SetLocation(o.Phys().Location().Moved(pixel.V(0, w.Y-o.Phys().Location().Max.Y)))
-		v := o.Phys().Vel()
+		o.NextPhys().SetLocation(o.NextPhys().Location().Moved(pixel.V(0, w.Y-o.NextPhys().Location().Max.Y)))
+		v := o.NextPhys().Vel()
 		v.Y = 0
-		o.Phys().SetVel(v)
-		o.Phys().SetCurrentMass(o.Mass)
+		o.NextPhys().SetVel(v)
+		o.NextPhys().SetCurrentMass(o.Mass)
 
 	default:
-		o.Phys().SetLocation(o.Phys().Location().Moved(pixel.V(v.X, v.Y)))
+		o.NextPhys().SetLocation(o.NextPhys().Location().Moved(pixel.V(v.X, v.Y)))
 	}
 }
 
@@ -354,8 +355,8 @@ func (o *BaseObject) CheckIntersect(w *World) {
 		if o.ID() == other.ID() {
 			continue // skip yourself
 		}
-		if o.Phys().Location().Intersect(other.Phys().Location()) != pixel.R(0, 0, 0, 0) {
-			log.Printf("%#+v (%v) intersects with %#v (%v)", o.name, o.Phys(), other.Name(), other.Phys())
+		if o.NextPhys().Location().Intersect(other.Phys().Location()) != pixel.R(0, 0, 0, 0) {
+			log.Printf("%#+v (%v) intersects with %#v (%v)", o.name, o.NextPhys(), other.Name(), other.Phys())
 		}
 	}
 }

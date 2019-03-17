@@ -36,27 +36,35 @@ func NewRectObject(name string, color color.Color, speed, mass, W, H float64, ph
 	o.phys = phys
 	o.Atlas = atlas
 
+	o.phys.SetVel(pixel.V(speed, 0))
+	o.phys.SetCurrentMass(mass)
+
+	o.nextPhys = o.phys.Copy()
+
 	return o
 }
 
 // Update the RectObject every frame
+// o.NextPhys, coming in, is the same as o.Phys.
+// Make changes and reads to/from o.NextPhys() only
+// When reading properties of other objects, only use other.Phys()
 func (o *RectObject) Update(w *World) {
 	defer o.CheckIntersect(w)
 
 	// save a copy of the current Phys().object to restore later
-	oldPhys := NewRectObjectPhysCopy(o.phys.(*RectObjectPhys))
+	// oldPhys := NewRectObjectPhysCopy(o.phys.(*RectObjectPhys))
 
-	defer func(o *RectObject) {
-		o.nextPhys = o.phys
-		o.phys = oldPhys
-	}(o)
+	// defer func(o *RectObject) {
+	// 	o.nextPhys = o.phys
+	// 	o.phys = oldPhys
+	// }(o)
 
 	// if on the ground and X velocity is 0, reset it - this seems to be a bug
-	if o.Phys().Location().Min.Y == w.Ground.Phys().Location().Max.Y && o.Phys().Vel().X == 0 {
-		v := o.Phys().Vel()
-		v.X = o.Phys().PreviousVel().X
+	if o.NextPhys().Location().Min.Y == w.Ground.Phys().Location().Max.Y && o.NextPhys().Vel().X == 0 {
+		v := o.NextPhys().Vel()
+		v.X = o.NextPhys().PreviousVel().X
 		v.Y = 0
-		o.Phys().SetVel(v)
+		o.NextPhys().SetVel(v)
 	}
 
 	// check if object should rise or fall, these checks not based on collisions
@@ -69,7 +77,7 @@ func (o *RectObject) Update(w *World) {
 	}
 
 	// no collisions detected, move
-	o.move(w, pixel.V(o.Phys().Vel().X, o.Phys().Vel().Y))
+	o.move(w, pixel.V(o.NextPhys().Vel().X, o.NextPhys().Vel().Y))
 }
 
 // Draw draws the object.
@@ -98,15 +106,15 @@ type RectObjectPhys struct {
 }
 
 // NewRectObjectPhys return a new physic object
-func NewRectObjectPhys(rect pixel.Rect) *RectObjectPhys {
+func NewRectObjectPhys(rect pixel.Rect) ObjectPhys {
 
 	return &RectObjectPhys{
 		rect: rect,
 	}
 }
 
-// NewRectObjectPhysCopy return a new rectangle phys object based on an existing one
-func NewRectObjectPhysCopy(o ObjectPhys) *RectObjectPhys {
+// Copy return a new rectangle phys object based on an existing one
+func (o *RectObjectPhys) Copy() ObjectPhys {
 
 	op := NewRectObjectPhys(o.Location())
 	op.SetVel(pixel.V(o.Vel().X, o.Vel().Y))

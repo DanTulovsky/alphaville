@@ -128,30 +128,23 @@ func RandomRectangles(w *world.World, n int, ystart float64) {
 	for i := 0; i < n; i++ {
 		randomColor := colornames.Map[colornames.Names[utils.RandomInt(0, len(colornames.Names))]]
 
+		x += maxWidth + 1
+		y += maxHeight + 1
+
+		width := utils.RandomFloat64(minWidth, maxWidth+1)
+		height := utils.RandomFloat64(minHeight, maxHeight)
+		phys := world.NewRectObjectPhys(pixel.R(x, y, x+width, y+height))
+
 		o := world.NewRectObject(
 			fmt.Sprintf("%v", i),
 			randomColor,
 			utils.RandomFloat64(minSpeed, maxSpeed)/10, // speed
 			utils.RandomFloat64(minMass, maxMass)/10,   // mass
-			utils.RandomFloat64(minWidth, maxWidth+1),  // width
-			utils.RandomFloat64(minHeight, maxHeight),  // height
-			nil,
+			width,  // width
+			height, // height
+			phys,
 			w.Atlas,
 		)
-
-		x += maxWidth + 1
-		y += maxHeight + 1
-
-		o.SetPhys(world.NewRectObjectPhys(pixel.R(x, y, x+o.W, y+o.H)))
-
-		// set bounding rectangle based on size and location
-		// o.Phys().SetLocation(pixel.R(x, y, o.W+x, o.H+y))
-
-		// set velocity vector
-		o.Phys().SetVel(pixel.V(o.Speed, 0))
-
-		// set current mass based on initial mass
-		o.Phys().SetCurrentMass(o.Mass)
 
 		w.AddObject(o)
 	}
