@@ -40,6 +40,10 @@ func (o *CircleObject) Draw(win *pixelgl.Window) {
 
 	center := o.Phys().Location().Center()
 
+	// matrix to manipulate shape
+	mat := pixel.IM
+	mat = mat.Rotated(center, o.Phys().Angle())
+
 	o.imd.Push(center)
 	o.imd.Circle(o.radius, 0)
 	o.imd.Draw(win)

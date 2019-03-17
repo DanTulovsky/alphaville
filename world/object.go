@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"image/color"
 	"log"
+	"math"
 
 	"golang.org/x/image/colornames"
 
@@ -115,6 +116,13 @@ func (o *BaseObject) SetNextPhys(op ObjectPhys) {
 // When reading properties of other objects, only use other.Phys()
 func (o *BaseObject) Update(w *World) {
 	defer o.CheckIntersect(w)
+
+	// rotate if wanted
+	angle := o.NextPhys().Angle() + 2*math.Pi/360
+	if angle > 2*math.Pi {
+		angle = 0
+	}
+	o.NextPhys().SetAngle(angle)
 
 	// if on the ground and X velocity is 0, reset it - this seems to be a bug
 	if o.NextPhys().Location().Min.Y == w.Ground.Phys().Location().Max.Y && o.NextPhys().Vel().X == 0 {

@@ -44,6 +44,11 @@ func (o *RectObject) Draw(win *pixelgl.Window) {
 	min := pixel.V(center.X-o.width/2, center.Y-o.height/2)
 	max := pixel.V(center.X+o.width/2, center.Y+o.height/2)
 
+	// matrix to manipulate shape
+	mat := pixel.IM
+	mat = mat.Rotated(center, o.Phys().Angle())
+
+	o.imd.SetMatrix(mat)
 	o.imd.Push(min)
 	o.imd.Push(max)
 	o.imd.Rectangle(0)

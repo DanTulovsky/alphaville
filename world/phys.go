@@ -6,11 +6,13 @@ import "github.com/faiface/pixel"
 type ObjectPhys interface {
 	Copy() ObjectPhys
 
+	Angle() float64
 	CurrentMass() float64
 	Location() pixel.Rect
 	PreviousVel() pixel.Vec
 	Vel() pixel.Vec
 
+	SetAngle(float64)
 	SetCurrentMass(float64)
 	SetLocation(pixel.Rect)
 	SetPreviousVel(pixel.Vec)
@@ -31,6 +33,14 @@ type BaseObjectPhys struct {
 
 	// this is the bounding rectangle in the world
 	rect pixel.Rect
+
+	// rotate object by this many radians (1 degree = 180/math.Pi)
+	angle float64
+}
+
+// Angle returns the angle of rotation
+func (o *BaseObjectPhys) Angle() float64 {
+	return o.angle
 }
 
 // CurrentMass returns the current mass
@@ -46,6 +56,11 @@ func (o *BaseObjectPhys) PreviousVel() pixel.Vec {
 // Vel returns the current velocity vecotr
 func (o *BaseObjectPhys) Vel() pixel.Vec {
 	return o.vel
+}
+
+// SetAngle sets the angle
+func (o *BaseObjectPhys) SetAngle(a float64) {
+	o.angle = a
 }
 
 // SetCurrentMass sets the current mass
@@ -78,6 +93,7 @@ func (o *BaseObjectPhys) Copy() ObjectPhys {
 	op.SetVel(pixel.V(o.Vel().X, o.Vel().Y))
 	op.SetPreviousVel(pixel.V(o.PreviousVel().X, o.PreviousVel().Y))
 	op.SetCurrentMass(o.CurrentMass())
+	op.SetAngle(o.Angle())
 	return op
 }
 
