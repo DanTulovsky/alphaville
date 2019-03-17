@@ -33,14 +33,6 @@ type BaseObjectPhys struct {
 
 	// this is the bounding rectangle in the world
 	rect pixel.Rect
-
-	// rotate object by this many radians (1 degree = 180/math.Pi)
-	angle float64
-}
-
-// Angle returns the angle of rotation
-func (o *BaseObjectPhys) Angle() float64 {
-	return o.angle
 }
 
 // CurrentMass returns the current mass
@@ -56,11 +48,6 @@ func (o *BaseObjectPhys) PreviousVel() pixel.Vec {
 // Vel returns the current velocity vecotr
 func (o *BaseObjectPhys) Vel() pixel.Vec {
 	return o.vel
-}
-
-// SetAngle sets the angle
-func (o *BaseObjectPhys) SetAngle(a float64) {
-	o.angle = a
 }
 
 // SetCurrentMass sets the current mass
