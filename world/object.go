@@ -24,7 +24,7 @@ type Object interface {
 	Name() string
 	Phys() ObjectPhys // returns the Phys object
 	SwapNextState()
-	Update(*World)
+	Update(*World) // Updates the object for the next iteration
 
 	SetNextPhys(ObjectPhys)
 	SetPhys(ObjectPhys)

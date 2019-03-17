@@ -3,7 +3,6 @@ package world
 import (
 	"fmt"
 	"image/color"
-	"math"
 
 	"golang.org/x/image/colornames"
 
@@ -43,10 +42,9 @@ func (o *EllipseObject) Draw(win *pixelgl.Window) {
 
 	center := o.Phys().Location().Center()
 
-	mat := pixel.IM
-	mat = mat.Rotated(center, 180/math.Pi*45)
+	// mat := pixel.IM
 
-	o.imd.SetMatrix(mat)
+	// o.imd.SetMatrix(mat)
 	o.imd.Push(center)
 	o.imd.Ellipse(pixel.V(o.b, o.a), 0)
 	o.imd.Draw(win)

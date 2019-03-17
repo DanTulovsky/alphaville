@@ -6,13 +6,11 @@ import "github.com/faiface/pixel"
 type ObjectPhys interface {
 	Copy() ObjectPhys
 
-	Angle() float64
 	CurrentMass() float64
 	Location() pixel.Rect
 	PreviousVel() pixel.Vec
 	Vel() pixel.Vec
 
-	SetAngle(float64)
 	SetCurrentMass(float64)
 	SetLocation(pixel.Rect)
 	SetPreviousVel(pixel.Vec)
@@ -80,7 +78,6 @@ func (o *BaseObjectPhys) Copy() ObjectPhys {
 	op.SetVel(pixel.V(o.Vel().X, o.Vel().Y))
 	op.SetPreviousVel(pixel.V(o.PreviousVel().X, o.PreviousVel().Y))
 	op.SetCurrentMass(o.CurrentMass())
-	op.SetAngle(o.Angle())
 	return op
 }
 
