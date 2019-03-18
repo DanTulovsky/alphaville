@@ -1,6 +1,7 @@
 package world
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/faiface/pixel"
@@ -10,17 +11,19 @@ import (
 
 // World defines the world
 type World struct {
-	X, Y    float64
-	Objects []Object
+	X, Y    float64  // size of the world
+	Gates   []*Gate  // entrances into the world
+	Objects []Object // objects in the world
 	Ground  Object
 	gravity float64
 	Atlas   *text.Atlas
 }
 
-// NewWorld returns a new world
+// NewWorld returns a new worldof size x, y
 func NewWorld(x, y float64, ground Object, gravity float64) *World {
 	return &World{
 		Objects: []Object{},
+		Gates:   []*Gate{},
 		X:       x,
 		Y:       y,
 		Ground:  ground,
@@ -32,6 +35,14 @@ func NewWorld(x, y float64, ground Object, gravity float64) *World {
 // Update updates all the objects in the world to their next state
 func (w *World) Update() {
 	for _, o := range w.Objects {
+
+		if !o.IsSpawned() {
+			if err := w.Spawn(o); err != nil {
+				log.Println(err)
+				continue
+			}
+		}
+
 		o.Update(w)
 	}
 }
@@ -40,14 +51,94 @@ func (w *World) Update() {
 func (w *World) NextTick() {
 
 	// After update, swap the state of all objects at once
-	for _, o := range w.Objects {
+	for _, o := range w.SpawnedObjects() {
 		o.SwapNextState()
+
+		// Remove gate reservations
+		for _, g := range w.Gates {
+			if g.ReservedBy == o.ID() {
+				g.UnReserve()
+			}
+		}
 	}
+}
+
+// SpawnedObjects returns all the spawned objects in the world
+func (w *World) SpawnedObjects() []Object {
+	var objs []Object
+	for _, o := range w.Objects {
+		if o.IsSpawned() {
+			objs = append(objs, o)
+		}
+	}
+
+	return objs
 }
 
 // AddObject adds a new object to the world
 func (w *World) AddObject(o Object) {
 	w.Objects = append(w.Objects, o)
+}
+
+// AddGate adds a new gate to the world
+func (w *World) AddGate(g *Gate) error {
+	for _, gate := range w.Gates {
+		if g.Location == gate.Location {
+			return fmt.Errorf("gate at %v already exists", g.Location)
+		}
+	}
+	w.Gates = append(w.Gates, g)
+	return nil
+}
+
+// NewGate creates a new gate in the world
+func (w *World) NewGate(l pixel.Vec, s gateStatus) error {
+	if l.X > w.X || l.Y > w.Y || l.X < 0 || l.Y < 0 {
+		return fmt.Errorf("Location %#v is outside the world bounds (%#v)", l, pixel.V(w.X, w.Y))
+	}
+
+	g := &Gate{
+		Location: l,
+		Status:   s,
+		Reserved: false,
+	}
+
+	return w.AddGate(g)
+}
+
+// Spawn tries to grab a gate and spawn, if area around is available
+// We also create the Phys() of the object here
+func (w *World) Spawn(o Object) error {
+
+	g, err := w.ReserveGate(o)
+	if err != nil {
+		return err
+	}
+
+	// TODO: Check if spawning here will cause a collision
+
+	b := o.BoundingBox(g.Location)
+
+	phys := NewBaseObjectPhys(b)
+	phys.SetVel(pixel.V(o.Speed(), 0))
+	phys.SetCurrentMass(o.Mass())
+
+	o.SetPhys(phys)
+	o.SetNextPhys(o.Phys().Copy())
+
+	return nil
+}
+
+// ReserveGate returns (and reserves) a gate to be used by an object
+// An error is returned if there are no available gates
+func (w *World) ReserveGate(o Object) (*Gate, error) {
+	for _, g := range w.Gates {
+		if g.Reserve(o.ID()) == nil {
+			return g, nil
+		}
+	}
+
+	return nil, fmt.Errorf("no avalable gates")
 }
 
 // CheckIntersect checks if any objects in the world intersect and prints an error.

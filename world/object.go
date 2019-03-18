@@ -18,11 +18,15 @@ import (
 
 // Object is an object in the world
 type Object interface {
+	BoundingBox(pixel.Vec) pixel.Rect
 	Draw(*pixelgl.Window)
 	ID() uuid.UUID
+	IsSpawned() bool
+	Mass() float64
 	NextPhys() ObjectPhys // returns the NextPhys object
 	Name() string
 	Phys() ObjectPhys // returns the Phys object
+	Speed() float64
 	SwapNextState()
 	Update(*World) // Updates the object for the next iteration
 
@@ -37,8 +41,8 @@ type BaseObject struct {
 	color color.Color
 
 	// initial Speed and Mass of BaseObject
-	Speed float64 // horizontal Speed (negative means move left)
-	Mass  float64
+	speed float64 // horizontal Speed (negative means move left)
+	mass  float64
 
 	// draws the BaseObject
 	imd *imdraw.IMDraw
@@ -55,33 +59,40 @@ type BaseObject struct {
 
 // NewBaseObject return a new rectangular object
 // phys bounding box is set based on width, height, unless phys is provided
-func NewBaseObject(name string, color color.Color, speed, mass float64, phys ObjectPhys, atlas *text.Atlas) BaseObject {
+func NewBaseObject(name string, color color.Color, speed, mass float64, atlas *text.Atlas) BaseObject {
 	o := BaseObject{}
-
-	if phys == nil {
-		log.Fatal("phys object is required!")
-	}
 
 	o.name = name
 	o.id = uuid.New()
 	o.color = color
-	o.Speed = speed
-	o.Mass = mass
+	o.speed = speed
+	o.mass = mass
 	o.imd = imdraw.New(nil)
-	o.phys = phys
+	o.phys = nil
 	o.Atlas = atlas
-
-	o.phys.SetVel(pixel.V(speed, 0))
-	o.phys.SetCurrentMass(mass)
-
-	o.nextPhys = o.phys.Copy()
 
 	return o
 }
 
-// Name returns the object's ID
+// BoundingBox must be implemented by each concrete object type; returns the bounding box of the object
+func (o *BaseObject) BoundingBox(v pixel.Vec) pixel.Rect {
+	log.Fatalf("using BaseObject BoundingBox, please implement: \n%#+v", o)
+	return pixel.R(0, 0, 0, 0)
+}
+
+// Name returns the object's name
 func (o *BaseObject) Name() string {
 	return o.name
+}
+
+// Speed returns the object's speed
+func (o *BaseObject) Speed() float64 {
+	return o.speed
+}
+
+// Mass returns the object's mass
+func (o *BaseObject) Mass() float64 {
+	return o.mass
 }
 
 // ID returns the object's ID
@@ -107,6 +118,11 @@ func (o *BaseObject) SetPhys(op ObjectPhys) {
 // SetNextPhys sets the nextPhys object
 func (o *BaseObject) SetNextPhys(op ObjectPhys) {
 	o.nextPhys = op
+}
+
+// IsSpawned returns true if the object already spawned in the world
+func (o *BaseObject) IsSpawned() bool {
+	return o.Phys() != nil
 }
 
 // Update the RectObject every frame
@@ -139,8 +155,9 @@ func (o *BaseObject) Update(w *World) {
 
 // SwapNextState swaps the current state for next state of the object
 func (o *BaseObject) SwapNextState() {
-	// o.phys = o.nextPhys
-	o.phys = o.nextPhys.Copy()
+	if o.IsSpawned() {
+		o.phys = o.nextPhys.Copy()
+	}
 }
 
 // isAboveGround checks if object is above ground
@@ -182,7 +199,7 @@ func (o *BaseObject) changeVerticalDirection(w *World) {
 	if o.isZeroMass() {
 		// rise speed based on mass and gravity
 		v := o.NextPhys().Vel()
-		v.Y = -1 * w.gravity * o.Mass
+		v.Y = -1 * w.gravity * o.Mass()
 		o.NextPhys().SetVel(v)
 
 		if o.NextPhys().Vel().X != 0 {
@@ -233,7 +250,7 @@ func (o *BaseObject) shouldCheckVerticalCollision(other Object) bool {
 // avoidCollisionBelow changes o to avoid collision with an object below while movign down
 func (o *BaseObject) avoidCollisionBelow(w *World) bool {
 	// if about to fall on another, rise back up
-	for _, other := range w.Objects {
+	for _, other := range w.SpawnedObjects() {
 		if !o.shouldCheckVerticalCollision(other) {
 			continue
 		}
@@ -262,7 +279,7 @@ func (o *BaseObject) avoidCollisionBelow(w *World) bool {
 
 // avoidCollisionAbove changes o to avoid collision with an object above while moving up
 func (o *BaseObject) avoidCollisionAbove(w *World) bool {
-	for _, other := range w.Objects {
+	for _, other := range w.SpawnedObjects() {
 		if !o.shouldCheckVerticalCollision(other) {
 			continue
 		}
@@ -279,7 +296,7 @@ func (o *BaseObject) avoidCollisionAbove(w *World) bool {
 			continue
 		}
 
-		o.NextPhys().SetCurrentMass(o.Mass)
+		o.NextPhys().SetCurrentMass(o.Mass())
 		v := o.NextPhys().Vel()
 		v.Y = 0
 		o.NextPhys().SetVel(v)
@@ -301,7 +318,7 @@ func (o *BaseObject) avoidHorizontalCollision() {
 
 // avoidCollisionRight changes o to avoid a collision on the right
 func (o *BaseObject) avoidCollisionRight(w *World) bool {
-	for _, other := range w.Objects {
+	for _, other := range w.SpawnedObjects() {
 		if !o.shouldCheckHorizontalCollision(other) {
 			continue
 		}
@@ -324,7 +341,7 @@ func (o *BaseObject) avoidCollisionRight(w *World) bool {
 
 // avoidCollisionLeft changes o to avoid a collision on the left
 func (o *BaseObject) avoidCollisionLeft(w *World) bool {
-	for _, other := range w.Objects {
+	for _, other := range w.SpawnedObjects() {
 		if !o.shouldCheckHorizontalCollision(other) {
 			continue
 		}
@@ -399,7 +416,7 @@ func (o *BaseObject) move(w *World, v pixel.Vec) {
 		v := o.NextPhys().Vel()
 		v.Y = 0
 		o.NextPhys().SetVel(v)
-		o.NextPhys().SetCurrentMass(o.Mass)
+		o.NextPhys().SetCurrentMass(o.Mass())
 
 	default:
 		o.NextPhys().SetLocation(o.NextPhys().Location().Moved(pixel.V(v.X, v.Y)))
@@ -408,7 +425,7 @@ func (o *BaseObject) move(w *World, v pixel.Vec) {
 
 // CheckIntersect prints out an error if this object intersects with another one
 func (o *BaseObject) CheckIntersect(w *World) {
-	for _, other := range w.Objects {
+	for _, other := range w.SpawnedObjects() {
 		if o.ID() == other.ID() {
 			continue // skip yourself
 		}

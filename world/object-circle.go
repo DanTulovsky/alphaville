@@ -20,20 +20,30 @@ type CircleObject struct {
 }
 
 // NewCircleObject return a new rectangular object
-func NewCircleObject(name string, color color.Color, speed, mass, radius float64, location pixel.Rect, atlas *text.Atlas) *CircleObject {
-
-	phys := NewBaseObjectPhys(location)
+func NewCircleObject(name string, color color.Color, speed, mass, radius float64, atlas *text.Atlas) *CircleObject {
 
 	o := &CircleObject{
-		NewBaseObject(name, color, speed, mass, phys, atlas),
+		NewBaseObject(name, color, speed, mass, atlas),
 		radius,
 	}
 
 	return o
 }
 
+// BoundingBox returns a Rect, rooted at the center, that covers the object
+func (o *CircleObject) BoundingBox(c pixel.Vec) pixel.Rect {
+	min := pixel.V(c.X-o.radius, c.Y-o.radius)
+	max := pixel.V(c.X+o.radius, c.Y+o.radius)
+
+	return pixel.R(min.X, min.Y, max.X, max.Y)
+}
+
 // Draw a rectangle of size width, height inside bounding box set in Phys()
 func (o *CircleObject) Draw(win *pixelgl.Window) {
+	if !o.IsSpawned() {
+		return
+	}
+
 	o.imd.Clear()
 	o.imd.Reset()
 	o.imd.Color = o.color

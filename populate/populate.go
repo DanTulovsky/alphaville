@@ -2,6 +2,7 @@ package populate
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/faiface/pixel"
 	"gogs.wetsnow.com/dant/alphaville/utils"
@@ -62,14 +63,9 @@ import (
 
 // RandomEllipses populates the world with N random objects
 // ystart specifies the lowest point these objects appear
-func RandomEllipses(w *world.World, n int, ystart float64) {
+func RandomEllipses(w *world.World, n int) {
 
-	var x, y, minRadius, maxRadius, minMass, maxMass, minSpeed, maxSpeed float64
-
-	if ystart < w.Ground.Phys().Location().Max.Y+200 {
-		ystart = w.Ground.Phys().Location().Max.Y + 200
-	}
-	y = ystart
+	var minRadius, maxRadius, minMass, maxMass, minSpeed, maxSpeed float64
 
 	minRadius = 10
 	maxRadius = 60
@@ -81,12 +77,6 @@ func RandomEllipses(w *world.World, n int, ystart float64) {
 
 		a := utils.RandomFloat64(minRadius, maxRadius+1)
 		b := utils.RandomFloat64(minRadius, maxRadius+1)
-		// place randomly, avoid intersection
-		y += 2*maxRadius + 1
-		// place randomly, avoid intersection
-		x += 2*maxRadius + 1
-
-		location := pixel.R(x-a, y-b, x+a, y+b)
 
 		o := world.NewEllipseObject(
 			fmt.Sprintf("%v", i),
@@ -95,7 +85,6 @@ func RandomEllipses(w *world.World, n int, ystart float64) {
 			utils.RandomFloat64(minMass, maxMass)/10,   // mass
 			a, // x radius
 			b, // y radius
-			location,
 			w.Atlas,
 		)
 
@@ -105,14 +94,9 @@ func RandomEllipses(w *world.World, n int, ystart float64) {
 
 // RandomCircles populates the world with N random objects
 // ystart specifies the lowest point these objects appear
-func RandomCircles(w *world.World, n int, ystart float64) {
+func RandomCircles(w *world.World, n int) {
 
-	var x, y, minRadius, maxRadius, minMass, maxMass, minSpeed, maxSpeed float64
-
-	if ystart < w.Ground.Phys().Location().Max.Y+200 {
-		ystart = w.Ground.Phys().Location().Max.Y + 200
-	}
-	y = ystart
+	var minRadius, maxRadius, minMass, maxMass, minSpeed, maxSpeed float64
 
 	minRadius = 10
 	maxRadius = 60
@@ -123,12 +107,6 @@ func RandomCircles(w *world.World, n int, ystart float64) {
 		randomColor := colornames.Map[colornames.Names[utils.RandomInt(0, len(colornames.Names))]]
 
 		radius := utils.RandomFloat64(minRadius, maxRadius+1)
-		// place randomly, avoid intersection
-		y += 2*maxRadius + 1
-		// place randomly, avoid intersection
-		x += 2*maxRadius + 1
-
-		location := pixel.R(x-radius, y-radius, x+radius, y+radius)
 
 		o := world.NewCircleObject(
 			fmt.Sprintf("%v", i),
@@ -136,7 +114,6 @@ func RandomCircles(w *world.World, n int, ystart float64) {
 			utils.RandomFloat64(minSpeed, maxSpeed)/10, // speed
 			utils.RandomFloat64(minMass, maxMass)/10,   // mass
 			radius, // radius
-			location,
 			w.Atlas,
 		)
 
@@ -146,14 +123,9 @@ func RandomCircles(w *world.World, n int, ystart float64) {
 
 // RandomRectangles populates the world with N random rectangular objects
 // ystart specifies the lowest point these objects appear
-func RandomRectangles(w *world.World, n int, ystart float64) {
+func RandomRectangles(w *world.World, n int) {
 
-	var x, y, minWidth, maxWidth, minHeight, maxHeight, minMass, maxMass, minSpeed, maxSpeed float64
-
-	if ystart < w.Ground.Phys().Location().Max.Y+200 {
-		ystart = w.Ground.Phys().Location().Max.Y + 200
-	}
-	y = ystart
+	var minWidth, maxWidth, minHeight, maxHeight, minMass, maxMass, minSpeed, maxSpeed float64
 
 	minWidth, maxWidth = 10, 81
 	minHeight, maxHeight = 10, 81
@@ -163,12 +135,8 @@ func RandomRectangles(w *world.World, n int, ystart float64) {
 	for i := 0; i < n; i++ {
 		randomColor := colornames.Map[colornames.Names[utils.RandomInt(0, len(colornames.Names))]]
 
-		x += maxWidth + 1
-		y += maxHeight + 1
-
 		width := utils.RandomFloat64(minWidth, maxWidth+1)
 		height := utils.RandomFloat64(minHeight, maxHeight)
-		location := pixel.R(x, y, x+width, y+height)
 
 		o := world.NewRectObject(
 			fmt.Sprintf("%v", i),
@@ -177,11 +145,16 @@ func RandomRectangles(w *world.World, n int, ystart float64) {
 			utils.RandomFloat64(minMass, maxMass)/10,   // mass
 			width,  // width
 			height, // height
-			location,
 			w.Atlas,
 		)
 
 		w.AddObject(o)
+	}
+
+	// add spawn gate
+	// if err := w.NewGate(pixel.V(w.X/2, w.Y-100), world.GateOpen); err != nil {
+	if err := w.NewGate(pixel.V(400, w.Y-100), world.GateOpen); err != nil {
+		log.Fatalf("failed to create gate: %v", err)
 	}
 
 }

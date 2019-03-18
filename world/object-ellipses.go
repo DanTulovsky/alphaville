@@ -21,12 +21,10 @@ type EllipseObject struct {
 }
 
 // NewEllipseObject return a new rectangular object
-func NewEllipseObject(name string, color color.Color, speed, mass, a, b float64, location pixel.Rect, atlas *text.Atlas) *EllipseObject {
-
-	phys := NewBaseObjectPhys(location)
+func NewEllipseObject(name string, color color.Color, speed, mass, a, b float64, atlas *text.Atlas) *EllipseObject {
 
 	o := &EllipseObject{
-		NewBaseObject(name, color, speed, mass, phys, atlas),
+		NewBaseObject(name, color, speed, mass, atlas),
 		a,
 		b,
 	}
@@ -34,8 +32,20 @@ func NewEllipseObject(name string, color color.Color, speed, mass, a, b float64,
 	return o
 }
 
+// BoundingBox returns a Rect, rooted at the center, that covers the object
+func (o *EllipseObject) BoundingBox(c pixel.Vec) pixel.Rect {
+	min := pixel.V(c.X-o.a, c.Y-o.b)
+	max := pixel.V(c.X+o.a, c.Y+o.b)
+
+	return pixel.R(min.X, min.Y, max.X, max.Y)
+}
+
 // Draw an ellipse of size width, height inside bounding box set in Phys()
 func (o *EllipseObject) Draw(win *pixelgl.Window) {
+	if !o.IsSpawned() {
+		return
+	}
+
 	o.imd.Clear()
 	o.imd.Reset()
 	o.imd.Color = o.color

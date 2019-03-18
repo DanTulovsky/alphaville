@@ -20,12 +20,10 @@ type RectObject struct {
 }
 
 // NewRectObject return a new rectangular object
-func NewRectObject(name string, color color.Color, speed, mass, width, height float64, location pixel.Rect, atlas *text.Atlas) *RectObject {
-
-	phys := NewBaseObjectPhys(location)
+func NewRectObject(name string, color color.Color, speed, mass, width, height float64, atlas *text.Atlas) *RectObject {
 
 	o := &RectObject{
-		NewBaseObject(name, color, speed, mass, phys, atlas),
+		NewBaseObject(name, color, speed, mass, atlas),
 		width,
 		height,
 	}
@@ -33,22 +31,34 @@ func NewRectObject(name string, color color.Color, speed, mass, width, height fl
 	return o
 }
 
+// BoundingBox returns a Rect, rooted at the center, that covers the object
+func (o *RectObject) BoundingBox(c pixel.Vec) pixel.Rect {
+	min := pixel.V(c.X-o.width/2, c.Y-o.height/2)
+	max := pixel.V(c.X+o.width/2, c.Y+o.height/2)
+
+	return pixel.R(min.X, min.Y, max.X, max.Y)
+
+}
+
 // Draw a rectangle of size width, height inside bounding box set in Phys()
 func (o *RectObject) Draw(win *pixelgl.Window) {
+
+	if !o.IsSpawned() {
+		return
+	}
+
 	o.imd.Clear()
 	o.imd.Reset()
 	o.imd.Color = o.color
 
-	center := o.Phys().Location().Center()
-	min := pixel.V(center.X-o.width/2, center.Y-o.height/2)
-	max := pixel.V(center.X+o.width/2, center.Y+o.height/2)
+	box := o.BoundingBox(o.Phys().Location().Center())
 
 	// matrix to manipulate shape
 	mat := pixel.IM
 
 	o.imd.SetMatrix(mat)
-	o.imd.Push(min)
-	o.imd.Push(max)
+	o.imd.Push(box.Min)
+	o.imd.Push(box.Max)
 	o.imd.Rectangle(0)
 	o.imd.Draw(win)
 

@@ -25,6 +25,10 @@ const (
 	// MsPerUpdate ms per game update loop, excluding rendering. This needs to be less than the time for the main update() loop
 	MsPerUpdate = 4
 	gravity     = -2
+
+	worldMaxX, worldMaxY           = 1500, 768
+	visibleWinMaxX, visibleWinMaxY = 1024, 768
+	groundHeight                   = 40
 )
 
 func processInput() {
@@ -42,6 +46,10 @@ func update(w *world.World) {
 func draw(w *world.World, win *pixelgl.Window) {
 	w.Ground.Draw(win)
 
+	for _, g := range w.Gates {
+		g.Draw(win)
+	}
+
 	for _, o := range w.Objects {
 		o.Draw(win)
 	}
@@ -54,20 +62,23 @@ func run() {
 	// text characters we can use to write text with
 	atlas := text.NewAtlas(basicfont.Face7x13, text.ASCII)
 
+	groundPhys := world.NewBaseObjectPhys(pixel.R(0, 0, worldMaxX, groundHeight))
 	ground := world.NewRectObject(
-		"ground", colornames.White, 0, 0, 1024, 40, pixel.R(0, 0, 1024, 40), atlas)
+		"ground", colornames.White, 0, 0, worldMaxX, groundHeight, atlas)
+	ground.SetPhys(groundPhys)
+	ground.SetNextPhys(ground.Phys().Copy())
 
-	world := world.NewWorld(1024, 768, ground, gravity)
+	world := world.NewWorld(worldMaxX, worldMaxY, ground, gravity)
 
 	// populate the world
 	// populate.Static(world)
-	// populate.RandomCircles(world, 15, 200)
-	populate.RandomRectangles(world, 5, 100)
-	// populate.RandomEllipses(world, 20, 100)
+	// populate.RandomCircles(world, 15)
+	populate.RandomRectangles(world, 2)
+	// populate.RandomEllipses(world, 20)
 
 	cfg := pixelgl.WindowConfig{
 		Title:  "Play!",
-		Bounds: pixel.R(0, 0, world.X, world.Y),
+		Bounds: pixel.R(0, 0, visibleWinMaxX, visibleWinMaxY),
 		VSync:  true,
 	}
 
