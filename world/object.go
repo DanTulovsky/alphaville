@@ -133,9 +133,12 @@ func (o *BaseObject) Update(w *World) {
 	defer o.CheckIntersect(w)
 
 	// if on the ground and X velocity is 0, reset it - this seems to be a bug
-	if o.NextPhys().Location().Min.Y == w.Ground.Phys().Location().Max.Y && o.NextPhys().Vel().X == 0 {
+	if o.OnGround(w) && o.Stopped() {
 		v := o.NextPhys().Vel()
 		v.X = o.NextPhys().PreviousVel().X
+		if v.X == 0 {
+			v.X = o.Speed()
+		}
 		v.Y = 0
 		o.NextPhys().SetVel(v)
 	}
@@ -366,24 +369,54 @@ func (o *BaseObject) avoidCollisionLeft(w *World) bool {
 // it adjusts the physical properties of o to avoid the collision
 func (o *BaseObject) handleCollisions(w *World) bool {
 	switch {
-	case o.NextPhys().Vel().Y < 0: // moving down
+	case o.MovingDown():
 		if o.avoidCollisionBelow(w) {
 			return true
 		}
-	case o.NextPhys().Vel().Y > 0: // moving up
+	case o.MovingUp():
 		if o.avoidCollisionAbove(w) {
 			return true
 		}
-	case o.NextPhys().Vel().X > 0: // moving right
+	case o.MovingRight():
 		if o.avoidCollisionRight(w) {
 			return true
 		}
-	case o.NextPhys().Vel().X < 0: // moving left
+	case o.MovingLeft():
 		if o.avoidCollisionLeft(w) {
 			return true
 		}
 	}
 	return false
+}
+
+// OnGround returns true if object is on the ground
+func (o *BaseObject) OnGround(w *World) bool {
+	return o.NextPhys().Location().Min.Y == w.Ground.Phys().Location().Max.Y
+}
+
+// Stopped returns true if object is stopped
+func (o *BaseObject) Stopped() bool {
+	return o.NextPhys().Vel().X == 0
+}
+
+// MovingUp returns true if object is moving up
+func (o *BaseObject) MovingUp() bool {
+	return o.NextPhys().Vel().Y > 0
+}
+
+// MovingDown returns true if object is moving down
+func (o *BaseObject) MovingDown() bool {
+	return o.NextPhys().Vel().Y < 0
+}
+
+// MovingLeft returns true if object is moving left
+func (o *BaseObject) MovingLeft() bool {
+	return o.NextPhys().Vel().X < 0
+}
+
+// MovingRight returns true if object is moving right
+func (o *BaseObject) MovingRight() bool {
+	return o.NextPhys().Vel().X > 0
 }
 
 // move moves the object by Vector, accounting for world boundaries
@@ -394,11 +427,11 @@ func (o *BaseObject) move(w *World, v pixel.Vec) {
 	}
 
 	switch {
-	case o.NextPhys().Vel().X < 0 && o.NextPhys().Location().Min.X+o.NextPhys().Vel().X <= 0:
+	case o.MovingLeft() && o.NextPhys().Location().Min.X+o.NextPhys().Vel().X <= 0:
 		// left border
 		o.ChangeHorizontalDirection()
 
-	case o.NextPhys().Vel().X > 0 && o.NextPhys().Location().Max.X+o.NextPhys().Vel().X >= w.X:
+	case o.MovingRight() && o.NextPhys().Location().Max.X+o.NextPhys().Vel().X >= w.X:
 		// right border
 		o.ChangeHorizontalDirection()
 

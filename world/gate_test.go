@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/faiface/pixel"
+	"github.com/google/uuid"
 )
 
 func TestNewGate(t *testing.T) {
@@ -38,7 +39,7 @@ func TestNewGate(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := NewGate(tt.args.l, tt.args.s, tt.args.w); (err != nil) != tt.wantErr {
+			if err := tt.args.w.NewGate(tt.args.l, tt.args.s); (err != nil) != tt.wantErr {
 				t.Errorf("NewGate() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -91,7 +92,7 @@ func TestGate_Reserve(t *testing.T) {
 				Status:   tt.fields.Status,
 				Reserved: tt.fields.Reserved,
 			}
-			if err := g.Reserve(); (err != nil) != tt.wantErr {
+			if err := g.Reserve(uuid.New()); (err != nil) != tt.wantErr {
 				t.Errorf("Gate.Reserve() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

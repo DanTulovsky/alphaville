@@ -26,7 +26,7 @@ const (
 	MsPerUpdate = 4
 	gravity     = -2
 
-	worldMaxX, worldMaxY           = 1500, 768
+	worldMaxX, worldMaxY           = 1024, 768
 	visibleWinMaxX, visibleWinMaxY = 1024, 768
 	groundHeight                   = 40
 )
@@ -40,6 +40,7 @@ func update(w *world.World) {
 	// defer utils.Elapsed("update")()
 	w.Update()
 	w.NextTick()
+	w.SpawnAllNew()
 }
 
 // draw calls each object's update
@@ -72,9 +73,10 @@ func run() {
 
 	// populate the world
 	// populate.Static(world)
-	// populate.RandomCircles(world, 15)
-	populate.RandomRectangles(world, 2)
-	// populate.RandomEllipses(world, 20)
+	// populate.RandomCircles(world, 5)
+	populate.RandomRectangles(world, 8)
+	// populate.RandomEllipses(world, 5)
+	populate.AddGates(world, time.Second*2)
 
 	cfg := pixelgl.WindowConfig{
 		Title:  "Play!",

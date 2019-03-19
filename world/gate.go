@@ -2,6 +2,7 @@ package world
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/faiface/pixel/pixelgl"
 	"github.com/google/uuid"
@@ -32,13 +33,31 @@ type Gate struct {
 	Status     gateStatus
 	Reserved   bool // gate is reserved by an object to be used next turn
 	ReservedBy uuid.UUID
+
+	// Wait this long before allowing a new spawn
+	SpawnCoolDown time.Duration
+	LastSpawn     time.Time
+}
+
+// CanSpawn returns true if the gate can spawn
+func (g *Gate) CanSpawn() bool {
+	switch {
+	case g.Status != GateOpen:
+		return false
+	case g.Reserved:
+		return false
+	case time.Now().Sub(g.LastSpawn) < g.SpawnCoolDown:
+		return false
+	}
+	return true
 }
 
 // Reserve reserves a gate if it's available
 func (g *Gate) Reserve(id uuid.UUID) error {
-	if !g.Reserved && g.Status == GateOpen {
+	if g.CanSpawn() {
 		g.Reserved = true
 		g.ReservedBy = id
+		g.LastSpawn = time.Now()
 		return nil
 	}
 	return fmt.Errorf("gate %#v already reserved or closed", g)

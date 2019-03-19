@@ -3,6 +3,7 @@ package populate
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/faiface/pixel"
 	"gogs.wetsnow.com/dant/alphaville/utils"
@@ -151,10 +152,28 @@ func RandomRectangles(w *world.World, n int) {
 		w.AddObject(o)
 	}
 
+}
+
+// AddGates adds gates to the world
+func AddGates(w *world.World, coolDown time.Duration) {
+
 	// add spawn gate
-	// if err := w.NewGate(pixel.V(w.X/2, w.Y-100), world.GateOpen); err != nil {
-	if err := w.NewGate(pixel.V(400, w.Y-100), world.GateOpen); err != nil {
-		log.Fatalf("failed to create gate: %v", err)
+	gates := []world.Gate{
+		{
+			Location:      pixel.V(0, 0),
+			Status:        world.GateOpen,
+			SpawnCoolDown: coolDown,
+		},
+		// {
+		// 	Location:      pixel.V(600, 600),
+		// 	Status:        world.GateOpen,
+		// 	SpawnCoolDown: coolDown,
+		// },
 	}
 
+	for _, g := range gates {
+		if err := w.NewGate(g.Location, g.Status, g.SpawnCoolDown); err != nil {
+			log.Fatalf("failed to create gate: %v", err)
+		}
+	}
 }

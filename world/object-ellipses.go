@@ -16,7 +16,7 @@ type EllipseObject struct {
 	BaseObject
 
 	// radius of EllipseObject
-	// b is y radius, a is x radius
+	// b is x radius, a is y radius
 	b, a float64
 }
 
@@ -34,8 +34,8 @@ func NewEllipseObject(name string, color color.Color, speed, mass, a, b float64,
 
 // BoundingBox returns a Rect, rooted at the center, that covers the object
 func (o *EllipseObject) BoundingBox(c pixel.Vec) pixel.Rect {
-	min := pixel.V(c.X-o.a, c.Y-o.b)
-	max := pixel.V(c.X+o.a, c.Y+o.b)
+	min := pixel.V(c.X-o.b, c.Y-o.a)
+	max := pixel.V(c.X+o.b, c.Y+o.a)
 
 	return pixel.R(min.X, min.Y, max.X, max.Y)
 }
