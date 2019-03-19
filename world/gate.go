@@ -7,6 +7,7 @@ import (
 	"github.com/faiface/pixel/pixelgl"
 	"github.com/faiface/pixel/text"
 	"github.com/google/uuid"
+	"gogs.wetsnow.com/dant/alphaville/behavior"
 	"golang.org/x/image/colornames"
 
 	"github.com/faiface/pixel/imdraw"
@@ -28,6 +29,27 @@ const (
 	GateClosed
 )
 
+// GateEvent implements the behavior.Event interface to send events to other components
+type GateEvent struct {
+	description string
+	time        time.Time // event time
+}
+
+// Description returns the event description
+func (e *GateEvent) Description() string {
+	return e.description
+}
+
+// String returns the event as string
+func (e *GateEvent) String() string {
+	return fmt.Sprintf("[%v] %v", e.time, e.description)
+}
+
+// Time returns the event time
+func (e *GateEvent) Time() time.Time {
+	return e.time
+}
+
 // Gate is a point in the world where new objects can appear
 type Gate struct {
 	Location   pixel.Vec
@@ -41,7 +63,14 @@ type Gate struct {
 
 	Radius float64 // size
 
+	eventNotifier behavior.EventNotifier
+
 	Atlas *text.Atlas
+}
+
+// String returns the gate as string
+func (g *Gate) String() string {
+	return fmt.Sprintf("%#v", g.Location)
 }
 
 // CanSpawn returns true if the gate can spawn
@@ -63,13 +92,21 @@ func (g *Gate) Reserve(id uuid.UUID) error {
 		g.Reserved = true
 		g.ReservedBy = id
 		g.LastSpawn = time.Now()
+		g.eventNotifier.Notify(&GateEvent{
+			description: fmt.Sprintf("gate [%v] reserved for [%v]", g, id),
+			time:        time.Now(),
+		})
 		return nil
 	}
 	return fmt.Errorf("gate %#v already reserved or closed", g)
 }
 
-// UnReserve removes a gates reservation
-func (g *Gate) UnReserve() {
+// Release removes a gates reservation
+func (g *Gate) Release() {
+	g.eventNotifier.Notify(&GateEvent{
+		description: fmt.Sprintf("gate [%v] reservation released", g),
+		time:        time.Now(),
+	})
 	g.Reserved = false
 }
 

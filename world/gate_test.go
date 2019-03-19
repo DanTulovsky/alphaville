@@ -2,6 +2,7 @@ package world
 
 import (
 	"testing"
+	"time"
 
 	"github.com/faiface/pixel"
 	"github.com/google/uuid"
@@ -11,6 +12,8 @@ func TestNewGate(t *testing.T) {
 	type args struct {
 		l pixel.Vec
 		s gateStatus
+		c time.Duration
+		r float64
 		w *World
 	}
 	tests := []struct {
@@ -24,6 +27,8 @@ func TestNewGate(t *testing.T) {
 				l: pixel.V(10, 10),
 				s: GateOpen,
 				w: NewWorld(768, 1024, nil, 2),
+				c: time.Minute * 1,
+				r: 20,
 			},
 			wantErr: false,
 		},
@@ -33,13 +38,15 @@ func TestNewGate(t *testing.T) {
 				l: pixel.V(100, 100),
 				s: GateOpen,
 				w: NewWorld(68, 1024, nil, 2),
+				c: time.Minute * 1,
+				r: 20,
 			},
 			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := tt.args.w.NewGate(tt.args.l, tt.args.s); (err != nil) != tt.wantErr {
+			if err := tt.args.w.NewGate(tt.args.l, tt.args.s, tt.args.c, tt.args.r, nil); (err != nil) != tt.wantErr {
 				t.Errorf("NewGate() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

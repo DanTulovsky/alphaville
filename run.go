@@ -11,9 +11,9 @@ import (
 	"github.com/faiface/pixel/pixelgl"
 	"github.com/faiface/pixel/text"
 	"gogs.wetsnow.com/dant/alphaville/populate"
+	"gogs.wetsnow.com/dant/alphaville/utils"
 	"gogs.wetsnow.com/dant/alphaville/world"
 	"golang.org/x/image/colornames"
-	"golang.org/x/image/font/basicfont"
 )
 
 var (
@@ -60,8 +60,13 @@ func run() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	rand.Seed(time.Now().UnixNano())
 
+	face, err := utils.LoadTTF("fonts/intuitive.ttf", 16)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	// text characters we can use to write text with
-	atlas := text.NewAtlas(basicfont.Face7x13, text.ASCII)
+	atlas := text.NewAtlas(face, text.ASCII)
 
 	groundPhys := world.NewBaseObjectPhys(pixel.R(0, 0, worldMaxX, groundHeight))
 	ground := world.NewRectObject(
@@ -76,7 +81,7 @@ func run() {
 	populate.RandomCircles(world, 5)
 	populate.RandomRectangles(world, 8)
 	populate.RandomEllipses(world, 5)
-	populate.AddGates(world, time.Second*10, atlas)
+	populate.AddGates(world, time.Millisecond*1, atlas)
 
 	cfg := pixelgl.WindowConfig{
 		Title:  "Play!",
@@ -90,7 +95,7 @@ func run() {
 	}
 
 	// set to false for pixel art
-	win.SetSmooth(false)
+	win.SetSmooth(true)
 	win.Clear(colornames.Black)
 
 	previous := time.Now()

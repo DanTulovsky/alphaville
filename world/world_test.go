@@ -35,6 +35,7 @@ func TestNewWorld(t *testing.T) {
 				Gates:   []*Gate{},
 				Ground:  nil,
 				gravity: 2,
+				stats:   NewStats(),
 				Atlas:   text.NewAtlas(basicfont.Face7x13, text.ASCII),
 			},
 		},

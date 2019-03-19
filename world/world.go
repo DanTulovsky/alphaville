@@ -5,6 +5,8 @@ import (
 	"log"
 	"time"
 
+	"gogs.wetsnow.com/dant/alphaville/behavior"
+
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/text"
 	"golang.org/x/image/font/basicfont"
@@ -17,6 +19,7 @@ type World struct {
 	Objects []Object // objects in the world
 	Ground  Object
 	gravity float64
+	stats   *Stats // world stats, an observer of events happening in the world
 	Atlas   *text.Atlas
 }
 
@@ -29,6 +32,7 @@ func NewWorld(x, y float64, ground Object, gravity float64) *World {
 		Y:       y,
 		Ground:  ground,
 		gravity: gravity,
+		stats:   NewStats(),
 		Atlas:   text.NewAtlas(basicfont.Face7x13, text.ASCII),
 	}
 }
@@ -60,11 +64,11 @@ func (w *World) NextTick() {
 		o.SwapNextState()
 
 		// Remove gate reservations
-		for _, g := range w.Gates {
-			if g.ReservedBy == o.ID() {
-				g.UnReserve()
-			}
-		}
+		// for _, g := range w.Gates {
+		// 	if g.Reserved {
+		// 		g.Release()
+		// 	}
+		// }
 	}
 }
 
@@ -121,7 +125,11 @@ func (w *World) NewGate(l pixel.Vec, s gateStatus, coolDown time.Duration, radiu
 		SpawnCoolDown: coolDown,
 		Atlas:         atlas,
 		Radius:        radius,
+		eventNotifier: behavior.NewEventNotifier(),
 	}
+
+	// Register the world.stats object to receive notifications from the gate
+	g.eventNotifier.Register(w.stats)
 
 	return w.AddGate(g)
 }
@@ -145,7 +153,6 @@ func (w *World) SpawnObject(o Object) error {
 	// Spawn happens after everything already moved, so simply check for intersections here
 	for _, other := range w.SpawnedObjects() {
 		if phys.Location().Intersect(other.Phys().Location()) != pixel.R(0, 0, 0, 0) {
-			g.UnReserve()
 			return fmt.Errorf("not spawning, would intersect with %v", other.Name())
 		}
 	}
@@ -156,12 +163,20 @@ func (w *World) SpawnObject(o Object) error {
 	o.SetPhys(phys)
 	o.SetNextPhys(o.Phys().Copy())
 
+	g.Release()
 	return nil
 }
 
 // ReserveGate returns (and reserves) a gate to be used by an object
 // An error is returned if there are no available gates
 func (w *World) ReserveGate(o Object) (*Gate, error) {
+	// make sure only one gate is reserved by an object
+	for _, g := range w.Gates {
+		if g.ReservedBy == o.ID() {
+			return g, nil // returned gate already reserved
+		}
+	}
+
 	for _, g := range w.Gates {
 		if g.Reserve(o.ID()) == nil {
 			return g, nil
