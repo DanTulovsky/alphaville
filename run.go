@@ -6,6 +6,7 @@ import (
 	"log"
 	"math/rand"
 	"time"
+	"unicode"
 
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/pixelgl"
@@ -66,7 +67,7 @@ func run() {
 	}
 
 	// text characters we can use to write text with
-	atlas := text.NewAtlas(face, text.ASCII)
+	atlas := text.NewAtlas(face, text.ASCII, text.RangeTable(unicode.Other_Math))
 
 	groundPhys := world.NewBaseObjectPhys(pixel.R(0, 0, worldMaxX, groundHeight))
 	ground := world.NewRectObject(
@@ -81,7 +82,7 @@ func run() {
 	populate.RandomCircles(world, 5)
 	populate.RandomRectangles(world, 8)
 	populate.RandomEllipses(world, 5)
-	populate.AddGates(world, time.Millisecond*1, atlas)
+	populate.AddGates(world, time.Second*5, atlas)
 
 	cfg := pixelgl.WindowConfig{
 		Title:  "Play!",

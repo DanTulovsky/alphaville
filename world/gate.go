@@ -115,8 +115,7 @@ func (g *Gate) Draw(win *pixelgl.Window) {
 	// TODO: Probably best to create ahead of time
 	imd := imdraw.New(nil)
 
-	// TODO: draw open and closed gates differently
-	if g.Reserved {
+	if g.Reserved || g.Status == GateClosed {
 		imd.Color = colornames.Red
 	} else {
 		imd.Color = colornames.Green
@@ -132,6 +131,8 @@ func (g *Gate) Draw(win *pixelgl.Window) {
 	label := ""
 
 	switch {
+	case g.Status == GateClosed:
+		label = "∞"
 	case !g.CanSpawn():
 		label = fmt.Sprintf("%v", g.SpawnCoolDown-time.Now().Sub(g.LastSpawn).Truncate(time.Second))
 	default:

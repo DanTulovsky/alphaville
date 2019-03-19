@@ -167,11 +167,13 @@ func AddGates(w *world.World, coolDown time.Duration, atlas *text.Atlas) {
 			Radius:        20,
 			Atlas:         atlas,
 		},
-		// {
-		// 	Location:      pixel.V(600, 600),
-		// 	Status:        world.GateOpen,
-		// 	SpawnCoolDown: coolDown,
-		// },
+		{
+			Location:      pixel.V(200, 600),
+			Status:        world.GateClosed,
+			SpawnCoolDown: coolDown,
+			Radius:        25,
+			Atlas:         atlas,
+		},
 	}
 
 	for _, g := range gates {

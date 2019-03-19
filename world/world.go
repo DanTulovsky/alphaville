@@ -109,6 +109,10 @@ func (w *World) AddGate(g *Gate) error {
 		}
 	}
 	w.Gates = append(w.Gates, g)
+	g.eventNotifier.Notify(&GateEvent{
+		description: fmt.Sprintf("gate [%v] created", g),
+		time:        time.Now(),
+	})
 	return nil
 }
 
