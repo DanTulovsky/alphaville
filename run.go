@@ -67,7 +67,7 @@ func run() {
 	}
 
 	// text characters we can use to write text with
-	atlas := text.NewAtlas(face, text.ASCII, text.RangeTable(unicode.Other_Math))
+	atlas := text.NewAtlas(face, text.ASCII, text.RangeTable(unicode.Sm))
 
 	groundPhys := world.NewBaseObjectPhys(pixel.R(0, 0, worldMaxX, groundHeight))
 	ground := world.NewRectObject(

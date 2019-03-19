@@ -132,11 +132,11 @@ func (g *Gate) Draw(win *pixelgl.Window) {
 
 	switch {
 	case g.Status == GateClosed:
-		label = "∞"
+		label = "inf"
 	case !g.CanSpawn():
 		label = fmt.Sprintf("%v", g.SpawnCoolDown-time.Now().Sub(g.LastSpawn).Truncate(time.Second))
 	default:
-		label = "∞"
+		label = "inf"
 
 	}
 
