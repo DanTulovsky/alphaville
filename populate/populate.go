@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/faiface/pixel"
+	"github.com/faiface/pixel/text"
 	"gogs.wetsnow.com/dant/alphaville/utils"
 	"gogs.wetsnow.com/dant/alphaville/world"
 	"golang.org/x/image/colornames"
@@ -155,14 +156,16 @@ func RandomRectangles(w *world.World, n int) {
 }
 
 // AddGates adds gates to the world
-func AddGates(w *world.World, coolDown time.Duration) {
+func AddGates(w *world.World, coolDown time.Duration, atlas *text.Atlas) {
 
 	// add spawn gate
 	gates := []world.Gate{
 		{
-			Location:      pixel.V(0, 0),
+			Location:      pixel.V(600, 600),
 			Status:        world.GateOpen,
 			SpawnCoolDown: coolDown,
+			Radius:        20,
+			Atlas:         atlas,
 		},
 		// {
 		// 	Location:      pixel.V(600, 600),
@@ -172,7 +175,7 @@ func AddGates(w *world.World, coolDown time.Duration) {
 	}
 
 	for _, g := range gates {
-		if err := w.NewGate(g.Location, g.Status, g.SpawnCoolDown); err != nil {
+		if err := w.NewGate(g.Location, g.Status, g.SpawnCoolDown, g.Radius, g.Atlas); err != nil {
 			log.Fatalf("failed to create gate: %v", err)
 		}
 	}

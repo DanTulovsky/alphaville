@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/faiface/pixel/pixelgl"
+	"github.com/faiface/pixel/text"
 	"github.com/google/uuid"
 	"golang.org/x/image/colornames"
 
@@ -37,6 +38,10 @@ type Gate struct {
 	// Wait this long before allowing a new spawn
 	SpawnCoolDown time.Duration
 	LastSpawn     time.Time
+
+	Radius float64 // size
+
+	Atlas *text.Atlas
 }
 
 // CanSpawn returns true if the gate can spawn
@@ -80,6 +85,23 @@ func (g *Gate) Draw(win *pixelgl.Window) {
 		imd.Color = colornames.Green
 	}
 	imd.Push(g.Location)
-	imd.Circle(10, 2)
+	imd.Circle(g.Radius, 2)
 	imd.Draw(win)
+
+	// remaining time until next spawn
+	txt := text.New(g.Location, g.Atlas)
+	txt.Color = colornames.Yellow
+
+	label := ""
+
+	switch {
+	case !g.CanSpawn():
+		label = fmt.Sprintf("%v", g.SpawnCoolDown-time.Now().Sub(g.LastSpawn).Truncate(time.Second))
+	default:
+		label = "∞"
+
+	}
+
+	fmt.Fprintf(txt, label)
+	txt.Draw(win, pixel.IM)
 }

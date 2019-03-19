@@ -109,7 +109,7 @@ func (w *World) AddGate(g *Gate) error {
 }
 
 // NewGate creates a new gate in the world
-func (w *World) NewGate(l pixel.Vec, s gateStatus, coolDown time.Duration) error {
+func (w *World) NewGate(l pixel.Vec, s gateStatus, coolDown time.Duration, radius float64, atlas *text.Atlas) error {
 	if l.X > w.X || l.Y > w.Y || l.X < 0 || l.Y < 0 {
 		return fmt.Errorf("Location %#v is outside the world bounds (%#v)", l, pixel.V(w.X, w.Y))
 	}
@@ -119,6 +119,8 @@ func (w *World) NewGate(l pixel.Vec, s gateStatus, coolDown time.Duration) error
 		Status:        s,
 		Reserved:      false,
 		SpawnCoolDown: coolDown,
+		Atlas:         atlas,
+		Radius:        radius,
 	}
 
 	return w.AddGate(g)
