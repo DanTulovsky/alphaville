@@ -24,7 +24,7 @@ type EllipseObject struct {
 func NewEllipseObject(name string, color color.Color, speed, mass, a, b float64, atlas *text.Atlas) *EllipseObject {
 
 	o := &EllipseObject{
-		NewBaseObject(name, color, speed, mass, atlas),
+		NewBaseObject(name, color, speed, mass, objectEllipseType, atlas),
 		a,
 		b,
 	}

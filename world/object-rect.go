@@ -19,11 +19,23 @@ type RectObject struct {
 	width, height float64
 }
 
+// NewGroundObject return a new ground object
+func NewGroundObject(name string, color color.Color, speed, mass, width, height float64, atlas *text.Atlas) *RectObject {
+
+	o := &RectObject{
+		NewBaseObject(name, color, speed, mass, groundType, atlas),
+		width,
+		height,
+	}
+
+	return o
+}
+
 // NewRectObject return a new rectangular object
 func NewRectObject(name string, color color.Color, speed, mass, width, height float64, atlas *text.Atlas) *RectObject {
 
 	o := &RectObject{
-		NewBaseObject(name, color, speed, mass, atlas),
+		NewBaseObject(name, color, speed, mass, objectRectType, atlas),
 		width,
 		height,
 	}

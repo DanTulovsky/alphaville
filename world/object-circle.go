@@ -23,7 +23,7 @@ type CircleObject struct {
 func NewCircleObject(name string, color color.Color, speed, mass, radius float64, atlas *text.Atlas) *CircleObject {
 
 	o := &CircleObject{
-		NewBaseObject(name, color, speed, mass, atlas),
+		NewBaseObject(name, color, speed, mass, objectCircleType, atlas),
 		radius,
 	}
 

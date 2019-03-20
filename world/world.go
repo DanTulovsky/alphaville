@@ -14,27 +14,53 @@ import (
 
 // World defines the world
 type World struct {
-	X, Y    float64  // size of the world
-	Gates   []*Gate  // entrances into the world
-	Objects []Object // objects in the world
-	Ground  Object
-	gravity float64
-	stats   *Stats // world stats, an observer of events happening in the world
-	Atlas   *text.Atlas
+	X, Y          float64  // size of the world
+	Gates         []*Gate  // entrances into the world
+	Objects       []Object // objects in the world
+	Ground        Object
+	gravity       float64
+	stats         *Stats // world stats, an observer of events happening in the world
+	worldType     Type
+	EventNotifier behavior.EventNotifier
+	Atlas         *text.Atlas
 }
 
 // NewWorld returns a new worldof size x, y
 func NewWorld(x, y float64, ground Object, gravity float64) *World {
-	return &World{
-		Objects: []Object{},
-		Gates:   []*Gate{},
-		X:       x,
-		Y:       y,
-		Ground:  ground,
-		gravity: gravity,
-		stats:   NewStats(),
-		Atlas:   text.NewAtlas(basicfont.Face7x13, text.ASCII),
+
+	w := &World{
+		Objects:       []Object{},
+		Gates:         []*Gate{},
+		X:             x,
+		Y:             y,
+		Ground:        ground,
+		gravity:       gravity,
+		stats:         NewStats(),
+		Atlas:         text.NewAtlas(basicfont.Face7x13, text.ASCII),
+		worldType:     worldType,
+		EventNotifier: behavior.NewEventNotifier(),
 	}
+
+	w.EventNotifier.Register(w.stats)
+	w.EventNotifier.Notify(w.NewWorldEvent(fmt.Sprintf("The world is created..."), time.Now()))
+	return w
+}
+
+type worldEvent struct {
+	behavior.BaseEvent
+	worldType Type
+}
+
+// NewWorldEvent create a new world event
+func (w *World) NewWorldEvent(d string, t time.Time, data ...behavior.EventData) behavior.Event {
+	e := &worldEvent{
+		worldType: worldType,
+	}
+	e.SetData(data)
+	e.SetDescription(d)
+	e.SetTime(t)
+
+	return e
 }
 
 // SpawnAllNew spanws all new objects
@@ -62,13 +88,6 @@ func (w *World) NextTick() {
 	// After update, swap the state of all objects at once
 	for _, o := range w.SpawnedObjects() {
 		o.SwapNextState()
-
-		// Remove gate reservations
-		// for _, g := range w.Gates {
-		// 	if g.Reserved {
-		// 		g.Release()
-		// 	}
-		// }
 	}
 }
 
@@ -109,33 +128,8 @@ func (w *World) AddGate(g *Gate) error {
 		}
 	}
 	w.Gates = append(w.Gates, g)
-	g.eventNotifier.Notify(&GateEvent{
-		description: fmt.Sprintf("gate [%v] created", g),
-		time:        time.Now(),
-	})
+	g.eventNotifier.Notify(w.NewWorldEvent(fmt.Sprintf("gate [%v] created", g), time.Now()))
 	return nil
-}
-
-// NewGate creates a new gate in the world
-func (w *World) NewGate(l pixel.Vec, s gateStatus, coolDown time.Duration, radius float64, atlas *text.Atlas) error {
-	if l.X > w.X || l.Y > w.Y || l.X < 0 || l.Y < 0 {
-		return fmt.Errorf("Location %#v is outside the world bounds (%#v)", l, pixel.V(w.X, w.Y))
-	}
-
-	g := &Gate{
-		Location:      l,
-		Status:        s,
-		Reserved:      false,
-		SpawnCoolDown: coolDown,
-		Atlas:         atlas,
-		Radius:        radius,
-		eventNotifier: behavior.NewEventNotifier(),
-	}
-
-	// Register the world.stats object to receive notifications from the gate
-	g.eventNotifier.Register(w.stats)
-
-	return w.AddGate(g)
 }
 
 // SpawnObject tries to grab a gate and spawn, if area around is available
@@ -168,6 +162,11 @@ func (w *World) SpawnObject(o Object) error {
 	o.SetNextPhys(o.Phys().Copy())
 
 	g.Release()
+	g.eventNotifier.Notify(w.NewWorldEvent(
+		fmt.Sprintf(
+			"object [%v] spawned", o.Name()), time.Now(),
+		behavior.EventData{Key: "spawn", Value: fmt.Sprintf("%T", o)}))
+
 	return nil
 }
 
@@ -203,4 +202,15 @@ func (w *World) CheckIntersect() {
 
 		}
 	}
+}
+
+// End destroys the world
+func (w *World) End() {
+	w.EventNotifier.Notify(w.NewWorldEvent(fmt.Sprint("The world dies..."), time.Now()))
+	w = nil
+}
+
+// ShowStats dumps the world stats to stdout
+func (w *World) ShowStats() {
+	fmt.Printf("%v", w.stats)
 }

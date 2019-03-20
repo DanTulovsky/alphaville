@@ -31,23 +31,20 @@ const (
 
 // GateEvent implements the behavior.Event interface to send events to other components
 type GateEvent struct {
-	description string
-	time        time.Time // event time
+	behavior.BaseEvent
+	worldType Type
 }
 
-// Description returns the event description
-func (e *GateEvent) Description() string {
-	return e.description
-}
+// newGateEvent create a new gate event
+func newGateEvent(d string, t time.Time, data ...behavior.EventData) behavior.Event {
+	e := &GateEvent{
+		worldType: gateType,
+	}
+	e.SetData(data)
+	e.SetDescription(d)
+	e.SetTime(t)
 
-// String returns the event as string
-func (e *GateEvent) String() string {
-	return fmt.Sprintf("[%v] %v", e.time, e.description)
-}
-
-// Time returns the event time
-func (e *GateEvent) Time() time.Time {
-	return e.time
+	return e
 }
 
 // Gate is a point in the world where new objects can appear
@@ -65,7 +62,32 @@ type Gate struct {
 
 	eventNotifier behavior.EventNotifier
 
+	worldType Type
+
 	Atlas *text.Atlas
+}
+
+// NewGate creates a new gate in the world
+func (w *World) NewGate(l pixel.Vec, s gateStatus, coolDown time.Duration, radius float64, atlas *text.Atlas) error {
+	if l.X > w.X || l.Y > w.Y || l.X < 0 || l.Y < 0 {
+		return fmt.Errorf("Location %#v is outside the world bounds (%#v)", l, pixel.V(w.X, w.Y))
+	}
+
+	g := &Gate{
+		Location:      l,
+		Status:        s,
+		Reserved:      false,
+		SpawnCoolDown: coolDown,
+		Atlas:         atlas,
+		Radius:        radius,
+		worldType:     gateType,
+		eventNotifier: behavior.NewEventNotifier(),
+	}
+
+	// Register the world.stats object to receive notifications from the gate
+	g.eventNotifier.Register(w.stats)
+
+	return w.AddGate(g)
 }
 
 // String returns the gate as string
@@ -92,10 +114,8 @@ func (g *Gate) Reserve(id uuid.UUID) error {
 		g.Reserved = true
 		g.ReservedBy = id
 		g.LastSpawn = time.Now()
-		g.eventNotifier.Notify(&GateEvent{
-			description: fmt.Sprintf("gate [%v] reserved for [%v]", g, id),
-			time:        time.Now(),
-		})
+		g.eventNotifier.Notify(newGateEvent(fmt.Sprintf("gate [%v] reserved for [%v]", g, id), time.Now()))
+
 		return nil
 	}
 	return fmt.Errorf("gate %#v already reserved or closed", g)
@@ -103,10 +123,7 @@ func (g *Gate) Reserve(id uuid.UUID) error {
 
 // Release removes a gates reservation
 func (g *Gate) Release() {
-	g.eventNotifier.Notify(&GateEvent{
-		description: fmt.Sprintf("gate [%v] reservation released", g),
-		time:        time.Now(),
-	})
+	g.eventNotifier.Notify(newGateEvent(fmt.Sprintf("gate [%v] reservation released", g), time.Now()))
 	g.Reserved = false
 }
 
@@ -139,6 +156,9 @@ func (g *Gate) Draw(win *pixelgl.Window) {
 		label = "inf"
 
 	}
+
+	// center the text
+	txt.Dot.X -= txt.BoundsOf(label).W() / 2
 
 	fmt.Fprintf(txt, label)
 	txt.Draw(win, pixel.IM)

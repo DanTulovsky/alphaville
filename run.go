@@ -5,8 +5,11 @@ import (
 	_ "image/png"
 	"log"
 	"math/rand"
+	"strconv"
 	"time"
 	"unicode"
+
+	"gogs.wetsnow.com/dant/alphaville/behavior"
 
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/pixelgl"
@@ -18,8 +21,9 @@ import (
 )
 
 var (
-	frames = 0
-	second = time.Tick(time.Second)
+	frames  = 0
+	updates = 0
+	second  = time.Tick(time.Second)
 )
 
 const (
@@ -70,19 +74,19 @@ func run() {
 	atlas := text.NewAtlas(face, text.ASCII, text.RangeTable(unicode.Sm))
 
 	groundPhys := world.NewBaseObjectPhys(pixel.R(0, 0, worldMaxX, groundHeight))
-	ground := world.NewRectObject(
+	ground := world.NewGroundObject(
 		"ground", colornames.White, 0, 0, worldMaxX, groundHeight, atlas)
 	ground.SetPhys(groundPhys)
 	ground.SetNextPhys(ground.Phys().Copy())
 
-	world := world.NewWorld(worldMaxX, worldMaxY, ground, gravity)
+	w := world.NewWorld(worldMaxX, worldMaxY, ground, gravity)
 
 	// populate the world
 	// populate.Static(world)
-	populate.RandomCircles(world, 5)
-	populate.RandomRectangles(world, 8)
-	populate.RandomEllipses(world, 5)
-	populate.AddGates(world, time.Second*5, atlas)
+	populate.RandomCircles(w, 5)
+	populate.RandomRectangles(w, 8)
+	populate.RandomEllipses(w, 5)
+	populate.AddGates(w, time.Second*5, atlas)
 
 	cfg := pixelgl.WindowConfig{
 		Title:  "Play!",
@@ -103,6 +107,14 @@ func run() {
 	// how far the game's clock is behind compared to the real world; in ms
 	var lag int64
 
+	// show world stats periodically
+	ticker := time.NewTicker(time.Second * 5)
+	go func() {
+		for range ticker.C {
+			w.ShowStats()
+		}
+	}()
+
 	// Main loop to keep window running
 	for !win.Closed() {
 		elapsed := time.Since(previous).Nanoseconds() / 1000000
@@ -114,23 +126,30 @@ func run() {
 
 		// update the game state
 		for lag >= MsPerUpdate {
-			update(world)
+			update(w)
+			updates++
 			lag -= MsPerUpdate
 		}
 
 		// render below here
 		win.Clear(colornames.Black)
-		draw(world, win)
+		draw(w, win)
 		win.Update()
 
 		frames++
 		select {
 		case <-second:
 			win.SetTitle(fmt.Sprintf("%s | FPS: %d", cfg.Title, frames))
+			w.EventNotifier.Notify(
+				w.NewWorldEvent(fmt.Sprintf("fps"), time.Now(),
+					behavior.EventData{Key: "fps", Value: strconv.Itoa(frames)},
+					behavior.EventData{Key: "ups", Value: strconv.Itoa(updates)}))
 			frames = 0
+			updates = 0
 		default:
 		}
 	}
+	w.End()
 }
 
 func main() {

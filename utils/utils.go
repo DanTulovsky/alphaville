@@ -6,6 +6,7 @@ import (
 	"math"
 	"math/rand"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/faiface/pixel"
@@ -99,4 +100,13 @@ func LoadTTF(path string, size float64) (font.Face, error) {
 		Size:              size,
 		GlyphCacheEntries: 1,
 	}), nil
+}
+
+// Atoi converts string to integer, errors crash.
+func Atoi(a string) (i int) {
+	var err error
+	if i, err = strconv.Atoi(a); err != nil {
+		log.Fatalf("%v is not a valid int", a)
+	}
+	return i
 }
