@@ -53,6 +53,10 @@ func draw(w *world.World, win *pixelgl.Window) {
 		g.Draw(win)
 	}
 
+	for _, f := range w.Fixtures() {
+		f.Draw(win)
+	}
+
 	for _, o := range w.Objects {
 		o.Draw(win)
 	}
@@ -76,6 +80,7 @@ func run() {
 	populate.RandomRectangles(w, 8)
 	populate.RandomEllipses(w, 5)
 	populate.AddGates(w, time.Second*5)
+	populate.AddFixtures(w)
 
 	cfg := pixelgl.WindowConfig{
 		Title:  "Play!",

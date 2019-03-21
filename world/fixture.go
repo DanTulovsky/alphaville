@@ -2,31 +2,34 @@ package world
 
 import (
 	"image/color"
-	"log"
 	"math"
+
+	"github.com/faiface/pixel"
 )
 
 // Fixture is a non-moving fixture in the world (walls, etc...)
 type Fixture struct {
-	BaseObject
-
-	// size of RectObject
-	width, height float64
+	RectObject
 }
 
 // NewFixture returns a new world fixture
 func NewFixture(name string, color color.Color, width, height float64) *Fixture {
 
 	f := &Fixture{
-		// 0 speed, max mass
-		NewBaseObject(name, color, 0, math.MaxFloat64, fixtureType),
-		width,
-		height,
+		*(NewRectObject(name, color, 0, math.MaxFloat64, width, height)),
 	}
+
 	return f
 }
 
 // Update updates the fixture for next tick
-func Update(f *Fixture) {
-	log.Printf("Updating fixture [%v]", f.Name())
+func (f *Fixture) Update(w *World) {
+	// Nothing to update for fixtures right now.
+}
+
+// Place places the fixture in the world
+func (f *Fixture) Place(l pixel.Vec) {
+	phys := NewBaseObjectPhys(f.BoundingBox(l))
+	f.SetPhys(phys)
+	f.SetNextPhys(f.Phys().Copy())
 }

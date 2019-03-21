@@ -12,11 +12,11 @@ import (
 
 // World defines the world
 type World struct {
-	X, Y          float64   // size of the world
-	Gates         []*Gate   // entrances into the world
-	Objects       []Object  // objects in the world
-	Ground        Object    // special, for now
-	Walls         []Fixture // walls, floors, rocks, etc...
+	X, Y          float64  // size of the world
+	Gates         []*Gate  // entrances into the world
+	Objects       []Object // objects in the world
+	Ground        Object   // special, for now
+	fixtures      []Object // walls, floors, rocks, etc...
 	gravity       float64
 	stats         *Stats // world stats, an observer of events happening in the world
 	worldType     Type
@@ -74,7 +74,13 @@ func (w *World) SpawnAllNew() {
 
 // Update updates all the objects in the world to their next state
 func (w *World) Update() {
+	// update movable objects
 	for _, o := range w.SpawnedObjects() {
+		o.Update(w)
+	}
+
+	// update fixtures
+	for _, o := range w.Fixtures() {
 		o.Update(w)
 	}
 }
@@ -86,6 +92,16 @@ func (w *World) NextTick() {
 	for _, o := range w.SpawnedObjects() {
 		o.SwapNextState()
 	}
+}
+
+// Fixtures returns all the fixtures in the world
+func (w *World) Fixtures() []Object {
+	var fs []Object
+
+	for _, f := range w.fixtures {
+		fs = append(fs, f)
+	}
+	return fs
 }
 
 // SpawnedObjects returns all the spawned objects in the world
@@ -115,6 +131,11 @@ func (w *World) UnSpawnedObjects() []Object {
 // AddObject adds a new object to the world
 func (w *World) AddObject(o Object) {
 	w.Objects = append(w.Objects, o)
+}
+
+// AddFixture adds a new fixture to the world
+func (w *World) AddFixture(o Object) {
+	w.fixtures = append(w.fixtures, o)
 }
 
 // AddGate adds a new gate to the world
