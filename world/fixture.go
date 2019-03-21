@@ -17,6 +17,7 @@ type Fixture struct {
 func NewFixture(name string, color color.Color, width, height float64) *Fixture {
 
 	f := &Fixture{
+		// 0 speed, max mass
 		NewBaseObject(name, color, 0, math.MaxFloat64, fixtureType),
 		width,
 		height,
