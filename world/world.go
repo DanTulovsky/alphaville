@@ -8,21 +8,19 @@ import (
 	"gogs.wetsnow.com/dant/alphaville/behavior"
 
 	"github.com/faiface/pixel"
-	"github.com/faiface/pixel/text"
-	"golang.org/x/image/font/basicfont"
 )
 
 // World defines the world
 type World struct {
-	X, Y          float64  // size of the world
-	Gates         []*Gate  // entrances into the world
-	Objects       []Object // objects in the world
-	Ground        Object
+	X, Y          float64   // size of the world
+	Gates         []*Gate   // entrances into the world
+	Objects       []Object  // objects in the world
+	Ground        Object    // special, for now
+	Walls         []Fixture // walls, floors, rocks, etc...
 	gravity       float64
 	stats         *Stats // world stats, an observer of events happening in the world
 	worldType     Type
 	EventNotifier behavior.EventNotifier
-	Atlas         *text.Atlas
 }
 
 // NewWorld returns a new worldof size x, y
@@ -36,7 +34,6 @@ func NewWorld(x, y float64, ground Object, gravity float64) *World {
 		Ground:        ground,
 		gravity:       gravity,
 		stats:         NewStats(),
-		Atlas:         text.NewAtlas(basicfont.Face7x13, text.ASCII),
 		worldType:     worldType,
 		EventNotifier: behavior.NewEventNotifier(),
 	}

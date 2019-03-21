@@ -61,7 +61,7 @@ type BaseObject struct {
 
 // NewBaseObject return a new rectangular object
 // phys bounding box is set based on width, height, unless phys is provided
-func NewBaseObject(name string, color color.Color, speed, mass float64, t Type, atlas *text.Atlas) BaseObject {
+func NewBaseObject(name string, color color.Color, speed, mass float64, t Type) BaseObject {
 	o := BaseObject{}
 
 	o.name = name
@@ -72,7 +72,6 @@ func NewBaseObject(name string, color color.Color, speed, mass float64, t Type, 
 	o.imd = imdraw.New(nil)
 	o.phys = nil
 	o.worldType = t
-	o.Atlas = atlas
 
 	return o
 }

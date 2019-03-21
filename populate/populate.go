@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/faiface/pixel"
-	"github.com/faiface/pixel/text"
 	"gogs.wetsnow.com/dant/alphaville/utils"
 	"gogs.wetsnow.com/dant/alphaville/world"
 	"golang.org/x/image/colornames"
@@ -87,7 +86,6 @@ func RandomEllipses(w *world.World, n int) {
 			utils.RandomFloat64(minMass, maxMass)/10,   // mass
 			a, // x radius
 			b, // y radius
-			w.Atlas,
 		)
 
 		w.AddObject(o)
@@ -116,7 +114,6 @@ func RandomCircles(w *world.World, n int) {
 			utils.RandomFloat64(minSpeed, maxSpeed)/10, // speed
 			utils.RandomFloat64(minMass, maxMass)/10,   // mass
 			radius, // radius
-			w.Atlas,
 		)
 
 		w.AddObject(o)
@@ -147,7 +144,6 @@ func RandomRectangles(w *world.World, n int) {
 			utils.RandomFloat64(minMass, maxMass)/10,   // mass
 			width,  // width
 			height, // height
-			w.Atlas,
 		)
 
 		w.AddObject(o)
@@ -156,7 +152,7 @@ func RandomRectangles(w *world.World, n int) {
 }
 
 // AddGates adds gates to the world
-func AddGates(w *world.World, coolDown time.Duration, atlas *text.Atlas) {
+func AddGates(w *world.World, coolDown time.Duration) {
 
 	// add spawn gate
 	gates := []world.Gate{
@@ -165,19 +161,17 @@ func AddGates(w *world.World, coolDown time.Duration, atlas *text.Atlas) {
 			Status:        world.GateOpen,
 			SpawnCoolDown: coolDown,
 			Radius:        20,
-			Atlas:         atlas,
 		},
 		{
 			Location:      pixel.V(200, 600),
 			Status:        world.GateClosed,
 			SpawnCoolDown: coolDown,
 			Radius:        25,
-			Atlas:         atlas,
 		},
 	}
 
 	for _, g := range gates {
-		if err := w.NewGate(g.Location, g.Status, g.SpawnCoolDown, g.Radius, g.Atlas); err != nil {
+		if err := w.NewGate(g.Location, g.Status, g.SpawnCoolDown, g.Radius); err != nil {
 			log.Fatalf("failed to create gate: %v", err)
 		}
 	}

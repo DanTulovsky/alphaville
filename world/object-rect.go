@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"image/color"
 
+	"gogs.wetsnow.com/dant/alphaville/utils"
 	"golang.org/x/image/colornames"
 
 	"github.com/faiface/pixel"
@@ -20,10 +21,10 @@ type RectObject struct {
 }
 
 // NewGroundObject return a new ground object
-func NewGroundObject(name string, color color.Color, speed, mass, width, height float64, atlas *text.Atlas) *RectObject {
+func NewGroundObject(name string, color color.Color, speed, mass, width, height float64) *RectObject {
 
 	o := &RectObject{
-		NewBaseObject(name, color, speed, mass, groundType, atlas),
+		NewBaseObject(name, color, speed, mass, groundType),
 		width,
 		height,
 	}
@@ -32,10 +33,10 @@ func NewGroundObject(name string, color color.Color, speed, mass, width, height 
 }
 
 // NewRectObject return a new rectangular object
-func NewRectObject(name string, color color.Color, speed, mass, width, height float64, atlas *text.Atlas) *RectObject {
+func NewRectObject(name string, color color.Color, speed, mass, width, height float64) *RectObject {
 
 	o := &RectObject{
-		NewBaseObject(name, color, speed, mass, objectRectType, atlas),
+		NewBaseObject(name, color, speed, mass, objectRectType),
 		width,
 		height,
 	}
@@ -75,7 +76,7 @@ func (o *RectObject) Draw(win *pixelgl.Window) {
 	o.imd.Draw(win)
 
 	// draw name of the object
-	txt := text.New(pixel.V(o.Phys().Location().Center().XY()), o.Atlas)
+	txt := text.New(pixel.V(o.Phys().Location().Center().XY()), utils.Atlas())
 	txt.Color = colornames.Black
 	fmt.Fprintf(txt, "%v", o.name)
 	txt.Draw(win, pixel.IM)
