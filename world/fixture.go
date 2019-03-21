@@ -2,6 +2,7 @@ package world
 
 import (
 	"image/color"
+	"log"
 	"math"
 )
 
@@ -23,4 +24,9 @@ func NewFixture(name string, color color.Color, width, height float64) *Fixture 
 		height,
 	}
 	return f
+}
+
+// Update updates the fixture for next tick
+func Update(f *Fixture) {
+	log.Printf("Updating fixture [%v]", f.Name())
 }
