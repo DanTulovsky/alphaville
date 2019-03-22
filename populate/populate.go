@@ -148,7 +148,6 @@ func RandomRectangles(w *world.World, n int) {
 
 		w.AddObject(o)
 	}
-
 }
 
 // AddGates adds gates to the world

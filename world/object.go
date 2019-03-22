@@ -253,7 +253,7 @@ func (o *BaseObject) shouldCheckVerticalCollision(other Object) bool {
 // avoidCollisionBelow changes o to avoid collision with an object below while movign down
 func (o *BaseObject) avoidCollisionBelow(w *World) bool {
 	// if about to fall on another, rise back up
-	for _, other := range w.SpawnedObjects() {
+	for _, other := range w.CollisionObjects() {
 		if !o.shouldCheckVerticalCollision(other) {
 			continue
 		}
@@ -282,7 +282,7 @@ func (o *BaseObject) avoidCollisionBelow(w *World) bool {
 
 // avoidCollisionAbove changes o to avoid collision with an object above while moving up
 func (o *BaseObject) avoidCollisionAbove(w *World) bool {
-	for _, other := range w.SpawnedObjects() {
+	for _, other := range w.CollisionObjects() {
 		if !o.shouldCheckVerticalCollision(other) {
 			continue
 		}
@@ -321,7 +321,7 @@ func (o *BaseObject) avoidHorizontalCollision() {
 
 // avoidCollisionRight changes o to avoid a collision on the right
 func (o *BaseObject) avoidCollisionRight(w *World) bool {
-	for _, other := range w.SpawnedObjects() {
+	for _, other := range w.CollisionObjects() {
 		if !o.shouldCheckHorizontalCollision(other) {
 			continue
 		}
@@ -344,7 +344,7 @@ func (o *BaseObject) avoidCollisionRight(w *World) bool {
 
 // avoidCollisionLeft changes o to avoid a collision on the left
 func (o *BaseObject) avoidCollisionLeft(w *World) bool {
-	for _, other := range w.SpawnedObjects() {
+	for _, other := range w.CollisionObjects() {
 		if !o.shouldCheckHorizontalCollision(other) {
 			continue
 		}
@@ -458,7 +458,7 @@ func (o *BaseObject) move(w *World, v pixel.Vec) {
 
 // CheckIntersect prints out an error if this object intersects with another one
 func (o *BaseObject) CheckIntersect(w *World) {
-	for _, other := range w.SpawnedObjects() {
+	for _, other := range w.CollisionObjects() {
 		if o.ID() == other.ID() {
 			continue // skip yourself
 		}

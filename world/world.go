@@ -128,6 +128,11 @@ func (w *World) UnSpawnedObjects() []Object {
 	return objs
 }
 
+// CollisionObjects returns all objects for which to check collisions.
+func (w *World) CollisionObjects() []Object {
+	return append(w.SpawnedObjects(), w.Fixtures()...)
+}
+
 // AddObject adds a new object to the world
 func (w *World) AddObject(o Object) {
 	w.Objects = append(w.Objects, o)
