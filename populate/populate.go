@@ -163,13 +163,13 @@ func AddGates(w *world.World, coolDown time.Duration, atlas *text.Atlas) {
 		{
 			Location:      pixel.V(600, 600),
 			Status:        world.GateOpen,
-			SpawnCoolDown: coolDown,
+			SpawnCoolDown: 10 * time.Second,
 			Radius:        20,
 			Atlas:         atlas,
 		},
 		{
 			Location:      pixel.V(200, 600),
-			Status:        world.GateClosed,
+			Status:        world.GateOpen,
 			SpawnCoolDown: coolDown,
 			Radius:        25,
 			Atlas:         atlas,
