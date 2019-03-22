@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"image/color"
 
+	"gogs.wetsnow.com/dant/alphaville/utils"
 	"golang.org/x/image/colornames"
 
 	"github.com/faiface/pixel"
@@ -20,10 +21,10 @@ type CircleObject struct {
 }
 
 // NewCircleObject return a new rectangular object
-func NewCircleObject(name string, color color.Color, speed, mass, radius float64, atlas *text.Atlas) *CircleObject {
+func NewCircleObject(name string, color color.Color, speed, mass, radius float64) *CircleObject {
 
 	o := &CircleObject{
-		NewBaseObject(name, color, speed, mass, objectCircleType, atlas),
+		NewBaseObject(name, color, speed, mass, objectCircleType),
 		radius,
 	}
 
@@ -55,7 +56,7 @@ func (o *CircleObject) Draw(win *pixelgl.Window) {
 	o.imd.Draw(win)
 
 	// draw name of the object
-	txt := text.New(pixel.V(o.Phys().Location().Center().XY()), o.Atlas)
+	txt := text.New(pixel.V(o.Phys().Location().Center().XY()), utils.Atlas())
 	txt.Color = colornames.Black
 	fmt.Fprintf(txt, "%v", o.name)
 	txt.Draw(win, pixel.IM)

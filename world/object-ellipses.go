@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"image/color"
 
+	"gogs.wetsnow.com/dant/alphaville/utils"
 	"golang.org/x/image/colornames"
 
 	"github.com/faiface/pixel"
@@ -21,10 +22,10 @@ type EllipseObject struct {
 }
 
 // NewEllipseObject return a new rectangular object
-func NewEllipseObject(name string, color color.Color, speed, mass, a, b float64, atlas *text.Atlas) *EllipseObject {
+func NewEllipseObject(name string, color color.Color, speed, mass, a, b float64) *EllipseObject {
 
 	o := &EllipseObject{
-		NewBaseObject(name, color, speed, mass, objectEllipseType, atlas),
+		NewBaseObject(name, color, speed, mass, objectEllipseType),
 		a,
 		b,
 	}
@@ -60,7 +61,7 @@ func (o *EllipseObject) Draw(win *pixelgl.Window) {
 	o.imd.Draw(win)
 
 	// draw name of the object
-	txt := text.New(pixel.V(o.Phys().Location().Center().XY()), o.Atlas)
+	txt := text.New(pixel.V(o.Phys().Location().Center().XY()), utils.Atlas())
 	txt.Color = colornames.Black
 	fmt.Fprintf(txt, "%v", o.name)
 	txt.Draw(win, pixel.IM)

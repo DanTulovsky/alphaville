@@ -24,4 +24,7 @@ const (
 
 	// ground
 	groundType
+
+	// fixture (wall, etc...)
+	fixtureType
 )

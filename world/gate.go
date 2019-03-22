@@ -8,6 +8,7 @@ import (
 	"github.com/faiface/pixel/text"
 	"github.com/google/uuid"
 	"gogs.wetsnow.com/dant/alphaville/behavior"
+	"gogs.wetsnow.com/dant/alphaville/utils"
 	"golang.org/x/image/colornames"
 
 	"github.com/faiface/pixel/imdraw"
@@ -63,12 +64,10 @@ type Gate struct {
 	eventNotifier behavior.EventNotifier
 
 	worldType Type
-
-	Atlas *text.Atlas
 }
 
 // NewGate creates a new gate in the world
-func (w *World) NewGate(l pixel.Vec, s gateStatus, coolDown time.Duration, radius float64, atlas *text.Atlas) error {
+func (w *World) NewGate(l pixel.Vec, s gateStatus, coolDown time.Duration, radius float64) error {
 	if l.X > w.X || l.Y > w.Y || l.X < 0 || l.Y < 0 {
 		return fmt.Errorf("Location %#v is outside the world bounds (%#v)", l, pixel.V(w.X, w.Y))
 	}
@@ -78,7 +77,6 @@ func (w *World) NewGate(l pixel.Vec, s gateStatus, coolDown time.Duration, radiu
 		Status:        s,
 		Reserved:      false,
 		SpawnCoolDown: coolDown,
-		Atlas:         atlas,
 		Radius:        radius,
 		worldType:     gateType,
 		eventNotifier: behavior.NewEventNotifier(),
@@ -142,7 +140,7 @@ func (g *Gate) Draw(win *pixelgl.Window) {
 	imd.Draw(win)
 
 	// remaining time until next spawn
-	txt := text.New(g.Location, g.Atlas)
+	txt := text.New(g.Location, utils.Atlas())
 	txt.Color = colornames.Yellow
 
 	label := ""

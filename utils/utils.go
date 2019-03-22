@@ -7,9 +7,12 @@ import (
 	"math/rand"
 	"os"
 	"strconv"
+	"sync"
 	"time"
+	"unicode"
 
 	"github.com/faiface/pixel"
+	"github.com/faiface/pixel/text"
 	"github.com/golang/freetype/truetype"
 	"golang.org/x/image/font"
 )
@@ -109,4 +112,21 @@ func Atoi(a string) (i int) {
 		log.Fatalf("%v is not a valid int", a)
 	}
 	return i
+}
+
+var atlas *text.Atlas
+var once sync.Once
+
+// Atlas returns a singleton of the atlas; contains the font to use for text
+func Atlas() *text.Atlas {
+
+	once.Do(func() {
+		face, err := LoadTTF("fonts/intuitive.ttf", 16)
+		if err != nil {
+			log.Fatal(err)
+		}
+		atlas = text.NewAtlas(face, text.ASCII, text.RangeTable(unicode.Sm))
+	})
+
+	return atlas
 }

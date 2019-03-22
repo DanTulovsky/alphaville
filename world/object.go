@@ -55,13 +55,11 @@ type BaseObject struct {
 	nextPhys ObjectPhys // State of the object in the next round
 
 	worldType Type
-
-	Atlas *text.Atlas
 }
 
 // NewBaseObject return a new rectangular object
 // phys bounding box is set based on width, height, unless phys is provided
-func NewBaseObject(name string, color color.Color, speed, mass float64, t Type, atlas *text.Atlas) BaseObject {
+func NewBaseObject(name string, color color.Color, speed, mass float64, t Type) BaseObject {
 	o := BaseObject{}
 
 	o.name = name
@@ -72,7 +70,6 @@ func NewBaseObject(name string, color color.Color, speed, mass float64, t Type, 
 	o.imd = imdraw.New(nil)
 	o.phys = nil
 	o.worldType = t
-	o.Atlas = atlas
 
 	return o
 }
@@ -475,7 +472,7 @@ func (o *BaseObject) CheckIntersect(w *World) {
 func (o *BaseObject) Draw(win *pixelgl.Window) {
 
 	// draw name of the object
-	txt := text.New(pixel.V(o.Phys().Location().Center().XY()), o.Atlas)
+	txt := text.New(pixel.V(o.Phys().Location().Center().XY()), utils.Atlas())
 	txt.Color = colornames.Red
 	fmt.Fprintf(txt, "IMPLEMENT ME!")
 	txt.Draw(win, pixel.IM)

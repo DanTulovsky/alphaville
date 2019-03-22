@@ -7,15 +7,12 @@ import (
 	"math/rand"
 	"strconv"
 	"time"
-	"unicode"
 
 	"gogs.wetsnow.com/dant/alphaville/behavior"
 
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/pixelgl"
-	"github.com/faiface/pixel/text"
 	"gogs.wetsnow.com/dant/alphaville/populate"
-	"gogs.wetsnow.com/dant/alphaville/utils"
 	"gogs.wetsnow.com/dant/alphaville/world"
 	"golang.org/x/image/colornames"
 )
@@ -56,6 +53,10 @@ func draw(w *world.World, win *pixelgl.Window) {
 		g.Draw(win)
 	}
 
+	for _, f := range w.Fixtures() {
+		f.Draw(win)
+	}
+
 	for _, o := range w.Objects {
 		o.Draw(win)
 	}
@@ -65,17 +66,9 @@ func run() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	rand.Seed(time.Now().UnixNano())
 
-	face, err := utils.LoadTTF("fonts/intuitive.ttf", 16)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// text characters we can use to write text with
-	atlas := text.NewAtlas(face, text.ASCII, text.RangeTable(unicode.Sm))
-
 	groundPhys := world.NewBaseObjectPhys(pixel.R(0, 0, worldMaxX, groundHeight))
 	ground := world.NewGroundObject(
-		"ground", colornames.White, 0, 0, worldMaxX, groundHeight, atlas)
+		"ground", colornames.White, 0, 0, worldMaxX, groundHeight)
 	ground.SetPhys(groundPhys)
 	ground.SetNextPhys(ground.Phys().Copy())
 
@@ -86,7 +79,8 @@ func run() {
 	populate.RandomCircles(w, 5)
 	populate.RandomRectangles(w, 8)
 	populate.RandomEllipses(w, 5)
-	populate.AddGates(w, time.Second*5, atlas)
+	populate.AddGates(w, time.Second*5)
+	populate.AddFixtures(w)
 
 	cfg := pixelgl.WindowConfig{
 		Title:  "Play!",
