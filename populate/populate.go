@@ -107,7 +107,7 @@ func AddManualObject(w *world.World, width, height float64) {
 	o := world.NewRectObject(
 		"manual",
 		colornames.Red,
-		4,      // speed
+		2,      // speed
 		1,      // mass
 		width,  // width
 		height, // height

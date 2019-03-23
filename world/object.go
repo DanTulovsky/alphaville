@@ -24,10 +24,6 @@ type Object interface {
 	ID() uuid.UUID
 	IsSpawned() bool
 	Mass() float64
-	MoveRight()
-	MoveLeft()
-	MoveUp()
-	MoveDown()
 	NextPhys() ObjectPhys // returns the NextPhys object
 	Name() string
 	Phys() ObjectPhys // returns the Phys object
@@ -170,26 +166,6 @@ func (o *BaseObject) CheckIntersect(w *World) {
 	}
 }
 
-// MoveLeft moves the object left
-func (o *BaseObject) MoveLeft() {
-	o.NextPhys().MoveLeft()
-}
-
-// MoveRight moves the object right
-func (o *BaseObject) MoveRight() {
-	o.NextPhys().MoveRight()
-}
-
-// MoveUp moves the object up
-func (o *BaseObject) MoveUp() {
-	o.NextPhys().MoveUp()
-}
-
-// MoveDown moves the object down
-func (o *BaseObject) MoveDown() {
-	o.NextPhys().MoveDown()
-}
-
 // Draw must be implemented by concrete objects
 func (o *BaseObject) Draw(win *pixelgl.Window) {
 
@@ -244,15 +220,3 @@ func (o *NullObject) Update(*World)  {}
 
 func (o *NullObject) SetNextPhys(ObjectPhys) {}
 func (o *NullObject) SetPhys(ObjectPhys)     {}
-
-// MoveLeft moves the object left
-func (o *NullObject) MoveLeft() {}
-
-// MoveRight moves the object right
-func (o *NullObject) MoveRight() {}
-
-// MoveUp moves the object up
-func (o *NullObject) MoveUp() {}
-
-// MoveDown moves the object down
-func (o *NullObject) MoveDown() {}

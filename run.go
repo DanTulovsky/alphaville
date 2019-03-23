@@ -32,7 +32,7 @@ const (
 	groundHeight                   = 40
 )
 
-func processInput(win *pixelgl.Window, w *world.World) {
+func processInput(win *pixelgl.Window, w *world.World, ctrl pixel.Vec) {
 
 	mo := w.ManualControl
 	if !mo.IsSpawned() {
@@ -41,14 +41,16 @@ func processInput(win *pixelgl.Window, w *world.World) {
 
 	switch {
 	case win.Pressed(pixelgl.KeyLeft):
-		mo.MoveLeft()
+		ctrl.X--
 	case win.Pressed(pixelgl.KeyRight):
-		mo.MoveRight()
+		ctrl.X++
 	case win.Pressed(pixelgl.KeyUp):
-		mo.MoveUp()
+		ctrl.Y--
 	case win.Pressed(pixelgl.KeyDown):
-		mo.MoveDown()
+		ctrl.Y++
 	}
+
+	mo.NextPhys().SetVelocity(ctrl)
 
 }
 
@@ -92,7 +94,7 @@ func run() {
 	// populate the world
 	// populate.Static(world)
 	// populate.RandomCircles(w, 5)
-	// populate.RandomRectangles(w, 2)
+	populate.RandomRectangles(w, 2)
 	// populate.RandomEllipses(w, 5)
 	populate.AddManualObject(w, 60, 60)
 	populate.AddGates(w, time.Second*1)
@@ -131,8 +133,10 @@ func run() {
 		previous = time.Now()
 		lag += elapsed
 
+		// manual control
+		ctrl := pixel.ZV
 		// user input
-		processInput(win, w)
+		processInput(win, w, ctrl)
 
 		update(w)
 		updates++

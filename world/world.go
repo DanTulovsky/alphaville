@@ -91,6 +91,7 @@ func (w *World) NextTick() {
 	for _, o := range w.SpawnedObjects() {
 		o.SwapNextState()
 	}
+	// w.ManualControl.Phys().Stop()
 }
 
 // Fixtures returns all the fixtures in the world
