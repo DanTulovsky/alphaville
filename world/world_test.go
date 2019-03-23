@@ -3,9 +3,9 @@ package world
 import (
 	"testing"
 
-	"github.com/faiface/pixel/text"
+	"gogs.wetsnow.com/dant/alphaville/observer"
+
 	"github.com/go-test/deep"
-	"golang.org/x/image/font/basicfont"
 )
 
 func TestNewWorld(t *testing.T) {
@@ -29,14 +29,14 @@ func TestNewWorld(t *testing.T) {
 				gravity: 2,
 			},
 			want: &World{
-				X:       100,
-				Y:       200,
-				Objects: []Object{},
-				Gates:   []*Gate{},
-				Ground:  nil,
-				gravity: 2,
-				stats:   NewStats(),
-				Atlas:   text.NewAtlas(basicfont.Face7x13, text.ASCII),
+				X:             100,
+				Y:             200,
+				Objects:       []Object{},
+				Gates:         []*Gate{},
+				Ground:        nil,
+				gravity:       2,
+				Stats:         NewStats(),
+				EventNotifier: observer.NewEventNotifier(),
 			},
 		},
 	}

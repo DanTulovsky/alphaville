@@ -170,8 +170,12 @@ func AddGates(w *world.World, coolDown time.Duration) {
 	}
 
 	for _, g := range gates {
-		if err := w.NewGate(g.Location, g.Status, g.SpawnCoolDown, g.Radius); err != nil {
-			log.Fatalf("failed to create gate: %v", err)
+		gate := world.NewGate(g.Location, g.Status, g.SpawnCoolDown, g.Radius)
+
+		// Register the world.stats object to receive notifications from the gate
+		gate.EventNotifier.Register(w.Stats)
+		if err := w.AddGate(gate); err != nil {
+			log.Fatalf("error adding gate: %v", err)
 		}
 	}
 }

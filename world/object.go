@@ -136,26 +136,10 @@ func (o *BaseObject) IsSpawned() bool {
 	return o.Phys() != nil
 }
 
-// Update the RectObject every frame
-// o.NextPhys, coming in, is the same as o.Phys.
-// Make changes and reads to/from o.NextPhys() only
-// When reading properties of other objects, only use other.Phys()
+// Update the Object every frame
 func (o *BaseObject) Update(w *World) {
 	o.Behavior().Update(w, o)
-
-	defer o.CheckIntersect(w)
-
-	// check if object should rise or fall, these checks not based on collisions
-	// o.changeVerticalDirection(w)
-
-	// check collisions and adjust movement parameters
-	// if a collision is detected, no movement happens this round
-	// if o.handleCollisions(w) {
-	// 	return
-	// }
-
-	// no collisions detected, move
-	// o.move(w, pixel.V(o.NextPhys().Vel().X, o.NextPhys().Vel().Y))
+	o.CheckIntersect(w)
 }
 
 // SwapNextState swaps the current state for next state of the object
@@ -163,41 +147,6 @@ func (o *BaseObject) SwapNextState() {
 	if o.IsSpawned() {
 		o.phys = o.nextPhys.Copy()
 	}
-}
-
-// isAboveGround checks if object is above ground
-func (o *BaseObject) isAboveGround(w *World) bool {
-	return o.NextPhys().IsAboveGround(w)
-}
-
-// OnGround returns true if object is on the ground
-func (o *BaseObject) OnGround(w *World) bool {
-	return o.NextPhys().OnGround(w)
-}
-
-// Stopped returns true if object is stopped
-func (o *BaseObject) Stopped() bool {
-	return o.NextPhys().Stopped()
-}
-
-// MovingUp returns true if object is moving up
-func (o *BaseObject) MovingUp() bool {
-	return o.NextPhys().MovingUp()
-}
-
-// MovingDown returns true if object is moving down
-func (o *BaseObject) MovingDown() bool {
-	return o.NextPhys().MovingDown()
-}
-
-// MovingLeft returns true if object is moving left
-func (o *BaseObject) MovingLeft() bool {
-	return o.NextPhys().MovingLeft()
-}
-
-// MovingRight returns true if object is moving right
-func (o *BaseObject) MovingRight() bool {
-	return o.NextPhys().MovingRight()
 }
 
 // CheckIntersect prints out an error if this object intersects with another one
@@ -220,9 +169,4 @@ func (o *BaseObject) Draw(win *pixelgl.Window) {
 	txt.Color = colornames.Red
 	fmt.Fprintf(txt, "IMPLEMENT ME!")
 	txt.Draw(win, pixel.IM)
-}
-
-// move moves the object by Vector, accounting for world boundaries
-func (o *BaseObject) move(w *World, v pixel.Vec) {
-	o.NextPhys().Move(w, v)
 }

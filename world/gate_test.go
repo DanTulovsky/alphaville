@@ -46,7 +46,8 @@ func TestNewGate(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := tt.args.w.NewGate(tt.args.l, tt.args.s, tt.args.c, tt.args.r, nil); (err != nil) != tt.wantErr {
+			g := NewGate(tt.args.l, tt.args.s, tt.args.c, tt.args.r)
+			if err := tt.args.w.AddGate(g); (err != nil) != tt.wantErr {
 				t.Errorf("NewGate() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -58,6 +59,7 @@ func TestGate_Reserve(t *testing.T) {
 		Location pixel.Vec
 		Status   gateStatus
 		Reserved bool
+		coolDown time.Duration
 	}
 	tests := []struct {
 		name    string
@@ -70,6 +72,7 @@ func TestGate_Reserve(t *testing.T) {
 				Location: pixel.V(100, 100),
 				Status:   GateOpen,
 				Reserved: false,
+				coolDown: time.Minute * 1,
 			},
 			wantErr: false,
 		},
@@ -79,6 +82,7 @@ func TestGate_Reserve(t *testing.T) {
 				Location: pixel.V(100, 100),
 				Status:   GateClosed,
 				Reserved: false,
+				coolDown: time.Minute * 1,
 			},
 			wantErr: true,
 		},
@@ -88,16 +92,16 @@ func TestGate_Reserve(t *testing.T) {
 				Location: pixel.V(100, 100),
 				Status:   GateOpen,
 				Reserved: true,
+				coolDown: time.Minute * 1,
 			},
 			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			g := &Gate{
-				Location: tt.fields.Location,
-				Status:   tt.fields.Status,
-				Reserved: tt.fields.Reserved,
+			g := NewGate(tt.fields.Location, tt.fields.Status, tt.fields.coolDown, 10)
+			if tt.fields.Reserved {
+				g.Reserve(uuid.New())
 			}
 			if err := g.Reserve(uuid.New()); (err != nil) != tt.wantErr {
 				t.Errorf("Gate.Reserve() error = %v, wantErr %v", err, tt.wantErr)
@@ -127,12 +131,11 @@ func TestGate_UnReserve(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			g := &Gate{
-				Location: tt.fields.Location,
-				Status:   tt.fields.Status,
-				Reserved: tt.fields.Reserved,
+			g := NewGate(tt.fields.Location, tt.fields.Status, 0, 10)
+			if tt.fields.Reserved {
+				g.Reserve(uuid.New())
 			}
-			g.UnReserve()
+			g.Release()
 			if g.Reserved != false {
 				t.Errorf("Expected gate %v to be unrserved, but it's not.", g)
 			}

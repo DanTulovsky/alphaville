@@ -18,7 +18,7 @@ type World struct {
 	Ground        Object   // special, for now
 	fixtures      []Object // walls, floors, rocks, etc...
 	gravity       float64
-	stats         *Stats // world stats, an observer of events happening in the world
+	Stats         *Stats // world stats, an observer of events happening in the world
 	worldType     Type
 	EventNotifier observer.EventNotifier
 }
@@ -33,12 +33,12 @@ func NewWorld(x, y float64, ground Object, gravity float64) *World {
 		Y:             y,
 		Ground:        ground,
 		gravity:       gravity,
-		stats:         NewStats(),
+		Stats:         NewStats(),
 		worldType:     worldType,
 		EventNotifier: observer.NewEventNotifier(),
 	}
 
-	w.EventNotifier.Register(w.stats)
+	w.EventNotifier.Register(w.Stats)
 	w.EventNotifier.Notify(w.NewWorldEvent(fmt.Sprintf("The world is created..."), time.Now()))
 	return w
 }
@@ -145,13 +145,17 @@ func (w *World) AddFixture(o Object) {
 
 // AddGate adds a new gate to the world
 func (w *World) AddGate(g *Gate) error {
+	if g.Location.X > w.X || g.Location.Y > w.Y || g.Location.X < 0 || g.Location.Y < 0 {
+		return fmt.Errorf("Location %#v is outside the world bounds (%#v)", g.Location, pixel.V(w.X, w.Y))
+	}
+
 	for _, gate := range w.Gates {
 		if g.Location == gate.Location {
 			return fmt.Errorf("gate at %v already exists", g.Location)
 		}
 	}
 	w.Gates = append(w.Gates, g)
-	g.eventNotifier.Notify(w.NewWorldEvent(fmt.Sprintf("gate [%v] created", g), time.Now()))
+	g.EventNotifier.Notify(w.NewWorldEvent(fmt.Sprintf("gate [%v] created", g), time.Now()))
 	return nil
 }
 
@@ -186,7 +190,7 @@ func (w *World) SpawnObject(o Object) error {
 	o.SetNextPhys(o.Phys().Copy())
 
 	g.Release()
-	g.eventNotifier.Notify(w.NewWorldEvent(
+	g.EventNotifier.Notify(w.NewWorldEvent(
 		fmt.Sprintf(
 			"object [%v] spawned", o.Name()), time.Now(),
 		observer.EventData{Key: "spawn", Value: fmt.Sprintf("%T", o)}))
@@ -236,5 +240,5 @@ func (w *World) End() {
 
 // ShowStats dumps the world stats to stdout
 func (w *World) ShowStats() {
-	fmt.Printf("%v", w.stats)
+	fmt.Printf("%v", w.Stats)
 }
