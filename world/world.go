@@ -91,7 +91,6 @@ func (w *World) NextTick() {
 	for _, o := range w.SpawnedObjects() {
 		o.SwapNextState()
 	}
-	// w.ManualControl.Phys().Stop()
 }
 
 // Fixtures returns all the fixtures in the world
@@ -247,4 +246,27 @@ func (w *World) End() {
 // ShowStats dumps the world stats to stdout
 func (w *World) ShowStats() {
 	fmt.Printf("%v", w.Stats)
+}
+
+// ObjectClicked returns the object at coordinates v
+func (w *World) ObjectClicked(v pixel.Vec) (Object, error) {
+	for _, o := range append(w.Objects) {
+		if o.Phys().Location().Contains(v) {
+			return o, nil
+		}
+	}
+
+	for _, o := range append(w.Fixtures()) {
+		if o.Phys().Location().Contains(v) {
+			return o, nil
+		}
+	}
+
+	for _, g := range append(w.Gates) {
+		c := pixel.C(g.Location, g.Radius)
+		if c.Contains(v) {
+			return g, nil
+		}
+	}
+	return nil, fmt.Errorf("no object at %v", v)
 }

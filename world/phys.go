@@ -1,6 +1,12 @@
 package world
 
-import "github.com/faiface/pixel"
+import (
+	"bytes"
+	"html/template"
+	"log"
+
+	"github.com/faiface/pixel"
+)
 
 // ObjectPhys is the physics of an object, these values change as the object moves
 type ObjectPhys interface {
@@ -49,6 +55,30 @@ type BaseObjectPhys struct {
 	rect pixel.Rect
 
 	parentObject Object
+}
+
+// String returns the Phys object string representation
+func (o *BaseObjectPhys) String() string {
+	buf := bytes.NewBufferString("")
+	tmpl, err := template.New("physObject").Parse(
+		`
+Phys
+  Vel: {{.Vel}}	
+  PreviousVel: {{.PreviousVel}}	
+  CurrentMass: {{.CurrentMass}}	
+  Rect: {{.Location}}
+  ParentObject: {{.ParentObject.Name}}
+`)
+
+	if err != nil {
+		log.Fatalf("object conversion error: %v", err)
+	}
+	err = tmpl.Execute(buf, o)
+	if err != nil {
+		log.Fatalf("object conversion error: %v", err)
+	}
+
+	return buf.String()
 }
 
 // ParentObject returns the parent object

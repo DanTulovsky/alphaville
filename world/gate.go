@@ -16,8 +16,8 @@ import (
 	"github.com/faiface/pixel"
 )
 
-// gateStatus is the status of the gate
-type gateStatus int
+// GateStatus is the status of the gate
+type GateStatus int
 
 const (
 	// Unknown gate state
@@ -47,9 +47,10 @@ func newGateEvent(d string, t time.Time, data ...observer.EventData) observer.Ev
 
 // Gate is a point in the world where new objects can appear
 type Gate struct {
-	Name       string
+	id         uuid.UUID
+	name       string
 	Location   pixel.Vec
-	Status     gateStatus
+	Status     GateStatus
 	Reserved   bool // gate is reserved by an object to be used next turn
 	ReservedBy uuid.UUID
 
@@ -63,10 +64,11 @@ type Gate struct {
 }
 
 // NewGate creates a new gate in the world
-func NewGate(n string, l pixel.Vec, s gateStatus, coolDown time.Duration, radius float64) *Gate {
+func NewGate(n string, l pixel.Vec, s GateStatus, coolDown time.Duration, radius float64) *Gate {
 
 	g := &Gate{
-		Name:          n,
+		id:            uuid.New(),
+		name:          n,
 		Location:      l,
 		Status:        s,
 		Reserved:      false,
@@ -80,7 +82,7 @@ func NewGate(n string, l pixel.Vec, s gateStatus, coolDown time.Duration, radius
 
 // String returns the gate as string
 func (g *Gate) String() string {
-	return fmt.Sprintf("%#v", g.Location)
+	return fmt.Sprintf("[%v] L: %v, S: %v, R: %v, C: %v (%v)", g.name, g.Location, g.Status, g.Reserved, g.SpawnCoolDown, g.LastSpawn)
 }
 
 // CanSpawn returns true if the gate can spawn
@@ -151,3 +153,68 @@ func (g *Gate) Draw(win *pixelgl.Window) {
 	fmt.Fprintf(txt, label)
 	txt.Draw(win, pixel.IM)
 }
+
+// Implement the Object interface
+
+// Behavior returns nil
+func (g *Gate) Behavior() Behavior {
+	return nil
+}
+
+// BoundingBox returns nil
+func (g *Gate) BoundingBox(v pixel.Vec) pixel.Rect {
+	min := pixel.V(g.Location.X-g.Radius, g.Location.Y-g.Radius)
+	max := pixel.V(g.Location.X+g.Radius, g.Location.Y+g.Radius)
+
+	return pixel.R(min.X, min.Y, max.X, max.Y)
+}
+
+// ID returns the id
+func (g *Gate) ID() uuid.UUID {
+	return g.id
+}
+
+// IsSpawned always return false
+func (g *Gate) IsSpawned() bool {
+	return false
+}
+
+// Mass always returns -1
+func (g *Gate) Mass() float64 {
+	return -1
+}
+
+// NextPhys always returns nil
+func (g *Gate) NextPhys() ObjectPhys {
+	return nil
+}
+
+// Name always returns 'null'
+func (g *Gate) Name() string {
+	return g.name
+}
+
+// Phys always returns nil
+func (g *Gate) Phys() ObjectPhys {
+	return nil
+}
+
+// Speed always returns 0
+func (g *Gate) Speed() float64 {
+	return 0
+}
+
+// SwapNextState does nothing
+func (g *Gate) SwapNextState() {}
+
+// Update does nothing
+func (g *Gate) Update(*World) {}
+
+// SetManualVelocity does nothing
+func (g *Gate) SetManualVelocity(v pixel.Vec) {}
+
+// SetNextPhys does nothing
+func (g *Gate) SetNextPhys(ObjectPhys) {}
+
+// SetPhys does nothing
+func (g *Gate) SetPhys(ObjectPhys) {}

@@ -31,6 +31,7 @@ type Object interface {
 	SwapNextState()
 	Update(*World) // Updates the object for the next iteration
 
+	SetManualVelocity(v pixel.Vec)
 	SetNextPhys(ObjectPhys)
 	SetPhys(ObjectPhys)
 }
@@ -176,47 +177,8 @@ func (o *BaseObject) Draw(win *pixelgl.Window) {
 	txt.Draw(win, pixel.IM)
 }
 
-// NullObject implements the Object interface, but doesn't do anything
-type NullObject struct {
-	id uuid.UUID
+// SetManualVelocity sets the velocity of the manually controlled object
+func (o *BaseObject) SetManualVelocity(v pixel.Vec) {
+	o.NextPhys().SetManualVelocity(v)
+	o.Phys().SetManualVelocity(v)
 }
-
-func NewNullObject() *NullObject {
-	return &NullObject{
-		id: uuid.New(),
-	}
-}
-
-func (o *NullObject) BoundingBox(pixel.Vec) pixel.Rect {
-	return pixel.R(0, 0, 0, 0)
-}
-func (o *NullObject) Draw(*pixelgl.Window) {}
-func (o *NullObject) Behavior() Behavior {
-	return nil
-}
-func (o *NullObject) ID() uuid.UUID {
-	return o.id
-}
-func (o *NullObject) IsSpawned() bool {
-	return false
-}
-func (o *NullObject) Mass() float64 {
-	return -1
-}
-func (o *NullObject) NextPhys() ObjectPhys {
-	return nil
-}
-func (o *NullObject) Name() string {
-	return "null"
-}
-func (o *NullObject) Phys() ObjectPhys {
-	return nil
-}
-func (o *NullObject) Speed() float64 {
-	return 0
-}
-func (o *NullObject) SwapNextState() {}
-func (o *NullObject) Update(*World)  {}
-
-func (o *NullObject) SetNextPhys(ObjectPhys) {}
-func (o *NullObject) SetPhys(ObjectPhys)     {}

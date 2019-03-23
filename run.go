@@ -32,6 +32,14 @@ const (
 	groundHeight                   = 40
 )
 
+// processMouseLeftInput handles left click
+func processMouseLeftInput(w *world.World, v pixel.Vec) {
+	o, err := w.ObjectClicked(v)
+	if err == nil {
+		log.Printf("%v", o)
+	}
+}
+
 func processInput(win *pixelgl.Window, w *world.World, ctrl pixel.Vec) {
 
 	mo := w.ManualControl
@@ -48,9 +56,11 @@ func processInput(win *pixelgl.Window, w *world.World, ctrl pixel.Vec) {
 		ctrl.Y--
 	case win.Pressed(pixelgl.KeyDown):
 		ctrl.Y++
+	case win.JustPressed(pixelgl.MouseButtonLeft):
+		processMouseLeftInput(w, win.MousePosition())
 	}
 
-	mo.NextPhys().SetManualVelocity(ctrl)
+	mo.SetManualVelocity(ctrl)
 
 }
 
@@ -94,7 +104,7 @@ func run() {
 	// populate the world
 	// populate.Static(world)
 	// populate.RandomCircles(w, 5)
-	populate.RandomRectangles(w, 2)
+	populate.RandomRectangles(w, 1)
 	// populate.RandomEllipses(w, 5)
 	populate.AddManualObject(w, 60, 60)
 	populate.AddGates(w, time.Second*1)
@@ -123,7 +133,7 @@ func run() {
 	ticker := time.NewTicker(time.Second * 5)
 	go func() {
 		for range ticker.C {
-			w.ShowStats()
+			// w.ShowStats()
 		}
 	}()
 

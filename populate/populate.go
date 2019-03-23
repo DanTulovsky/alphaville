@@ -121,33 +121,41 @@ func AddManualObject(w *world.World, width, height float64) {
 // AddGates adds gates to the world
 func AddGates(w *world.World, coolDown time.Duration) {
 
+	type gate struct {
+		name     string
+		location pixel.Vec
+		status   world.GateStatus
+		coolDown time.Duration
+		radius   float64
+	}
+
 	// add spawn gate
-	gates := []world.Gate{
+	gates := []gate{
 		{
-			Name:          "One",
-			Location:      pixel.V(600, 600),
-			Status:        world.GateOpen,
-			SpawnCoolDown: 10 * time.Second,
-			Radius:        20,
+			name:     "One",
+			location: pixel.V(600, 600),
+			status:   world.GateOpen,
+			coolDown: 10 * time.Second,
+			radius:   20,
 		},
 		{
-			Name:          "Two",
-			Location:      pixel.V(200, 600),
-			Status:        world.GateOpen,
-			SpawnCoolDown: 2 * time.Second,
-			Radius:        25,
+			name:     "Two",
+			location: pixel.V(200, 600),
+			status:   world.GateOpen,
+			coolDown: 2 * time.Second,
+			radius:   25,
 		},
 		{
-			Name:          "manual only",
-			Location:      pixel.V(400, 600),
-			Status:        world.GateOpen,
-			SpawnCoolDown: 2 * time.Second,
-			Radius:        25,
+			name:     "manual only",
+			location: pixel.V(400, 600),
+			status:   world.GateOpen,
+			coolDown: 2 * time.Second,
+			radius:   25,
 		},
 	}
 
 	for _, g := range gates {
-		gate := world.NewGate(g.Name, g.Location, g.Status, g.SpawnCoolDown, g.Radius)
+		gate := world.NewGate(g.name, g.location, g.status, g.coolDown, g.radius)
 
 		// Register the world.stats object to receive notifications from the gate
 		gate.EventNotifier.Register(w.Stats)

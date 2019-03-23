@@ -1,8 +1,11 @@
 package world
 
 import (
+	"bytes"
 	"fmt"
+	"html/template"
 	"image/color"
+	"log"
 
 	"gogs.wetsnow.com/dant/alphaville/utils"
 	"golang.org/x/image/colornames"
@@ -18,6 +21,32 @@ type RectObject struct {
 
 	// size of RectObject
 	width, height float64
+}
+
+// String returns the object as string
+func (o *RectObject) String() string {
+	buf := bytes.NewBufferString("")
+
+	tmpl, err := template.New("object").Parse(
+		`
+----------------------------------------
+Name: {{.Name}}
+Speed: {{.Speed}}
+Mass: {{.Mass}}
+`)
+
+	if err != nil {
+		log.Fatalf("object conversion error: %v", err)
+	}
+	err = tmpl.Execute(buf, o)
+	if err != nil {
+		log.Fatalf("object conversion error: %v", err)
+	}
+
+	fmt.Fprintf(buf, "  %v", o.Phys())
+	fmt.Fprintf(buf, "  %v", o.Behavior())
+	fmt.Fprintf(buf, "----------------------------------------")
+	return buf.String()
 }
 
 // NewGroundObject return a new ground object

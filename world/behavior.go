@@ -1,6 +1,8 @@
 package world
 
 import (
+	"bytes"
+	"html/template"
 	"log"
 
 	"github.com/faiface/pixel"
@@ -9,16 +11,54 @@ import (
 
 // Behavior is the interface for all behaviors
 type Behavior interface {
+	Description() string
+	Name() string
 	Update(*World, Object)
 }
 
 // DefaultBehavior is the default implementation of Behavior
 type DefaultBehavior struct {
+	description string
+	name        string
 }
 
 // NewDefaultBehavior return a DefaultBehavior
 func NewDefaultBehavior() *DefaultBehavior {
-	return &DefaultBehavior{}
+	return &DefaultBehavior{
+		description: "",
+		name:        "default_behavior",
+	}
+}
+
+// String returns ...
+func (b *DefaultBehavior) String() string {
+	buf := bytes.NewBufferString("")
+	tmpl, err := template.New("physObject").Parse(
+		`
+Behavior
+  Name: {{.Name}}	
+  Desc: {{.Description}}	
+`)
+
+	if err != nil {
+		log.Fatalf("behavior conversion error: %v", err)
+	}
+	err = tmpl.Execute(buf, b)
+	if err != nil {
+		log.Fatalf("behavior conversion error: %v", err)
+	}
+
+	return buf.String()
+}
+
+// Name returns the name of the behavior
+func (b *DefaultBehavior) Name() string {
+	return b.name
+}
+
+// Description returns the name of the behavior
+func (b *DefaultBehavior) Description() string {
+	return b.description
 }
 
 // Update executes the next world step for the object
@@ -214,7 +254,10 @@ type ManualBehavior struct {
 
 // NewManualBehavior return a ManualBehavior
 func NewManualBehavior() *ManualBehavior {
-	return &ManualBehavior{}
+	b := &ManualBehavior{}
+	b.name = "manual_behavior"
+	b.description = "Controlled by a human."
+	return b
 }
 
 // Update implements the Behavior Update method
