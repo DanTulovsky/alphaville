@@ -87,7 +87,6 @@ func (w *World) Update() {
 
 // NextTick moves the world to the next state
 func (w *World) NextTick() {
-
 	// After update, swap the state of all objects at once
 	for _, o := range w.SpawnedObjects() {
 		o.SwapNextState()

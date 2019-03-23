@@ -16,12 +16,17 @@ type ObjectPhys interface {
 	IsZeroMass() bool
 	Location() pixel.Rect
 	OnGround(*World) bool
+	MoveRight()
+	MoveLeft()
+	MoveUp()
+	MoveDown()
 	MovingUp() bool
 	MovingDown() bool
 	MovingLeft() bool
 	MovingRight() bool
 	ParentObject() Object
 	PreviousVel() pixel.Vec
+	Stop()
 	Stopped() bool
 	Vel() pixel.Vec
 
@@ -262,6 +267,10 @@ func (o *BaseObjectPhys) shouldCheckHorizontalCollision(other Object) bool {
 		return false // ignore falling BaseObjects higher than you
 	}
 
+	if other.Phys().Location().Max.Y < o.Location().Min.Y {
+		return false // ignore objects lower than you
+	}
+
 	return true
 }
 
@@ -305,4 +314,44 @@ func (o *BaseObjectPhys) CollisionRight(w *World) bool {
 		return true
 	}
 	return false
+}
+
+// Stop stops the object
+func (o *BaseObjectPhys) Stop() {
+	v := o.Vel()
+	v.X = 0
+	v.Y = 0
+	o.SetVel(v)
+}
+
+// MoveLeft moves the object left
+func (o *BaseObjectPhys) MoveLeft() {
+	v := o.Vel()
+	v.X = o.ParentObject().Speed() * -1
+	v.Y = 0
+	o.SetVel(v)
+}
+
+// MoveRight moves the object right
+func (o *BaseObjectPhys) MoveRight() {
+	v := o.Vel()
+	v.X = o.ParentObject().Speed()
+	v.Y = 0
+	o.SetVel(v)
+}
+
+// MoveUp moves the object up
+func (o *BaseObjectPhys) MoveUp() {
+	v := o.Vel()
+	v.Y = o.ParentObject().Speed()
+	v.X = 0
+	o.SetVel(v)
+}
+
+// MoveDown moves the object down
+func (o *BaseObjectPhys) MoveDown() {
+	v := o.Vel()
+	v.Y = o.ParentObject().Speed() * -1
+	v.X = 0
+	o.SetVel(v)
 }

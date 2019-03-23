@@ -172,39 +172,22 @@ func (o *BaseObject) CheckIntersect(w *World) {
 
 // MoveLeft moves the object left
 func (o *BaseObject) MoveLeft() {
-	phys := o.NextPhys()
-	v := phys.Vel()
-	v.X = o.Speed() * -1
-	v.Y = 0
-	phys.SetVel(v)
+	o.NextPhys().MoveLeft()
 }
 
 // MoveRight moves the object right
 func (o *BaseObject) MoveRight() {
-	phys := o.NextPhys()
-	v := phys.Vel()
-	v.X = o.Speed()
-	v.Y = 0
-	phys.SetVel(v)
+	o.NextPhys().MoveRight()
 }
 
 // MoveUp moves the object up
 func (o *BaseObject) MoveUp() {
-	phys := o.NextPhys()
-	v := phys.Vel()
-	v.Y = o.Speed()
-	v.X = 0
-	phys.SetVel(v)
+	o.NextPhys().MoveUp()
 }
 
 // MoveDown moves the object down
 func (o *BaseObject) MoveDown() {
-
-	phys := o.NextPhys()
-	v := phys.Vel()
-	v.Y = o.Speed() * -1
-	v.X = 0
-	phys.SetVel(v)
+	o.NextPhys().MoveDown()
 }
 
 // Draw must be implemented by concrete objects

@@ -233,4 +233,5 @@ func (b *ManualBehavior) Update(w *World, o Object) {
 func (b *ManualBehavior) Move(w *World, o Object, v pixel.Vec) {
 	phys := o.NextPhys()
 	phys.SetLocation(phys.Location().Moved(pixel.V(v.X, v.Y)))
+	// phys.Stop()
 }

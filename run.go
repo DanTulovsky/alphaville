@@ -35,6 +35,9 @@ const (
 func processInput(win *pixelgl.Window, w *world.World) {
 
 	mo := w.ManualControl
+	if !mo.IsSpawned() {
+		return
+	}
 
 	switch {
 	case win.Pressed(pixelgl.KeyLeft):
@@ -89,7 +92,7 @@ func run() {
 	// populate the world
 	// populate.Static(world)
 	// populate.RandomCircles(w, 5)
-	populate.RandomRectangles(w, 20)
+	// populate.RandomRectangles(w, 2)
 	// populate.RandomEllipses(w, 5)
 	populate.AddManualObject(w, 60, 60)
 	populate.AddGates(w, time.Second*1)
@@ -131,12 +134,15 @@ func run() {
 		// user input
 		processInput(win, w)
 
-		// update the game state
-		for lag >= MsPerUpdate {
-			update(w)
-			updates++
-			lag -= MsPerUpdate
-		}
+		update(w)
+		updates++
+
+		// // update the game state
+		// for lag >= MsPerUpdate {
+		// 	update(w)
+		// 	updates++
+		// 	lag -= MsPerUpdate
+		// }
 
 		// render below here
 		win.Clear(colornames.Black)

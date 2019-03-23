@@ -132,7 +132,7 @@ func AddGates(w *world.World, coolDown time.Duration) {
 		{
 			Location:      pixel.V(200, 600),
 			Status:        world.GateOpen,
-			SpawnCoolDown: 7 * time.Second,
+			SpawnCoolDown: 2 * time.Second,
 			Radius:        25,
 		},
 	}
