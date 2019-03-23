@@ -6,12 +6,12 @@ import (
 	"html/template"
 	"log"
 
-	"gogs.wetsnow.com/dant/alphaville/behavior"
+	"gogs.wetsnow.com/dant/alphaville/observer"
 	"gogs.wetsnow.com/dant/alphaville/utils"
 )
 
 // Stats keeps trackof world wide stats
-// Implements behavior.EventObserver interface
+// Implements observer.EventObserver interface
 type Stats struct {
 	Fps            int // frames per second
 	ObjectsSpawned int // number of spawned objects
@@ -70,7 +70,7 @@ func (s *Stats) processGateEvent(e *GateEvent) {
 }
 
 // OnNotify runs when a notification is received
-func (s *Stats) OnNotify(e behavior.Event) {
+func (s *Stats) OnNotify(e observer.Event) {
 	switch event := e.(type) {
 	case nil:
 		log.Printf("nil notification")

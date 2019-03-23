@@ -5,7 +5,7 @@ import (
 	"log"
 	"time"
 
-	"gogs.wetsnow.com/dant/alphaville/behavior"
+	"gogs.wetsnow.com/dant/alphaville/observer"
 
 	"github.com/faiface/pixel"
 )
@@ -20,7 +20,7 @@ type World struct {
 	gravity       float64
 	stats         *Stats // world stats, an observer of events happening in the world
 	worldType     Type
-	EventNotifier behavior.EventNotifier
+	EventNotifier observer.EventNotifier
 }
 
 // NewWorld returns a new worldof size x, y
@@ -35,7 +35,7 @@ func NewWorld(x, y float64, ground Object, gravity float64) *World {
 		gravity:       gravity,
 		stats:         NewStats(),
 		worldType:     worldType,
-		EventNotifier: behavior.NewEventNotifier(),
+		EventNotifier: observer.NewEventNotifier(),
 	}
 
 	w.EventNotifier.Register(w.stats)
@@ -44,12 +44,12 @@ func NewWorld(x, y float64, ground Object, gravity float64) *World {
 }
 
 type worldEvent struct {
-	behavior.BaseEvent
+	observer.BaseEvent
 	worldType Type
 }
 
 // NewWorldEvent create a new world event
-func (w *World) NewWorldEvent(d string, t time.Time, data ...behavior.EventData) behavior.Event {
+func (w *World) NewWorldEvent(d string, t time.Time, data ...observer.EventData) observer.Event {
 	e := &worldEvent{
 		worldType: worldType,
 	}
@@ -178,6 +178,7 @@ func (w *World) SpawnObject(o Object) error {
 		}
 	}
 
+	// phys.SetVel(pixel.V(o.Speed(), w.gravity*o.Mass()))
 	phys.SetVel(pixel.V(o.Speed(), 0))
 	phys.SetCurrentMass(o.Mass())
 
@@ -188,7 +189,7 @@ func (w *World) SpawnObject(o Object) error {
 	g.eventNotifier.Notify(w.NewWorldEvent(
 		fmt.Sprintf(
 			"object [%v] spawned", o.Name()), time.Now(),
-		behavior.EventData{Key: "spawn", Value: fmt.Sprintf("%T", o)}))
+		observer.EventData{Key: "spawn", Value: fmt.Sprintf("%T", o)}))
 
 	return nil
 }

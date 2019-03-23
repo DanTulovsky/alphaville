@@ -7,7 +7,7 @@ import (
 	"github.com/faiface/pixel/pixelgl"
 	"github.com/faiface/pixel/text"
 	"github.com/google/uuid"
-	"gogs.wetsnow.com/dant/alphaville/behavior"
+	"gogs.wetsnow.com/dant/alphaville/observer"
 	"gogs.wetsnow.com/dant/alphaville/utils"
 	"golang.org/x/image/colornames"
 
@@ -30,14 +30,14 @@ const (
 	GateClosed
 )
 
-// GateEvent implements the behavior.Event interface to send events to other components
+// GateEvent implements the observer.Event interface to send events to other components
 type GateEvent struct {
-	behavior.BaseEvent
+	observer.BaseEvent
 	worldType Type
 }
 
 // newGateEvent create a new gate event
-func newGateEvent(d string, t time.Time, data ...behavior.EventData) behavior.Event {
+func newGateEvent(d string, t time.Time, data ...observer.EventData) observer.Event {
 	e := &GateEvent{
 		worldType: gateType,
 	}
@@ -61,7 +61,7 @@ type Gate struct {
 
 	Radius float64 // size
 
-	eventNotifier behavior.EventNotifier
+	eventNotifier observer.EventNotifier
 
 	worldType Type
 }
@@ -79,7 +79,7 @@ func (w *World) NewGate(l pixel.Vec, s gateStatus, coolDown time.Duration, radiu
 		SpawnCoolDown: coolDown,
 		Radius:        radius,
 		worldType:     gateType,
-		eventNotifier: behavior.NewEventNotifier(),
+		eventNotifier: observer.NewEventNotifier(),
 	}
 
 	// Register the world.stats object to receive notifications from the gate

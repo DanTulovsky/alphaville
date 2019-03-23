@@ -1,4 +1,4 @@
-package behavior
+package observer
 
 import (
 	"fmt"

@@ -8,10 +8,9 @@ import (
 	"strconv"
 	"time"
 
-	"gogs.wetsnow.com/dant/alphaville/behavior"
-
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/pixelgl"
+	"gogs.wetsnow.com/dant/alphaville/observer"
 	"gogs.wetsnow.com/dant/alphaville/populate"
 	"gogs.wetsnow.com/dant/alphaville/world"
 	"golang.org/x/image/colornames"
@@ -76,10 +75,10 @@ func run() {
 
 	// populate the world
 	// populate.Static(world)
-	populate.RandomCircles(w, 5)
-	populate.RandomRectangles(w, 8)
-	populate.RandomEllipses(w, 5)
-	populate.AddGates(w, time.Second*5)
+	// populate.RandomCircles(w, 5)
+	populate.RandomRectangles(w, 20)
+	// populate.RandomEllipses(w, 5)
+	populate.AddGates(w, time.Second*1)
 	populate.AddFixtures(w)
 
 	cfg := pixelgl.WindowConfig{
@@ -136,8 +135,8 @@ func run() {
 			win.SetTitle(fmt.Sprintf("%s | FPS: %d", cfg.Title, frames))
 			w.EventNotifier.Notify(
 				w.NewWorldEvent(fmt.Sprintf("fps"), time.Now(),
-					behavior.EventData{Key: "fps", Value: strconv.Itoa(frames)},
-					behavior.EventData{Key: "ups", Value: strconv.Itoa(updates)}))
+					observer.EventData{Key: "fps", Value: strconv.Itoa(frames)},
+					observer.EventData{Key: "ups", Value: strconv.Itoa(updates)}))
 			frames = 0
 			updates = 0
 		default:
