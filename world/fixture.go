@@ -27,9 +27,9 @@ func (f *Fixture) Update(w *World) {
 	// Nothing to update for fixtures right now.
 }
 
-// Place places the fixture in the world
+// Place places the fixture in the world, l is the bottom left corner
 func (f *Fixture) Place(l pixel.Vec) {
-	phys := NewBaseObjectPhys(f.BoundingBox(l), f)
+	phys := NewBaseObjectPhys(pixel.R(l.X, l.Y, l.X+f.width, l.Y+f.height), f)
 	f.SetPhys(phys)
 	f.SetNextPhys(f.Phys().Copy())
 }

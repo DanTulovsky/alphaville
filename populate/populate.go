@@ -164,7 +164,7 @@ func AddGates(w *world.World, coolDown time.Duration) {
 		{
 			Location:      pixel.V(200, 600),
 			Status:        world.GateOpen,
-			SpawnCoolDown: coolDown,
+			SpawnCoolDown: 7 * time.Second,
 			Radius:        25,
 		},
 	}
@@ -186,7 +186,7 @@ func AddFixtures(w *world.World) {
 	var width float64 = 10
 	var height float64 = 100
 
-	f := world.NewFixture("block1", colornames.Yellow, width, height)
+	f := world.NewFixture("block1", colornames.Green, width, height)
 	f.Place(pixel.V(300, w.Ground.Phys().Location().Max.Y+100))
 
 	w.AddFixture(f)

@@ -75,9 +75,9 @@ func run() {
 
 	// populate the world
 	// populate.Static(world)
-	// populate.RandomCircles(w, 5)
+	populate.RandomCircles(w, 5)
 	populate.RandomRectangles(w, 20)
-	// populate.RandomEllipses(w, 5)
+	populate.RandomEllipses(w, 5)
 	populate.AddGates(w, time.Second*1)
 	populate.AddFixtures(w)
 
