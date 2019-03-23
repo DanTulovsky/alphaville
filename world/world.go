@@ -15,11 +15,11 @@ type World struct {
 	X, Y          float64  // size of the world
 	Gates         []*Gate  // entrances into the world
 	Objects       []Object // objects in the world
+	ManualControl Object   // this object is human controlled
 	Ground        Object   // special, for now
 	fixtures      []Object // walls, floors, rocks, etc...
 	gravity       float64
 	Stats         *Stats // world stats, an observer of events happening in the world
-	worldType     Type
 	EventNotifier observer.EventNotifier
 }
 
@@ -34,8 +34,8 @@ func NewWorld(x, y float64, ground Object, gravity float64) *World {
 		Ground:        ground,
 		gravity:       gravity,
 		Stats:         NewStats(),
-		worldType:     worldType,
 		EventNotifier: observer.NewEventNotifier(),
+		ManualControl: NewNullObject(),
 	}
 
 	w.EventNotifier.Register(w.Stats)
@@ -183,7 +183,13 @@ func (w *World) SpawnObject(o Object) error {
 	}
 
 	// phys.SetVel(pixel.V(o.Speed(), w.gravity*o.Mass()))
-	phys.SetVel(pixel.V(o.Speed(), 0))
+
+	// Don't set velocity for manual objects
+	switch o.Behavior().(type) {
+	case *ManualBehavior:
+	default:
+		phys.SetVel(pixel.V(o.Speed(), 0))
+	}
 	phys.SetCurrentMass(o.Mass())
 
 	o.SetPhys(phys)

@@ -11,6 +11,7 @@ type ObjectPhys interface {
 	CollisionLeft(*World) bool
 	CollisionRight(*World) bool
 	CurrentMass() float64
+	HaveCollision(*World) bool
 	IsAboveGround(w *World) bool
 	IsZeroMass() bool
 	Location() pixel.Rect
@@ -174,6 +175,33 @@ func (o *BaseObjectPhys) shouldCheckVerticalCollision(other Object) bool {
 		return false // no intersection in X axis
 	}
 	return true
+}
+
+// HaveCollision returns true if the object has a collision with current trajectory
+func (o *BaseObjectPhys) HaveCollision(w *World) bool {
+	return o.CollisionAbove(w) || o.CollisionBelow(w) || o.CollisionLeft(w) || o.CollisionRight(w) || o.CollisionBorders(w)
+}
+
+// CollisionBorders returns true if there is a collision with a wall, ground or ceiling
+func (o *BaseObjectPhys) CollisionBorders(w *World) bool {
+
+	switch {
+	case o.MovingLeft() && o.Location().Min.X+o.Vel().X <= 0:
+		// left border
+		return true
+	case o.MovingRight() && o.Location().Max.X+o.Vel().X >= w.X:
+		// right border
+		return true
+	case o.Location().Min.Y+o.Vel().Y < w.Ground.Phys().Location().Max.Y:
+		// stop at ground level
+		return true
+	case o.Location().Max.Y+o.Vel().Y >= w.Y && o.Vel().Y > 0:
+		// stop at ceiling if going up
+		return true
+
+	default:
+		return false
+	}
 }
 
 // CollisionBelow returns true if object will collide with anything while moving down

@@ -22,10 +22,10 @@ type EllipseObject struct {
 }
 
 // NewEllipseObject return a new rectangular object
-func NewEllipseObject(name string, color color.Color, speed, mass, a, b float64) *EllipseObject {
+func NewEllipseObject(name string, color color.Color, speed, mass, a, b float64, behavior Behavior) *EllipseObject {
 
 	o := &EllipseObject{
-		NewBaseObject(name, color, speed, mass),
+		NewBaseObject(name, color, speed, mass, behavior),
 		a,
 		b,
 	}
@@ -63,6 +63,10 @@ func (o *EllipseObject) Draw(win *pixelgl.Window) {
 	// draw name of the object
 	txt := text.New(pixel.V(o.Phys().Location().Center().XY()), utils.Atlas())
 	txt.Color = colornames.Black
+
+	// center the text
+	txt.Dot.X -= txt.BoundsOf(o.name).W() / 2
+
 	fmt.Fprintf(txt, "%v", o.name)
 	txt.Draw(win, pixel.IM)
 }

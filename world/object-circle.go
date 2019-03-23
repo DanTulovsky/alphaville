@@ -21,10 +21,10 @@ type CircleObject struct {
 }
 
 // NewCircleObject return a new rectangular object
-func NewCircleObject(name string, color color.Color, speed, mass, radius float64) *CircleObject {
+func NewCircleObject(name string, color color.Color, speed, mass, radius float64, behavior Behavior) *CircleObject {
 
 	o := &CircleObject{
-		NewBaseObject(name, color, speed, mass),
+		NewBaseObject(name, color, speed, mass, behavior),
 		radius,
 	}
 
@@ -58,6 +58,10 @@ func (o *CircleObject) Draw(win *pixelgl.Window) {
 	// draw name of the object
 	txt := text.New(pixel.V(o.Phys().Location().Center().XY()), utils.Atlas())
 	txt.Color = colornames.Black
+
+	// center the text
+	txt.Dot.X -= txt.BoundsOf(o.name).W() / 2
+
 	fmt.Fprintf(txt, "%v", o.name)
 	txt.Draw(win, pixel.IM)
 }

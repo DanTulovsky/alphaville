@@ -206,3 +206,31 @@ func (b *DefaultBehavior) Move(w *World, o Object, v pixel.Vec) {
 		phys.SetLocation(phys.Location().Moved(pixel.V(v.X, v.Y)))
 	}
 }
+
+// ManualBehavior is human controlled
+type ManualBehavior struct {
+	DefaultBehavior
+}
+
+// NewManualBehavior return a ManualBehavior
+func NewManualBehavior() *ManualBehavior {
+	return &ManualBehavior{}
+}
+
+// Update implements the Behavior Update method
+func (b *ManualBehavior) Update(w *World, o Object) {
+	phys := o.NextPhys()
+
+	if o.Phys().HaveCollision(w) {
+		return
+	}
+
+	// no collisions detected, move
+	b.Move(w, o, pixel.V(phys.Vel().X, phys.Vel().Y))
+}
+
+// Move moves the object
+func (b *ManualBehavior) Move(w *World, o Object, v pixel.Vec) {
+	phys := o.NextPhys()
+	phys.SetLocation(phys.Location().Moved(pixel.V(v.X, v.Y)))
+}

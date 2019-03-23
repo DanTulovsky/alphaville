@@ -18,11 +18,16 @@ import (
 
 // Object is an object in the world
 type Object interface {
+	Behavior() Behavior
 	BoundingBox(pixel.Vec) pixel.Rect
 	Draw(*pixelgl.Window)
 	ID() uuid.UUID
 	IsSpawned() bool
 	Mass() float64
+	MoveRight()
+	MoveLeft()
+	MoveUp()
+	MoveDown()
 	NextPhys() ObjectPhys // returns the NextPhys object
 	Name() string
 	Phys() ObjectPhys // returns the Phys object
@@ -60,8 +65,12 @@ type BaseObject struct {
 
 // NewBaseObject return a new rectangular object
 // phys bounding box is set based on width, height, unless phys is provided
-func NewBaseObject(name string, color color.Color, speed, mass float64) BaseObject {
+func NewBaseObject(name string, color color.Color, speed, mass float64, behavior Behavior) BaseObject {
 	o := BaseObject{}
+
+	if behavior == nil {
+		behavior = NewDefaultBehavior()
+	}
 
 	o.name = name
 	o.id = uuid.New()
@@ -70,7 +79,7 @@ func NewBaseObject(name string, color color.Color, speed, mass float64) BaseObje
 	o.mass = mass
 	o.imd = imdraw.New(nil)
 	o.phys = nil
-	o.behavior = NewDefaultBehavior()
+	o.behavior = behavior
 
 	return o
 }
@@ -161,6 +170,43 @@ func (o *BaseObject) CheckIntersect(w *World) {
 	}
 }
 
+// MoveLeft moves the object left
+func (o *BaseObject) MoveLeft() {
+	phys := o.NextPhys()
+	v := phys.Vel()
+	v.X = o.Speed() * -1
+	v.Y = 0
+	phys.SetVel(v)
+}
+
+// MoveRight moves the object right
+func (o *BaseObject) MoveRight() {
+	phys := o.NextPhys()
+	v := phys.Vel()
+	v.X = o.Speed()
+	v.Y = 0
+	phys.SetVel(v)
+}
+
+// MoveUp moves the object up
+func (o *BaseObject) MoveUp() {
+	phys := o.NextPhys()
+	v := phys.Vel()
+	v.Y = o.Speed()
+	v.X = 0
+	phys.SetVel(v)
+}
+
+// MoveDown moves the object down
+func (o *BaseObject) MoveDown() {
+
+	phys := o.NextPhys()
+	v := phys.Vel()
+	v.Y = o.Speed() * -1
+	v.X = 0
+	phys.SetVel(v)
+}
+
 // Draw must be implemented by concrete objects
 func (o *BaseObject) Draw(win *pixelgl.Window) {
 
@@ -170,3 +216,60 @@ func (o *BaseObject) Draw(win *pixelgl.Window) {
 	fmt.Fprintf(txt, "IMPLEMENT ME!")
 	txt.Draw(win, pixel.IM)
 }
+
+// NullObject implements the Object interface, but doesn't do anything
+type NullObject struct {
+	id uuid.UUID
+}
+
+func NewNullObject() *NullObject {
+	return &NullObject{
+		id: uuid.New(),
+	}
+}
+
+func (o *NullObject) BoundingBox(pixel.Vec) pixel.Rect {
+	return pixel.R(0, 0, 0, 0)
+}
+func (o *NullObject) Draw(*pixelgl.Window) {}
+func (o *NullObject) Behavior() Behavior {
+	return nil
+}
+func (o *NullObject) ID() uuid.UUID {
+	return o.id
+}
+func (o *NullObject) IsSpawned() bool {
+	return false
+}
+func (o *NullObject) Mass() float64 {
+	return -1
+}
+func (o *NullObject) NextPhys() ObjectPhys {
+	return nil
+}
+func (o *NullObject) Name() string {
+	return "null"
+}
+func (o *NullObject) Phys() ObjectPhys {
+	return nil
+}
+func (o *NullObject) Speed() float64 {
+	return 0
+}
+func (o *NullObject) SwapNextState() {}
+func (o *NullObject) Update(*World)  {}
+
+func (o *NullObject) SetNextPhys(ObjectPhys) {}
+func (o *NullObject) SetPhys(ObjectPhys)     {}
+
+// MoveLeft moves the object left
+func (o *NullObject) MoveLeft() {}
+
+// MoveRight moves the object right
+func (o *NullObject) MoveRight() {}
+
+// MoveUp moves the object up
+func (o *NullObject) MoveUp() {}
+
+// MoveDown moves the object down
+func (o *NullObject) MoveDown() {}

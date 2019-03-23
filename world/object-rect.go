@@ -24,7 +24,7 @@ type RectObject struct {
 func NewGroundObject(name string, color color.Color, speed, mass, width, height float64) *RectObject {
 
 	o := &RectObject{
-		NewBaseObject(name, color, speed, mass),
+		NewBaseObject(name, color, speed, mass, nil),
 		width,
 		height,
 	}
@@ -33,10 +33,10 @@ func NewGroundObject(name string, color color.Color, speed, mass, width, height 
 }
 
 // NewRectObject return a new rectangular object
-func NewRectObject(name string, color color.Color, speed, mass, width, height float64) *RectObject {
+func NewRectObject(name string, color color.Color, speed, mass, width, height float64, behavior Behavior) *RectObject {
 
 	o := &RectObject{
-		NewBaseObject(name, color, speed, mass),
+		NewBaseObject(name, color, speed, mass, behavior),
 		width,
 		height,
 	}
@@ -78,6 +78,10 @@ func (o *RectObject) Draw(win *pixelgl.Window) {
 	// draw name of the object
 	txt := text.New(pixel.V(o.Phys().Location().Center().XY()), utils.Atlas())
 	txt.Color = colornames.Black
+
+	// center the text
+	txt.Dot.X -= txt.BoundsOf(o.name).W() / 2
+
 	fmt.Fprintf(txt, "%v", o.name)
 	txt.Draw(win, pixel.IM)
 }

@@ -32,7 +32,20 @@ const (
 	groundHeight                   = 40
 )
 
-func processInput() {
+func processInput(win *pixelgl.Window, w *world.World) {
+
+	mo := w.ManualControl
+
+	switch {
+	case win.Pressed(pixelgl.KeyLeft):
+		mo.MoveLeft()
+	case win.Pressed(pixelgl.KeyRight):
+		mo.MoveRight()
+	case win.Pressed(pixelgl.KeyUp):
+		mo.MoveUp()
+	case win.Pressed(pixelgl.KeyDown):
+		mo.MoveDown()
+	}
 
 }
 
@@ -75,9 +88,10 @@ func run() {
 
 	// populate the world
 	// populate.Static(world)
-	populate.RandomCircles(w, 5)
+	// populate.RandomCircles(w, 5)
 	populate.RandomRectangles(w, 20)
-	populate.RandomEllipses(w, 5)
+	// populate.RandomEllipses(w, 5)
+	populate.AddManualObject(w, 60, 60)
 	populate.AddGates(w, time.Second*1)
 	populate.AddFixtures(w)
 
@@ -115,7 +129,7 @@ func run() {
 		lag += elapsed
 
 		// user input
-		processInput()
+		processInput(win, w)
 
 		// update the game state
 		for lag >= MsPerUpdate {

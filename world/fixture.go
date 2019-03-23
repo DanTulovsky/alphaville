@@ -16,7 +16,7 @@ type Fixture struct {
 func NewFixture(name string, color color.Color, width, height float64) *Fixture {
 
 	f := &Fixture{
-		*(NewRectObject(name, color, 0, math.MaxFloat64, width, height)),
+		*(NewRectObject(name, color, 0, math.MaxFloat64, width, height, nil)),
 	}
 
 	return f
