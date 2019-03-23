@@ -24,7 +24,7 @@ type RectObject struct {
 func NewGroundObject(name string, color color.Color, speed, mass, width, height float64) *RectObject {
 
 	o := &RectObject{
-		NewBaseObject(name, color, speed, mass, groundType),
+		NewBaseObject(name, color, speed, mass),
 		width,
 		height,
 	}
@@ -36,7 +36,7 @@ func NewGroundObject(name string, color color.Color, speed, mass, width, height 
 func NewRectObject(name string, color color.Color, speed, mass, width, height float64) *RectObject {
 
 	o := &RectObject{
-		NewBaseObject(name, color, speed, mass, objectRectType),
+		NewBaseObject(name, color, speed, mass),
 		width,
 		height,
 	}
@@ -80,9 +80,4 @@ func (o *RectObject) Draw(win *pixelgl.Window) {
 	txt.Color = colornames.Black
 	fmt.Fprintf(txt, "%v", o.name)
 	txt.Draw(win, pixel.IM)
-}
-
-// NewRectObjectPhys return a new physics object
-func NewRectObjectPhys(rect pixel.Rect) ObjectPhys {
-	return NewBaseObjectPhys(rect)
 }

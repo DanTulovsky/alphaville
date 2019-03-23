@@ -164,7 +164,7 @@ func (w *World) SpawnObject(o Object) error {
 		return err
 	}
 
-	phys := NewBaseObjectPhys(o.BoundingBox(g.Location))
+	phys := NewBaseObjectPhys(o.BoundingBox(g.Location), o)
 
 	// If below ground, move up
 	if phys.Location().Min.Y < w.Ground.Phys().Location().Max.Y {

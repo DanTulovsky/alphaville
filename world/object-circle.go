@@ -24,7 +24,7 @@ type CircleObject struct {
 func NewCircleObject(name string, color color.Color, speed, mass, radius float64) *CircleObject {
 
 	o := &CircleObject{
-		NewBaseObject(name, color, speed, mass, objectCircleType),
+		NewBaseObject(name, color, speed, mass),
 		radius,
 	}
 
@@ -60,9 +60,4 @@ func (o *CircleObject) Draw(win *pixelgl.Window) {
 	txt.Color = colornames.Black
 	fmt.Fprintf(txt, "%v", o.name)
 	txt.Draw(win, pixel.IM)
-}
-
-// NewCircleObjectPhys return a new physics object
-func NewCircleObjectPhys(rect pixel.Rect) ObjectPhys {
-	return NewBaseObjectPhys(rect)
 }

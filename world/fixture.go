@@ -29,7 +29,7 @@ func (f *Fixture) Update(w *World) {
 
 // Place places the fixture in the world
 func (f *Fixture) Place(l pixel.Vec) {
-	phys := NewBaseObjectPhys(f.BoundingBox(l))
+	phys := NewBaseObjectPhys(f.BoundingBox(l), f)
 	f.SetPhys(phys)
 	f.SetNextPhys(f.Phys().Copy())
 }

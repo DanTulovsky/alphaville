@@ -65,9 +65,9 @@ func run() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	rand.Seed(time.Now().UnixNano())
 
-	groundPhys := world.NewBaseObjectPhys(pixel.R(0, 0, worldMaxX, groundHeight))
 	ground := world.NewGroundObject(
 		"ground", colornames.White, 0, 0, worldMaxX, groundHeight)
+	groundPhys := world.NewBaseObjectPhys(pixel.R(0, 0, worldMaxX, groundHeight), ground)
 	ground.SetPhys(groundPhys)
 	ground.SetNextPhys(ground.Phys().Copy())
 

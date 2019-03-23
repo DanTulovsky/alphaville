@@ -25,7 +25,7 @@ type EllipseObject struct {
 func NewEllipseObject(name string, color color.Color, speed, mass, a, b float64) *EllipseObject {
 
 	o := &EllipseObject{
-		NewBaseObject(name, color, speed, mass, objectEllipseType),
+		NewBaseObject(name, color, speed, mass),
 		a,
 		b,
 	}
@@ -65,9 +65,4 @@ func (o *EllipseObject) Draw(win *pixelgl.Window) {
 	txt.Color = colornames.Black
 	fmt.Fprintf(txt, "%v", o.name)
 	txt.Draw(win, pixel.IM)
-}
-
-// NewEllipseObjectPhys return a new physics object
-func NewEllipseObjectPhys(rect pixel.Rect) ObjectPhys {
-	return NewBaseObjectPhys(rect)
 }
