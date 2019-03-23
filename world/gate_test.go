@@ -46,7 +46,7 @@ func TestNewGate(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			g := NewGate(tt.args.l, tt.args.s, tt.args.c, tt.args.r)
+			g := NewGate("", tt.args.l, tt.args.s, tt.args.c, tt.args.r)
 			if err := tt.args.w.AddGate(g); (err != nil) != tt.wantErr {
 				t.Errorf("NewGate() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -99,7 +99,7 @@ func TestGate_Reserve(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			g := NewGate(tt.fields.Location, tt.fields.Status, tt.fields.coolDown, 10)
+			g := NewGate("", tt.fields.Location, tt.fields.Status, tt.fields.coolDown, 10)
 			if tt.fields.Reserved {
 				g.Reserve(uuid.New())
 			}
@@ -131,7 +131,7 @@ func TestGate_UnReserve(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			g := NewGate(tt.fields.Location, tt.fields.Status, 0, 10)
+			g := NewGate("", tt.fields.Location, tt.fields.Status, 0, 10)
 			if tt.fields.Reserved {
 				g.Reserve(uuid.New())
 			}

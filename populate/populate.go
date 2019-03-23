@@ -124,13 +124,22 @@ func AddGates(w *world.World, coolDown time.Duration) {
 	// add spawn gate
 	gates := []world.Gate{
 		{
+			Name:          "One",
 			Location:      pixel.V(600, 600),
 			Status:        world.GateOpen,
 			SpawnCoolDown: 10 * time.Second,
 			Radius:        20,
 		},
 		{
+			Name:          "Two",
 			Location:      pixel.V(200, 600),
+			Status:        world.GateOpen,
+			SpawnCoolDown: 2 * time.Second,
+			Radius:        25,
+		},
+		{
+			Name:          "manual only",
+			Location:      pixel.V(400, 600),
 			Status:        world.GateOpen,
 			SpawnCoolDown: 2 * time.Second,
 			Radius:        25,
@@ -138,7 +147,7 @@ func AddGates(w *world.World, coolDown time.Duration) {
 	}
 
 	for _, g := range gates {
-		gate := world.NewGate(g.Location, g.Status, g.SpawnCoolDown, g.Radius)
+		gate := world.NewGate(g.Name, g.Location, g.Status, g.SpawnCoolDown, g.Radius)
 
 		// Register the world.stats object to receive notifications from the gate
 		gate.EventNotifier.Register(w.Stats)

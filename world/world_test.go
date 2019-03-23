@@ -37,6 +37,7 @@ func TestNewWorld(t *testing.T) {
 				gravity:       2,
 				Stats:         NewStats(),
 				EventNotifier: observer.NewEventNotifier(),
+				ManualControl: NewNullObject(),
 			},
 		},
 	}

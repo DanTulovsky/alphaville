@@ -50,7 +50,7 @@ func processInput(win *pixelgl.Window, w *world.World, ctrl pixel.Vec) {
 		ctrl.Y++
 	}
 
-	mo.NextPhys().SetVelocity(ctrl)
+	mo.NextPhys().SetManualVelocity(ctrl)
 
 }
 

@@ -47,6 +47,7 @@ func newGateEvent(d string, t time.Time, data ...observer.EventData) observer.Ev
 
 // Gate is a point in the world where new objects can appear
 type Gate struct {
+	Name       string
 	Location   pixel.Vec
 	Status     gateStatus
 	Reserved   bool // gate is reserved by an object to be used next turn
@@ -59,14 +60,13 @@ type Gate struct {
 	Radius float64 // size
 
 	EventNotifier observer.EventNotifier
-
-	worldType Type
 }
 
 // NewGate creates a new gate in the world
-func NewGate(l pixel.Vec, s gateStatus, coolDown time.Duration, radius float64) *Gate {
+func NewGate(n string, l pixel.Vec, s gateStatus, coolDown time.Duration, radius float64) *Gate {
 
 	g := &Gate{
+		Name:          n,
 		Location:      l,
 		Status:        s,
 		Reserved:      false,
