@@ -40,7 +40,7 @@ func (b *DefaultBehavior) Update(w *World, o Object) {
 	}
 
 	// check if object should rise or fall, these checks not based on collisions
-	phys.ChangeVerticalDirection(w)
+	b.changeVerticalDirection(w, o)
 
 	// check collisions and adjust movement parameters
 	// if a collision is detected, no movement happens this round
@@ -50,6 +50,45 @@ func (b *DefaultBehavior) Update(w *World, o Object) {
 
 	// no collisions detected, move
 	b.Move(w, o, pixel.V(phys.Vel().X, phys.Vel().Y))
+}
+
+// changeVerticalDirection updates the vertical direction if needed
+func (b *DefaultBehavior) changeVerticalDirection(w *World, o Object) {
+	phys := o.NextPhys()
+
+	if phys.IsAboveGround(w) {
+		// fall speed based on mass and gravity
+		new := phys.Vel()
+		new.Y = w.gravity * phys.CurrentMass()
+		phys.SetVel(new)
+
+		if phys.Vel().X != 0 {
+			v := phys.PreviousVel()
+			v.X = phys.Vel().X
+			phys.SetPreviousVel(v)
+
+			v = phys.Vel()
+			v.X = 0
+			phys.SetVel(v)
+		}
+	}
+
+	if phys.IsZeroMass() {
+		// rise speed based on mass and gravity
+		v := phys.Vel()
+		v.Y = -1 * w.gravity * o.Mass()
+		phys.SetVel(v)
+
+		if phys.Vel().X != 0 {
+			v = phys.PreviousVel()
+			v.X = phys.Vel().X
+			phys.SetPreviousVel(v)
+
+			v = phys.Vel()
+			v.X = 0
+			phys.SetVel(v)
+		}
+	}
 }
 
 // HandleCollisions returns true if o has any collisions

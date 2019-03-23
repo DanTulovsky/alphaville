@@ -6,13 +6,13 @@ import "github.com/faiface/pixel"
 type ObjectPhys interface {
 	Copy() ObjectPhys
 
-	ChangeVerticalDirection(*World)
 	CollisionAbove(*World) bool
 	CollisionBelow(*World) bool
 	CollisionLeft(*World) bool
 	CollisionRight(*World) bool
 	CurrentMass() float64
 	IsAboveGround(w *World) bool
+	IsZeroMass() bool
 	Location() pixel.Rect
 	OnGround(*World) bool
 	MovingUp() bool
@@ -132,46 +132,9 @@ func (o *BaseObjectPhys) IsAboveGround(w *World) bool {
 	return o.Location().Min.Y > w.Ground.Phys().Location().Max.Y
 }
 
-// isZeroMass checks if object has no mass
-func (o *BaseObjectPhys) isZeroMass() bool {
+// IsZeroMass checks if object has no mass
+func (o *BaseObjectPhys) IsZeroMass() bool {
 	return o.CurrentMass() == 0
-}
-
-// ChangeVerticalDirection updates the vertical direction if needed
-func (o *BaseObjectPhys) ChangeVerticalDirection(w *World) {
-	if o.IsAboveGround(w) {
-		// fall speed based on mass and gravity
-		new := o.Vel()
-		new.Y = w.gravity * o.CurrentMass()
-		o.SetVel(new)
-
-		if o.Vel().X != 0 {
-			v := o.PreviousVel()
-			v.X = o.Vel().X
-			o.SetPreviousVel(v)
-
-			v = o.Vel()
-			v.X = 0
-			o.SetVel(v)
-		}
-	}
-
-	if o.isZeroMass() {
-		// rise speed based on mass and gravity
-		v := o.Vel()
-		v.Y = -1 * w.gravity * o.parentObject.Mass()
-		o.SetVel(v)
-
-		if o.Vel().X != 0 {
-			v = o.PreviousVel()
-			v.X = o.Vel().X
-			o.SetPreviousVel(v)
-
-			v = o.Vel()
-			v.X = 0
-			o.SetVel(v)
-		}
-	}
 }
 
 // MovingUp returns true if object is moving up
