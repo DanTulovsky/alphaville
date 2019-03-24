@@ -8,6 +8,7 @@ import (
 	"gogs.wetsnow.com/dant/alphaville/observer"
 
 	"github.com/faiface/pixel"
+	"github.com/faiface/pixel/pixelgl"
 )
 
 // World defines the world
@@ -15,6 +16,7 @@ type World struct {
 	X, Y          float64  // size of the world
 	Gates         []*Gate  // entrances into the world
 	Objects       []Object // objects in the world
+	targets       []Target // targets in the world that TargetSeekers hunt
 	ManualControl Object   // this object is human controlled
 	Ground        Object   // special, for now
 	fixtures      []Object // walls, floors, rocks, etc...
@@ -29,6 +31,7 @@ func NewWorld(x, y float64, ground Object, gravity float64) *World {
 	w := &World{
 		Objects:       []Object{},
 		Gates:         []*Gate{},
+		targets:       []Target{},
 		X:             x,
 		Y:             y,
 		Ground:        ground,
@@ -43,20 +46,6 @@ func NewWorld(x, y float64, ground Object, gravity float64) *World {
 	return w
 }
 
-type worldEvent struct {
-	observer.BaseEvent
-}
-
-// NewWorldEvent create a new world event
-func (w *World) NewWorldEvent(d string, t time.Time, data ...observer.EventData) observer.Event {
-	e := &worldEvent{}
-	e.SetData(data)
-	e.SetDescription(d)
-	e.SetTime(t)
-
-	return e
-}
-
 // SpawnAllNew spanws all new objects
 func (w *World) SpawnAllNew() {
 	for _, o := range w.UnSpawnedObjects() {
@@ -66,6 +55,27 @@ func (w *World) SpawnAllNew() {
 				continue
 			}
 		}
+	}
+}
+
+// Draw draws the world by callign each object's Draw()
+func (w *World) Draw(win *pixelgl.Window) {
+	w.Ground.Draw(win)
+
+	for _, g := range w.Gates {
+		g.Draw(win)
+	}
+
+	for _, f := range w.Fixtures() {
+		f.Draw(win)
+	}
+
+	for _, t := range w.Targets() {
+		t.Draw(win)
+	}
+
+	for _, o := range w.Objects {
+		o.Draw(win)
 	}
 }
 
@@ -88,6 +98,16 @@ func (w *World) NextTick() {
 	for _, o := range w.SpawnedObjects() {
 		o.SwapNextState()
 	}
+}
+
+// Targets returns all the targets in the world
+func (w *World) Targets() []Target {
+	var targets []Target
+
+	for _, t := range w.targets {
+		targets = append(targets, t)
+	}
+	return targets
 }
 
 // Fixtures returns all the fixtures in the world
@@ -139,6 +159,44 @@ func (w *World) AddFixture(o Object) {
 	w.fixtures = append(w.fixtures, o)
 }
 
+// AddTarget adds a new target to the world
+func (w *World) AddTarget(t Target) error {
+	if t.Location().X > w.X || t.Location().Y > w.Y || t.Location().X < 0 || t.Location().Y < 0 {
+		return fmt.Errorf("Location %#v is outside the world bounds (%#v)", t.Location(), pixel.V(w.X, w.Y))
+	}
+
+	for _, target := range w.Targets() {
+		if t.Location() == target.Location() {
+			return fmt.Errorf("target at %v already exists (%v)", t.Location(), t.Name())
+		}
+	}
+	w.targets = append(w.targets, t)
+
+	// register those who should be notified of events
+	t.EventNotifier().Register(w.Stats)
+	t.EventNotifier().Register(w)
+
+	t.EventNotifier().Notify(NewTargetEvent(fmt.Sprintf("target [%v] created", t), time.Now(),
+		observer.EventData{Key: "created", Value: t.ID().String()}))
+	return nil
+}
+
+// RemoveTarget removes a target from the world
+func (w *World) RemoveTarget(uuid string) {
+	targets := []Target{}
+	for _, t := range w.Targets() {
+		if t.ID().String() != uuid {
+			targets = append(targets, t)
+		}
+	}
+	w.targets = targets
+}
+
+// AvailableTargets returns a list of available targets in the world
+func (w *World) AvailableTargets() []Target {
+	return w.Targets()
+}
+
 // AddGate adds a new gate to the world
 func (w *World) AddGate(g *Gate) error {
 	if g.Location.X > w.X || g.Location.Y > w.Y || g.Location.X < 0 || g.Location.Y < 0 {
@@ -151,7 +209,12 @@ func (w *World) AddGate(g *Gate) error {
 		}
 	}
 	w.Gates = append(w.Gates, g)
-	g.EventNotifier.Notify(w.NewWorldEvent(fmt.Sprintf("gate [%v] created", g), time.Now()))
+
+	g.EventNotifier().Register(w.Stats)
+	g.EventNotifier().Register(w)
+
+	g.EventNotifier().Notify(NewGateEvent(fmt.Sprintf("gate [%v] created", g), time.Now(),
+		observer.EventData{Key: "created", Value: g.Name()}))
 	return nil
 }
 
@@ -192,7 +255,7 @@ func (w *World) SpawnObject(o Object) error {
 	o.SetNextPhys(o.Phys().Copy())
 
 	g.Release()
-	g.EventNotifier.Notify(w.NewWorldEvent(
+	g.EventNotifier().Notify(NewGateEvent(
 		fmt.Sprintf(
 			"object [%v] spawned", o.Name()), time.Now(),
 		observer.EventData{Key: "spawn", Value: fmt.Sprintf("%T", o)}))

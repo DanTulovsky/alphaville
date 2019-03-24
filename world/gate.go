@@ -35,8 +35,8 @@ type GateEvent struct {
 	observer.BaseEvent
 }
 
-// newGateEvent create a new gate event
-func newGateEvent(d string, t time.Time, data ...observer.EventData) observer.Event {
+// NewGateEvent create a new gate event
+func NewGateEvent(d string, t time.Time, data ...observer.EventData) observer.Event {
 	e := &GateEvent{}
 	e.SetData(data)
 	e.SetDescription(d)
@@ -60,7 +60,7 @@ type Gate struct {
 
 	Radius float64 // size
 
-	EventNotifier observer.EventNotifier
+	eventNotifier observer.EventNotifier
 
 	// filters controls what object is allowed to use (reserver and spawn) this gate
 	// if any filter denies (returns false), usage is not allowed
@@ -86,7 +86,7 @@ func NewGate(n string, l pixel.Vec, s GateStatus, coolDown time.Duration, radius
 		Reserved:      false,
 		SpawnCoolDown: coolDown,
 		Radius:        radius,
-		EventNotifier: observer.NewEventNotifier(),
+		eventNotifier: observer.NewEventNotifier(),
 		filters:       filters,
 	}
 
@@ -96,6 +96,11 @@ func NewGate(n string, l pixel.Vec, s GateStatus, coolDown time.Duration, radius
 // String returns the gate as string
 func (g *Gate) String() string {
 	return fmt.Sprintf("[%v] L: %v, S: %v, R: %v, C: %v (%v)", g.name, g.Location, g.Status, g.Reserved, g.SpawnCoolDown, g.LastSpawn)
+}
+
+// EventNotifier returns the event notifier
+func (g *Gate) EventNotifier() observer.EventNotifier {
+	return g.eventNotifier
 }
 
 // CanSpawn returns true if the gate can spawn
@@ -122,7 +127,7 @@ func (g *Gate) Reserve(o Object) error {
 	if g.CanSpawn() {
 		g.Reserved = true
 		g.ReservedBy = o.ID()
-		g.EventNotifier.Notify(newGateEvent(fmt.Sprintf("gate [%v] reserved for [%v]", g, o.ID()), time.Now()))
+		g.eventNotifier.Notify(NewGateEvent(fmt.Sprintf("gate [%v] reserved for [%v]", g, o.ID()), time.Now()))
 
 		return nil
 	}
@@ -131,7 +136,7 @@ func (g *Gate) Reserve(o Object) error {
 
 // Release removes a gates reservation
 func (g *Gate) Release() {
-	g.EventNotifier.Notify(newGateEvent(fmt.Sprintf("gate [%v] reservation released", g), time.Now()))
+	g.eventNotifier.Notify(NewGateEvent(fmt.Sprintf("gate [%v] reservation released", g), time.Now()))
 	g.Reserved = false
 	g.LastSpawn = time.Now()
 }

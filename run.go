@@ -12,6 +12,7 @@ import (
 	"github.com/faiface/pixel/pixelgl"
 	"gogs.wetsnow.com/dant/alphaville/observer"
 	"gogs.wetsnow.com/dant/alphaville/populate"
+	"gogs.wetsnow.com/dant/alphaville/utils"
 	"gogs.wetsnow.com/dant/alphaville/world"
 	"golang.org/x/image/colornames"
 )
@@ -30,6 +31,8 @@ const (
 	worldMaxX, worldMaxY           = 1024, 768
 	visibleWinMaxX, visibleWinMaxY = 1024, 768
 	groundHeight                   = 40
+
+	maxTargets = 2
 )
 
 // processMouseLeftInput handles left click
@@ -72,21 +75,19 @@ func update(w *world.World) {
 	w.SpawnAllNew()
 }
 
-// draw calls each object's update
+// draw draws the world
 func draw(w *world.World, win *pixelgl.Window) {
-	w.Ground.Draw(win)
+	w.Draw(win)
+}
 
-	for _, g := range w.Gates {
-		g.Draw(win)
+// addTargets adds targets into the world as they are caught
+func addTargets(w *world.World) {
+	if len(w.Targets()) >= 2 {
+		return
 	}
 
-	for _, f := range w.Fixtures() {
-		f.Draw(win)
-	}
-
-	for _, o := range w.Objects {
-		o.Draw(win)
-	}
+	t := world.NewSimpleTarget("t", pixel.V(utils.RandomFloat64(0, w.X), utils.RandomFloat64(0, w.Y)))
+	w.AddTarget(t)
 }
 
 func run() {
@@ -102,11 +103,12 @@ func run() {
 	w := world.NewWorld(worldMaxX, worldMaxY, ground, gravity)
 
 	// populate the world
+	populate.AddTargets(w)
 	populate.AddTargetSeeker(w)
-	populate.RandomCircles(w, 2)
-	populate.RandomRectangles(w, 2)
-	populate.RandomEllipses(w, 2)
-	populate.AddManualObject(w, 60, 60)
+	// populate.RandomCircles(w, 2)
+	// populate.RandomRectangles(w, 2)
+	// populate.RandomEllipses(w, 2)
+	// populate.AddManualObject(w, 60, 60)
 	populate.AddGates(w, time.Second*1)
 	// populate.AddFixtures(w)
 
@@ -147,6 +149,8 @@ func run() {
 		ctrl := pixel.ZV
 		// user input
 		processInput(win, w, ctrl)
+
+		addTargets(w)
 
 		update(w)
 		updates++

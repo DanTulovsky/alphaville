@@ -122,10 +122,6 @@ func AddTargetSeeker(w *world.World) {
 		world.NewTargetSeekerBehavior(), // default behavior
 	)
 
-	target := pixel.V(0, w.Ground.Phys().Location().Max.Y)
-	log.Printf("target: %v", target)
-	o.Behavior().(*world.TargetSeekerBehavior).SetTarget(target)
-
 	w.AddObject(o)
 }
 
@@ -197,12 +193,18 @@ func AddGates(w *world.World, coolDown time.Duration) {
 	for _, g := range gates {
 		gate := world.NewGate(g.name, g.location, g.status, g.coolDown, g.radius, g.filters...)
 
-		// Register the world.stats object to receive notifications from the gate
-		gate.EventNotifier.Register(w.Stats)
 		if err := w.AddGate(gate); err != nil {
 			log.Fatalf("error adding gate: %v", err)
 		}
 	}
+}
+
+// AddTargets adds targets to the world
+func AddTargets(w *world.World) {
+
+	t := world.NewSimpleTarget("one", pixel.V(100, 100))
+	w.AddTarget(t)
+
 }
 
 // AddFixtures add fixtures to the world

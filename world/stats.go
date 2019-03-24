@@ -55,7 +55,6 @@ func (s *Stats) processWorldEvent(e *worldEvent) {
 			s.Ups = utils.Atoi(data.Value)
 		case "spawn":
 			s.ObjectsSpawned++
-
 		}
 	}
 }
@@ -63,8 +62,21 @@ func (s *Stats) processWorldEvent(e *worldEvent) {
 func (s *Stats) processGateEvent(e *GateEvent) {
 	for _, data := range e.Data() {
 		switch data.Key {
-		case "none_yet":
-			continue
+		case "created":
+			log.Printf("gate [%v] created", data.Value)
+		case "spawn":
+			log.Printf("gate spawned [%v]", data.Value)
+		}
+	}
+}
+
+func (s *Stats) processTargetEvent(e *TargetEvent) {
+	for _, data := range e.Data() {
+		switch data.Key {
+		case "created":
+			log.Printf("target [%v] created", data.Value)
+		case "destroyed":
+			log.Printf("target [%v] destroyed", data.Value)
 		}
 	}
 }
@@ -78,5 +90,7 @@ func (s *Stats) OnNotify(e observer.Event) {
 		s.processWorldEvent(event)
 	case *GateEvent:
 		s.processGateEvent(event)
+	case *TargetEvent:
+		s.processTargetEvent(event)
 	}
 }

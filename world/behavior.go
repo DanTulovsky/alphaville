@@ -5,18 +5,13 @@ import (
 	"html/template"
 	"log"
 
-	"golang.org/x/image/colornames"
-
 	"github.com/faiface/pixel"
-	"github.com/faiface/pixel/imdraw"
-	"github.com/faiface/pixel/pixelgl"
 	"gogs.wetsnow.com/dant/alphaville/utils"
 )
 
 // Behavior is the interface for all behaviors
 type Behavior interface {
 	Description() string
-	Draw(*pixelgl.Window) // draws any artifacts due to the behavior
 	Name() string
 	Update(*World, Object)
 }
@@ -261,11 +256,6 @@ func (b *DefaultBehavior) Move(w *World, o Object, v pixel.Vec) {
 	}
 }
 
-// Draw does nothing
-func (b *DefaultBehavior) Draw(win *pixelgl.Window) {
-
-}
-
 // ManualBehavior is human controlled
 type ManualBehavior struct {
 	DefaultBehavior
@@ -294,15 +284,10 @@ func (b *ManualBehavior) Move(w *World, o Object, v pixel.Vec) {
 	o.NextPhys().SetLocation(newLocation)
 }
 
-// Draw does nothing
-func (b *ManualBehavior) Draw(win *pixelgl.Window) {
-
-}
-
 // TargetSeekerBehavior moves in shortest path to the target
 type TargetSeekerBehavior struct {
 	DefaultBehavior
-	target pixel.Vec
+	target Target
 }
 
 // NewTargetSeekerBehavior return a TargetSeekerBehavior
@@ -314,12 +299,12 @@ func NewTargetSeekerBehavior() *TargetSeekerBehavior {
 }
 
 // SetTarget sets the target
-func (b *TargetSeekerBehavior) SetTarget(t pixel.Vec) {
+func (b *TargetSeekerBehavior) SetTarget(t Target) {
 	b.target = t
 }
 
 // Target returns the current target
-func (b *TargetSeekerBehavior) Target() pixel.Vec {
+func (b *TargetSeekerBehavior) Target() Target {
 	return b.target
 }
 
@@ -329,16 +314,16 @@ func (b *TargetSeekerBehavior) nextDirectionToTarget(w *World, o Object) string 
 	t := b.Target()
 	c := o.Phys().Location().Center()
 
-	to := t.To(c)
+	to := t.Location().To(c)
 
 	switch {
-	case to.X < 0 && !o.Phys().Location().Contains(pixel.V(t.X, c.Y)):
+	case to.X < 0 && !o.Phys().Location().Contains(pixel.V(t.Location().X, c.Y)):
 		return "right"
-	case to.X > 0 && !o.Phys().Location().Contains(pixel.V(t.X, c.Y)):
+	case to.X > 0 && !o.Phys().Location().Contains(pixel.V(t.Location().X, c.Y)):
 		return "left"
-	case to.Y < 0 && !o.Phys().Location().Contains(pixel.V(c.X, t.Y)):
+	case to.Y < 0 && !o.Phys().Location().Contains(pixel.V(c.X, t.Location().Y)):
 		return "up"
-	case to.Y > 0 && !o.Phys().Location().Contains(pixel.V(c.X, t.Y)):
+	case to.Y > 0 && !o.Phys().Location().Contains(pixel.V(c.X, t.Location().Y)):
 		return "down"
 	}
 
@@ -347,7 +332,13 @@ func (b *TargetSeekerBehavior) nextDirectionToTarget(w *World, o Object) string 
 
 // isAtTarget returns true if any part of the object covers the target
 func (b *TargetSeekerBehavior) isAtTarget(o Object) bool {
-	return o.Phys().Location().Contains(b.Target())
+	if o.Phys().Location().Contains(b.target.Location()) {
+		// log.Printf("found target %v", b.target.Location())
+		b.target.Destroy()
+		b.target = nil
+		return true
+	}
+	return false
 }
 
 // Direction returns the velocity vector setting the correct direction to travel
@@ -369,25 +360,24 @@ func (b *TargetSeekerBehavior) Direction(w *World, o Object) pixel.Vec {
 	return pixel.V(0, 0) // default is not to move
 }
 
-// pickNewTarget sets a new random target
+// pickNewTarget sets a new random target if available
 func (b *TargetSeekerBehavior) pickNewTarget(w *World) {
-	target := pixel.V(utils.RandomFloat64(0, w.X), utils.RandomFloat64(0, w.Y))
-	b.SetTarget(target)
-}
-
-// Draw draws the target
-func (b *TargetSeekerBehavior) Draw(win *pixelgl.Window) {
-	imd := imdraw.New(nil)
-	imd.Color = colornames.Red
-	imd.Push(b.Target())
-	imd.Circle(10, 0)
-	imd.Draw(win)
+	targets := w.AvailableTargets()
+	if len(targets) == 0 {
+		return
+	}
+	new := targets[utils.RandomInt(0, len(targets))]
+	b.SetTarget(new)
 }
 
 // Update implements the Behavior Update method
 func (b *TargetSeekerBehavior) Update(w *World, o Object) {
-	if b.isAtTarget(o) {
+	if b.target == nil {
 		b.pickNewTarget(w)
+		return
+	}
+
+	if b.isAtTarget(o) {
 		return
 	}
 
