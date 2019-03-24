@@ -151,7 +151,7 @@ func AddGates(w *world.World, coolDown time.Duration) {
 			name:     "Two",
 			location: pixel.V(200, 600),
 			status:   world.GateOpen,
-			coolDown: 2 * time.Second,
+			coolDown: 5 * time.Second,
 			radius:   25,
 		},
 		{

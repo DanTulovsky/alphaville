@@ -122,7 +122,6 @@ func (g *Gate) Reserve(o Object) error {
 	if g.CanSpawn() {
 		g.Reserved = true
 		g.ReservedBy = o.ID()
-		g.LastSpawn = time.Now()
 		g.EventNotifier.Notify(newGateEvent(fmt.Sprintf("gate [%v] reserved for [%v]", g, o.ID()), time.Now()))
 
 		return nil
@@ -134,6 +133,7 @@ func (g *Gate) Reserve(o Object) error {
 func (g *Gate) Release() {
 	g.EventNotifier.Notify(newGateEvent(fmt.Sprintf("gate [%v] reservation released", g), time.Now()))
 	g.Reserved = false
+	g.LastSpawn = time.Now()
 }
 
 // Draw draws the gate on the screen
