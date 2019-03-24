@@ -4,14 +4,15 @@ import (
 	"testing"
 	"time"
 
+	"golang.org/x/image/colornames"
+
 	"github.com/faiface/pixel"
-	"github.com/google/uuid"
 )
 
 func TestNewGate(t *testing.T) {
 	type args struct {
 		l pixel.Vec
-		s gateStatus
+		s GateStatus
 		c time.Duration
 		r float64
 		w *World
@@ -57,9 +58,10 @@ func TestNewGate(t *testing.T) {
 func TestGate_Reserve(t *testing.T) {
 	type fields struct {
 		Location pixel.Vec
-		Status   gateStatus
+		Status   GateStatus
 		Reserved bool
 		coolDown time.Duration
+		object   BaseObject
 	}
 	tests := []struct {
 		name    string
@@ -73,6 +75,7 @@ func TestGate_Reserve(t *testing.T) {
 				Status:   GateOpen,
 				Reserved: false,
 				coolDown: time.Minute * 1,
+				object:   NewBaseObject("", colornames.Red, 0, 0, nil),
 			},
 			wantErr: false,
 		},
@@ -83,6 +86,7 @@ func TestGate_Reserve(t *testing.T) {
 				Status:   GateClosed,
 				Reserved: false,
 				coolDown: time.Minute * 1,
+				object:   NewBaseObject("", colornames.Red, 0, 0, nil),
 			},
 			wantErr: true,
 		},
@@ -93,6 +97,7 @@ func TestGate_Reserve(t *testing.T) {
 				Status:   GateOpen,
 				Reserved: true,
 				coolDown: time.Minute * 1,
+				object:   NewBaseObject("", colornames.Red, 0, 0, nil),
 			},
 			wantErr: true,
 		},
@@ -101,9 +106,9 @@ func TestGate_Reserve(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			g := NewGate("", tt.fields.Location, tt.fields.Status, tt.fields.coolDown, 10)
 			if tt.fields.Reserved {
-				g.Reserve(uuid.New())
+				g.Reserve(&tt.fields.object)
 			}
-			if err := g.Reserve(uuid.New()); (err != nil) != tt.wantErr {
+			if err := g.Reserve(&tt.fields.object); (err != nil) != tt.wantErr {
 				t.Errorf("Gate.Reserve() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -113,8 +118,9 @@ func TestGate_Reserve(t *testing.T) {
 func TestGate_UnReserve(t *testing.T) {
 	type fields struct {
 		Location pixel.Vec
-		Status   gateStatus
+		Status   GateStatus
 		Reserved bool
+		object   BaseObject
 	}
 	tests := []struct {
 		name   string
@@ -126,6 +132,7 @@ func TestGate_UnReserve(t *testing.T) {
 				Location: pixel.V(100, 100),
 				Status:   GateOpen,
 				Reserved: false,
+				object:   NewBaseObject("", colornames.Red, 0, 0, nil),
 			},
 		},
 	}
@@ -133,7 +140,7 @@ func TestGate_UnReserve(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			g := NewGate("", tt.fields.Location, tt.fields.Status, 0, 10)
 			if tt.fields.Reserved {
-				g.Reserve(uuid.New())
+				g.Reserve(&tt.fields.object)
 			}
 			g.Release()
 			if g.Reserved != false {

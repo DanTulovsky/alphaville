@@ -121,12 +121,21 @@ func AddManualObject(w *world.World, width, height float64) {
 // AddGates adds gates to the world
 func AddGates(w *world.World, coolDown time.Duration) {
 
+	var filterManualOnly world.GateFilter = func(o world.Object) bool {
+		switch o.Behavior().(type) {
+		case *world.ManualBehavior:
+			return true
+		}
+		return false
+	}
+
 	type gate struct {
 		name     string
 		location pixel.Vec
 		status   world.GateStatus
 		coolDown time.Duration
 		radius   float64
+		filters  []world.GateFilter
 	}
 
 	// add spawn gate
@@ -151,11 +160,12 @@ func AddGates(w *world.World, coolDown time.Duration) {
 			status:   world.GateOpen,
 			coolDown: 2 * time.Second,
 			radius:   25,
+			filters:  []world.GateFilter{filterManualOnly},
 		},
 	}
 
 	for _, g := range gates {
-		gate := world.NewGate(g.name, g.location, g.status, g.coolDown, g.radius)
+		gate := world.NewGate(g.name, g.location, g.status, g.coolDown, g.radius, g.filters...)
 
 		// Register the world.stats object to receive notifications from the gate
 		gate.EventNotifier.Register(w.Stats)

@@ -214,7 +214,7 @@ func (w *World) ReserveGate(o Object) (*Gate, error) {
 	}
 
 	for _, g := range w.Gates {
-		if g.Reserve(o.ID()) == nil {
+		if g.Reserve(o) == nil {
 			return g, nil
 		}
 	}

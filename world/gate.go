@@ -61,10 +61,22 @@ type Gate struct {
 	Radius float64 // size
 
 	EventNotifier observer.EventNotifier
+
+	// filters controls what object is allowed to use (reserver and spawn) this gate
+	// if any filter denies (returns false), usage is not allowed
+	filters []GateFilter
+}
+
+// GateFilter filters what object is allowed to use the gate, it should return true if allowed
+type GateFilter func(Object) bool
+
+// defaultGateFilter allows all objects
+var defaultGateFilter = func(Object) bool {
+	return true
 }
 
 // NewGate creates a new gate in the world
-func NewGate(n string, l pixel.Vec, s GateStatus, coolDown time.Duration, radius float64) *Gate {
+func NewGate(n string, l pixel.Vec, s GateStatus, coolDown time.Duration, radius float64, filters ...GateFilter) *Gate {
 
 	g := &Gate{
 		id:            uuid.New(),
@@ -75,6 +87,7 @@ func NewGate(n string, l pixel.Vec, s GateStatus, coolDown time.Duration, radius
 		SpawnCoolDown: coolDown,
 		Radius:        radius,
 		EventNotifier: observer.NewEventNotifier(),
+		filters:       filters,
 	}
 
 	return g
@@ -99,12 +112,18 @@ func (g *Gate) CanSpawn() bool {
 }
 
 // Reserve reserves a gate if it's available
-func (g *Gate) Reserve(id uuid.UUID) error {
+func (g *Gate) Reserve(o Object) error {
+	for _, f := range g.filters {
+		if !f(o) {
+			return fmt.Errorf("usage of gate denied by filter")
+		}
+	}
+
 	if g.CanSpawn() {
 		g.Reserved = true
-		g.ReservedBy = id
+		g.ReservedBy = o.ID()
 		g.LastSpawn = time.Now()
-		g.EventNotifier.Notify(newGateEvent(fmt.Sprintf("gate [%v] reserved for [%v]", g, id), time.Now()))
+		g.EventNotifier.Notify(newGateEvent(fmt.Sprintf("gate [%v] reserved for [%v]", g, o.ID()), time.Now()))
 
 		return nil
 	}
