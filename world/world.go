@@ -45,14 +45,11 @@ func NewWorld(x, y float64, ground Object, gravity float64) *World {
 
 type worldEvent struct {
 	observer.BaseEvent
-	worldType Type
 }
 
 // NewWorldEvent create a new world event
 func (w *World) NewWorldEvent(d string, t time.Time, data ...observer.EventData) observer.Event {
-	e := &worldEvent{
-		worldType: worldType,
-	}
+	e := &worldEvent{}
 	e.SetData(data)
 	e.SetDescription(d)
 	e.SetTime(t)

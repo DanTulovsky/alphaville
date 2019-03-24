@@ -5,13 +5,18 @@ import (
 	"html/template"
 	"log"
 
+	"golang.org/x/image/colornames"
+
 	"github.com/faiface/pixel"
+	"github.com/faiface/pixel/imdraw"
+	"github.com/faiface/pixel/pixelgl"
 	"gogs.wetsnow.com/dant/alphaville/utils"
 )
 
 // Behavior is the interface for all behaviors
 type Behavior interface {
 	Description() string
+	Draw(*pixelgl.Window) // draws any artifacts due to the behavior
 	Name() string
 	Update(*World, Object)
 }
@@ -222,6 +227,7 @@ func (b *DefaultBehavior) Move(w *World, o Object, v pixel.Vec) {
 		log.Fatalf("o:%+#v\nx: %v; y: %v\n", o, phys.Vel().X, phys.Vel().Y)
 	}
 
+	// TODO: refactor to use CollisionBorders() function
 	switch {
 	case phys.MovingLeft() && phys.Location().Min.X+phys.Vel().X <= 0:
 		// left border
@@ -255,6 +261,11 @@ func (b *DefaultBehavior) Move(w *World, o Object, v pixel.Vec) {
 	}
 }
 
+// Draw does nothing
+func (b *DefaultBehavior) Draw(win *pixelgl.Window) {
+
+}
+
 // ManualBehavior is human controlled
 type ManualBehavior struct {
 	DefaultBehavior
@@ -281,6 +292,11 @@ func (b *ManualBehavior) Update(w *World, o Object) {
 func (b *ManualBehavior) Move(w *World, o Object, v pixel.Vec) {
 	newLocation := o.NextPhys().Location().Moved(pixel.V(v.X, v.Y))
 	o.NextPhys().SetLocation(newLocation)
+}
+
+// Draw does nothing
+func (b *ManualBehavior) Draw(win *pixelgl.Window) {
+
 }
 
 // TargetSeekerBehavior moves in shortest path to the target
@@ -353,10 +369,25 @@ func (b *TargetSeekerBehavior) Direction(w *World, o Object) pixel.Vec {
 	return pixel.V(0, 0) // default is not to move
 }
 
+// pickNewTarget sets a new random target
+func (b *TargetSeekerBehavior) pickNewTarget(w *World) {
+	target := pixel.V(utils.RandomFloat64(0, w.X), utils.RandomFloat64(0, w.Y))
+	b.SetTarget(target)
+}
+
+// Draw draws the target
+func (b *TargetSeekerBehavior) Draw(win *pixelgl.Window) {
+	imd := imdraw.New(nil)
+	imd.Color = colornames.Red
+	imd.Push(b.Target())
+	imd.Circle(10, 0)
+	imd.Draw(win)
+}
+
 // Update implements the Behavior Update method
 func (b *TargetSeekerBehavior) Update(w *World, o Object) {
 	if b.isAtTarget(o) {
-		log.Println("at target")
+		b.pickNewTarget(w)
 		return
 	}
 
@@ -370,7 +401,6 @@ func (b *TargetSeekerBehavior) Update(w *World, o Object) {
 	if !phys.HaveCollision(w) {
 		b.Move(w, o, phys.CollisionBorders(w, phys.Vel()))
 	}
-
 }
 
 // Move moves the object

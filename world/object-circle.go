@@ -93,4 +93,7 @@ func (o *CircleObject) Draw(win *pixelgl.Window) {
 
 	fmt.Fprintf(txt, "%v", o.name)
 	txt.Draw(win, pixel.IM)
+
+	// draw any artifacts due to behavior
+	o.Behavior().Draw(win)
 }
