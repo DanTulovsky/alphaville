@@ -188,9 +188,6 @@ func (b *DefaultBehavior) avoidCollisionAbove(phys ObjectPhys, w *World) {
 func (b *DefaultBehavior) ChangeHorizontalDirection(phys ObjectPhys) {
 	v := phys.Vel()
 	v.X = -1 * v.X
-	if v.X == 0 {
-		log.Printf("Found 0 v.X!")
-	}
 	phys.SetVel(v)
 }
 
@@ -228,10 +225,12 @@ func (b *DefaultBehavior) Move(w *World, o Object, v pixel.Vec) {
 	switch {
 	case phys.MovingLeft() && phys.Location().Min.X+phys.Vel().X <= 0:
 		// left border
+		phys.SetLocation(phys.Location().Moved(pixel.V(0-phys.Location().Min.X, 0)))
 		b.ChangeHorizontalDirection(phys)
 
 	case phys.MovingRight() && phys.Location().Max.X+phys.Vel().X >= w.X:
 		// right border
+		phys.SetLocation(phys.Location().Moved(pixel.V(w.X-phys.Location().Max.X, 0)))
 		b.ChangeHorizontalDirection(phys)
 
 	case phys.MovingDown() && phys.Location().Min.Y+phys.Vel().Y < w.Ground.Phys().Location().Max.Y:
@@ -240,9 +239,6 @@ func (b *DefaultBehavior) Move(w *World, o Object, v pixel.Vec) {
 		v := phys.Vel()
 		v.Y = 0
 		v.X = phys.PreviousVel().X
-		if v.X == 0 {
-			log.Println("X is 0!!!!")
-		}
 		phys.SetVel(v)
 
 	case phys.MovingUp() && phys.Location().Max.Y+phys.Vel().Y >= w.Y && phys.Vel().Y > 0:
@@ -255,11 +251,7 @@ func (b *DefaultBehavior) Move(w *World, o Object, v pixel.Vec) {
 
 	default:
 		newLocation := phys.Location().Moved(pixel.V(v.X, v.Y))
-		// log.Printf("name=%v) from: %v to: %v", o.Name(), phys.Location(), newLocation)
-		// CheckIntersectRect(w, newLocation, o.ID())
 		phys.SetLocation(newLocation)
-		// log.Printf("checking intersect of: %v", o.Name())
-		// o.CheckIntersect(w)
 	}
 }
 
@@ -280,14 +272,109 @@ func NewManualBehavior() *ManualBehavior {
 func (b *ManualBehavior) Update(w *World, o Object) {
 	phys := o.NextPhys()
 
-	if !o.Phys().HaveCollision(w) {
-		b.Move(w, o, pixel.V(phys.Vel().X, phys.Vel().Y))
+	if !phys.HaveCollision(w) {
+		b.Move(w, o, phys.CollisionBorders(w, phys.Vel()))
 	}
 }
 
 // Move moves the object
 func (b *ManualBehavior) Move(w *World, o Object, v pixel.Vec) {
 	newLocation := o.NextPhys().Location().Moved(pixel.V(v.X, v.Y))
-	CheckIntersectRect(w, newLocation, o.ID())
+	o.NextPhys().SetLocation(newLocation)
+}
+
+// TargetSeekerBehavior moves in shortest path to the target
+type TargetSeekerBehavior struct {
+	DefaultBehavior
+	target pixel.Vec
+}
+
+// NewTargetSeekerBehavior return a TargetSeekerBehavior
+func NewTargetSeekerBehavior() *TargetSeekerBehavior {
+	b := &TargetSeekerBehavior{}
+	b.name = "target_seeker"
+	b.description = "Travels in shortest path to target, if given, otherwise stands still."
+	return b
+}
+
+// SetTarget sets the target
+func (b *TargetSeekerBehavior) SetTarget(t pixel.Vec) {
+	b.target = t
+}
+
+// Target returns the current target
+func (b *TargetSeekerBehavior) Target() pixel.Vec {
+	return b.target
+}
+
+// nextDirectionToTarget returns the next direction to travel to the target
+// up, down, left, right
+func (b *TargetSeekerBehavior) nextDirectionToTarget(w *World, o Object) string {
+	t := b.Target()
+	c := o.Phys().Location().Center()
+
+	to := t.To(c)
+
+	switch {
+	case to.X < 0 && !o.Phys().Location().Contains(pixel.V(t.X, c.Y)):
+		return "right"
+	case to.X > 0 && !o.Phys().Location().Contains(pixel.V(t.X, c.Y)):
+		return "left"
+	case to.Y < 0 && !o.Phys().Location().Contains(pixel.V(c.X, t.Y)):
+		return "up"
+	case to.Y > 0 && !o.Phys().Location().Contains(pixel.V(c.X, t.Y)):
+		return "down"
+	}
+
+	return ""
+}
+
+// isAtTarget returns true if any part of the object covers the target
+func (b *TargetSeekerBehavior) isAtTarget(o Object) bool {
+	return o.Phys().Location().Contains(b.Target())
+}
+
+// Direction returns the velocity vector setting the correct direction to travel
+func (b *TargetSeekerBehavior) Direction(w *World, o Object) pixel.Vec {
+
+	// find direction to move and set x, y based on velocity
+	d := b.nextDirectionToTarget(w, o)
+
+	switch d {
+	case "up":
+		return pixel.V(0, 1)
+	case "down":
+		return pixel.V(0, -1)
+	case "right":
+		return pixel.V(1, 0)
+	case "left":
+		return pixel.V(-1, 0)
+	}
+	return pixel.V(0, 0) // default is not to move
+}
+
+// Update implements the Behavior Update method
+func (b *TargetSeekerBehavior) Update(w *World, o Object) {
+	if b.isAtTarget(o) {
+		log.Println("at target")
+		return
+	}
+
+	phys := o.NextPhys()
+
+	d := b.Direction(w, o)
+	phys.SetManualVelocity(d)
+	// o.Phys().SetManualVelocity(d)
+
+	// check collisions with objects
+	if !phys.HaveCollision(w) {
+		b.Move(w, o, phys.CollisionBorders(w, phys.Vel()))
+	}
+
+}
+
+// Move moves the object
+func (b *TargetSeekerBehavior) Move(w *World, o Object, v pixel.Vec) {
+	newLocation := o.NextPhys().Location().Moved(pixel.V(v.X, v.Y))
 	o.NextPhys().SetLocation(newLocation)
 }

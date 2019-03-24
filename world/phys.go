@@ -16,6 +16,7 @@ type ObjectPhys interface {
 
 	CollisionAbove(*World) bool
 	CollisionBelow(*World) bool
+	CollisionBorders(*World, pixel.Vec) pixel.Vec
 	CollisionLeft(*World) bool
 	CollisionRight(*World) bool
 	CurrentMass() float64
@@ -242,29 +243,28 @@ func (o *BaseObjectPhys) shouldCheckVerticalCollision(other Object) bool {
 
 // HaveCollision returns true if the object has a collision with current trajectory
 func (o *BaseObjectPhys) HaveCollision(w *World) bool {
-	return o.CollisionAbove(w) || o.CollisionBelow(w) || o.CollisionLeft(w) || o.CollisionRight(w) || o.CollisionBorders(w)
+	return o.CollisionAbove(w) || o.CollisionBelow(w) || o.CollisionLeft(w) || o.CollisionRight(w)
 }
 
-// CollisionBorders returns true if there is a collision with a wall, ground or ceiling
-func (o *BaseObjectPhys) CollisionBorders(w *World) bool {
+// CollisionBorders returns a movement vector that avoids collision with border given vel vector
+// If no collisions detected, vel is returned as is
+func (o *BaseObjectPhys) CollisionBorders(w *World, vel pixel.Vec) pixel.Vec {
 
 	switch {
-	case o.MovingLeft() && o.Location().Min.X+o.Vel().X <= 0:
+	case o.MovingLeft() && o.Location().Min.X+vel.X <= 0:
 		// left border
-		return true
-	case o.MovingRight() && o.Location().Max.X+o.Vel().X >= w.X:
+		return pixel.V(0-o.Location().Min.X, 0)
+	case o.MovingRight() && o.Location().Max.X+vel.X >= w.X:
 		// right border
-		return true
-	case o.Location().Min.Y+o.Vel().Y < w.Ground.Phys().Location().Max.Y:
+		return pixel.V(w.X-o.Location().Max.X, 0)
+	case o.MovingDown() && o.Location().Min.Y+o.Vel().Y < w.Ground.Phys().Location().Max.Y:
 		// stop at ground level
-		return true
-	case o.Location().Max.Y+o.Vel().Y >= w.Y && o.Vel().Y > 0:
+		return pixel.V(0, w.Ground.Phys().Location().Max.Y-o.Location().Min.Y)
+	case o.MovingUp() && o.Location().Max.Y+o.Vel().Y >= w.Y:
 		// stop at ceiling if going up
-		return true
-
-	default:
-		return false
+		return pixel.V(0, w.Y-o.Location().Max.Y)
 	}
+	return vel
 }
 
 // CollisionBelow returns true if object will collide with anything while moving down
@@ -394,10 +394,10 @@ func (o *BaseObjectPhys) SetManualVelocity(v pixel.Vec) {
 	case v.X > 0:
 		v.X = o.ParentObject().Speed()
 		v.Y = 0
-	case v.Y < 0:
+	case v.Y > 0:
 		v.Y = o.ParentObject().Speed()
 		v.X = 0
-	case v.Y > 0:
+	case v.Y < 0:
 		v.Y = o.ParentObject().Speed() * -1
 		v.X = 0
 	}

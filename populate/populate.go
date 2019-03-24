@@ -99,6 +99,36 @@ func RandomRectangles(w *world.World, n int) {
 	}
 }
 
+// AddTargetSeeker adds an object that seeks a target
+func AddTargetSeeker(w *world.World) {
+
+	var minWidth, maxWidth, minHeight, maxHeight, minMass, maxMass, minSpeed, maxSpeed float64
+
+	minWidth, maxWidth = 10, 81
+	minHeight, maxHeight = 10, 81
+	minMass, maxMass = 6, 10
+	minSpeed, maxSpeed = 6, 10
+
+	width := utils.RandomFloat64(minWidth, maxWidth+1)
+	height := utils.RandomFloat64(minHeight, maxHeight)
+
+	o := world.NewRectObject(
+		fmt.Sprintf("ts1"),
+		colornames.Yellow,
+		utils.RandomFloat64(minSpeed, maxSpeed)/10, // speed
+		utils.RandomFloat64(minMass, maxMass)/10,   // mass
+		width,  // width
+		height, // height
+		world.NewTargetSeekerBehavior(), // default behavior
+	)
+
+	target := pixel.V(0, w.Ground.Phys().Location().Max.Y)
+	log.Printf("target: %v", target)
+	o.Behavior().(*world.TargetSeekerBehavior).SetTarget(target)
+
+	w.AddObject(o)
+}
+
 // AddManualObject adds a manually controlled object to the world
 func AddManualObject(w *world.World, width, height float64) {
 

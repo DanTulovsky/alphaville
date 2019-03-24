@@ -53,9 +53,9 @@ func processInput(win *pixelgl.Window, w *world.World, ctrl pixel.Vec) {
 	case win.Pressed(pixelgl.KeyRight):
 		ctrl.X++
 	case win.Pressed(pixelgl.KeyUp):
-		ctrl.Y--
-	case win.Pressed(pixelgl.KeyDown):
 		ctrl.Y++
+	case win.Pressed(pixelgl.KeyDown):
+		ctrl.Y--
 	case win.JustPressed(pixelgl.MouseButtonLeft):
 		processMouseLeftInput(w, win.MousePosition())
 	}
@@ -106,6 +106,7 @@ func run() {
 	populate.RandomRectangles(w, 20)
 	populate.RandomEllipses(w, 5)
 	populate.AddManualObject(w, 60, 60)
+	// populate.AddTargetSeeker(w)
 	populate.AddGates(w, time.Second*1)
 	populate.AddFixtures(w)
 
