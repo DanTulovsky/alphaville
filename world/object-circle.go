@@ -1,8 +1,11 @@
 package world
 
 import (
+	"bytes"
 	"fmt"
+	"html/template"
 	"image/color"
+	"log"
 
 	"gogs.wetsnow.com/dant/alphaville/utils"
 	"golang.org/x/image/colornames"
@@ -29,6 +32,32 @@ func NewCircleObject(name string, color color.Color, speed, mass, radius float64
 	}
 
 	return o
+}
+
+// String returns the object as string
+func (o *CircleObject) String() string {
+	buf := bytes.NewBufferString("")
+
+	tmpl, err := template.New("object").Parse(
+		`
+----------------------------------------
+Name: {{.Name}}
+Speed: {{.Speed}}
+Mass: {{.Mass}}
+`)
+
+	if err != nil {
+		log.Fatalf("object conversion error: %v", err)
+	}
+	err = tmpl.Execute(buf, o)
+	if err != nil {
+		log.Fatalf("object conversion error: %v", err)
+	}
+
+	fmt.Fprintf(buf, "  %v", o.Phys())
+	fmt.Fprintf(buf, "  %v", o.Behavior())
+	fmt.Fprintf(buf, "----------------------------------------")
+	return buf.String()
 }
 
 // BoundingBox returns a Rect, rooted at the center, that covers the object

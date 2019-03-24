@@ -102,9 +102,9 @@ func run() {
 	w := world.NewWorld(worldMaxX, worldMaxY, ground, gravity)
 
 	// populate the world
-	// populate.RandomCircles(w, 5)
+	populate.RandomCircles(w, 5)
 	populate.RandomRectangles(w, 20)
-	// populate.RandomEllipses(w, 5)
+	populate.RandomEllipses(w, 5)
 	populate.AddManualObject(w, 60, 60)
 	populate.AddGates(w, time.Second*1)
 	populate.AddFixtures(w)

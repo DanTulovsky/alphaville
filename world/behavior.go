@@ -144,7 +144,7 @@ func (b *DefaultBehavior) HandleCollisions(w *World, o Object) bool {
 		}
 	case phys.MovingUp():
 		if phys.CollisionAbove(w) {
-			b.avoidCollisionAbove(phys)
+			b.avoidCollisionAbove(phys, w)
 			return true
 		}
 	case phys.MovingRight():
@@ -172,11 +172,15 @@ func (b *DefaultBehavior) avoidCollisionBelow(phys ObjectPhys) {
 }
 
 // avoidCollisionAbove changes o to avoid collision with an object above while moving up
-func (b *DefaultBehavior) avoidCollisionAbove(phys ObjectPhys) {
+func (b *DefaultBehavior) avoidCollisionAbove(phys ObjectPhys, w *World) {
 
 	phys.SetCurrentMass(phys.ParentObject().Mass())
 	v := phys.Vel()
 	v.Y = 0
+	// if on ground, Y is now 0 and X is 0 from before, reset X movement
+	if phys.OnGround(w) {
+		v.X = phys.PreviousVel().X
+	}
 	phys.SetVel(v)
 }
 
@@ -184,6 +188,9 @@ func (b *DefaultBehavior) avoidCollisionAbove(phys ObjectPhys) {
 func (b *DefaultBehavior) ChangeHorizontalDirection(phys ObjectPhys) {
 	v := phys.Vel()
 	v.X = -1 * v.X
+	if v.X == 0 {
+		log.Printf("Found 0 v.X!")
+	}
 	phys.SetVel(v)
 }
 
@@ -193,6 +200,7 @@ func (b *DefaultBehavior) avoidHorizontalCollision(phys ObjectPhys) {
 	// Going to bump, 50/50 chance of rising up or changing direction
 	if utils.RandomInt(0, 100) > 50 {
 		phys.SetCurrentMass(0)
+		// b.ChangeHorizontalDirection(phys)
 	} else {
 		b.ChangeHorizontalDirection(phys)
 	}
@@ -226,15 +234,18 @@ func (b *DefaultBehavior) Move(w *World, o Object, v pixel.Vec) {
 		// right border
 		b.ChangeHorizontalDirection(phys)
 
-	case phys.Location().Min.Y+phys.Vel().Y < w.Ground.Phys().Location().Max.Y:
+	case phys.MovingDown() && phys.Location().Min.Y+phys.Vel().Y < w.Ground.Phys().Location().Max.Y:
 		// stop at ground level
 		phys.SetLocation(phys.Location().Moved(pixel.V(0, w.Ground.Phys().Location().Max.Y-phys.Location().Min.Y)))
 		v := phys.Vel()
 		v.Y = 0
 		v.X = phys.PreviousVel().X
+		if v.X == 0 {
+			log.Println("X is 0!!!!")
+		}
 		phys.SetVel(v)
 
-	case phys.Location().Max.Y+phys.Vel().Y >= w.Y && phys.Vel().Y > 0:
+	case phys.MovingUp() && phys.Location().Max.Y+phys.Vel().Y >= w.Y && phys.Vel().Y > 0:
 		// stop at ceiling if going up
 		phys.SetLocation(phys.Location().Moved(pixel.V(0, w.Y-phys.Location().Max.Y)))
 		v := phys.Vel()

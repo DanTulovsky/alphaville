@@ -384,7 +384,7 @@ func (o *BaseObjectPhys) Stop() {
 	o.SetVel(v)
 }
 
-// SetVelocity sets the manual object's velocity
+// SetManualVelocity sets the manual object's velocity
 func (o *BaseObjectPhys) SetManualVelocity(v pixel.Vec) {
 
 	switch {
