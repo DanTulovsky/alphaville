@@ -68,17 +68,6 @@ func (b *DefaultBehavior) Update(w *World, o Object) {
 	// Movement and location are set in the NextPhys object
 	phys := o.NextPhys()
 
-	// if on the ground and X velocity is 0, reset it - this seems to be a bug
-	if phys.OnGround(w) && phys.StoppedX() {
-		v := o.NextPhys().Vel()
-		v.X = o.NextPhys().PreviousVel().X
-		if v.X == 0 {
-			v.X = o.Speed()
-		}
-		v.Y = 0
-		o.NextPhys().SetVel(v)
-	}
-
 	// check if object should rise or fall, these checks not based on collisions
 	// if anything changes, leave actual movement until next turn, otherwise
 	// collision detection gets confused
@@ -203,8 +192,7 @@ func (b *DefaultBehavior) avoidHorizontalCollision(phys ObjectPhys) {
 
 	// Going to bump, 50/50 chance of rising up or changing direction
 	if utils.RandomInt(0, 100) > 50 {
-		// phys.SetCurrentMass(0)
-		b.ChangeHorizontalDirection(phys)
+		phys.SetCurrentMass(0)
 	} else {
 		b.ChangeHorizontalDirection(phys)
 	}
