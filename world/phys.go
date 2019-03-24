@@ -5,6 +5,8 @@ import (
 	"html/template"
 	"log"
 
+	"gogs.wetsnow.com/dant/alphaville/utils"
+
 	"github.com/faiface/pixel"
 )
 
@@ -31,6 +33,8 @@ type ObjectPhys interface {
 	SetManualVelocity(v pixel.Vec)
 	Stop()
 	Stopped() bool
+	StoppedX() bool
+	StoppedY() bool
 	Vel() pixel.Vec
 
 	SetCurrentMass(float64)
@@ -155,9 +159,19 @@ func (o *BaseObjectPhys) OnGround(w *World) bool {
 	return o.Location().Min.Y == w.Ground.Phys().Location().Max.Y
 }
 
-// Stopped returns true if object is stopped
+// Stopped returns true if object is stopped in both directions
 func (o *BaseObjectPhys) Stopped() bool {
+	return o.Vel().X == 0 && o.Vel().Y == 0
+}
+
+// StoppedX returns true if object is stopped horizontally
+func (o *BaseObjectPhys) StoppedX() bool {
 	return o.Vel().X == 0
+}
+
+// StoppedY returns true if object is stopped vertically
+func (o *BaseObjectPhys) StoppedY() bool {
+	return o.Vel().Y == 0
 }
 
 // IsAboveGround checks if object is above ground
@@ -197,15 +211,32 @@ func (o *BaseObjectPhys) shouldCheckVerticalCollision(other Object) bool {
 		return false // skip yourself
 	}
 
-	if o.Location().Max.X < other.Phys().Location().Min.X+other.Phys().Vel().X &&
-		o.Location().Max.X < other.Phys().Location().Min.X {
-		return false // no intersection in X axis
+	// other is moving left, would cross, but cannot due to Y intersect
+	if o.Location().Max.X > other.Phys().Location().Min.X+other.Phys().Vel().X {
+		if utils.HaveCommonY(o.Location(), other.Phys().Location()) {
+			return false
+		}
 	}
 
+	// other is moving left and would cross
+	if o.Location().Max.X < other.Phys().Location().Min.X+other.Phys().Vel().X &&
+		o.Location().Max.X < other.Phys().Location().Min.X {
+		return false
+	}
+
+	// other is moving right, would cross, but cannot due to Y intersect
+	if o.Location().Min.X < other.Phys().Location().Max.X+other.Phys().Vel().X {
+		if utils.HaveCommonY(o.Location(), other.Phys().Location()) {
+			return false
+		}
+	}
+
+	// other is moving right and would cross
 	if o.Location().Min.X > other.Phys().Location().Max.X+other.Phys().Vel().X &&
 		o.Location().Min.X > other.Phys().Location().Max.X {
-		return false // no intersection in X axis
+		return false
 	}
+
 	return true
 }
 
@@ -244,8 +275,8 @@ func (o *BaseObjectPhys) CollisionBelow(w *World) bool {
 			continue
 		}
 
-		gap := o.Location().Min.Y - other.Phys().Location().Max.Y
-		if gap < 0 {
+		if o.Location().Min.Y < other.Phys().Location().Max.Y &&
+			o.Location().Max.Y < other.Phys().Location().Min.Y {
 			continue
 		}
 
@@ -255,8 +286,10 @@ func (o *BaseObjectPhys) CollisionBelow(w *World) bool {
 			// too far apart
 			continue
 		}
+
 		return true
 	}
+
 	return false
 }
 
@@ -267,8 +300,8 @@ func (o *BaseObjectPhys) CollisionAbove(w *World) bool {
 			continue
 		}
 
-		gap := other.Phys().Location().Min.Y - o.Location().Max.Y
-		if gap < 0 {
+		if other.Phys().Location().Min.Y < o.Location().Max.Y &&
+			other.Phys().Location().Max.Y < o.Location().Min.Y {
 			continue
 		}
 

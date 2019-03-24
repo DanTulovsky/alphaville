@@ -130,3 +130,21 @@ func Atlas() *text.Atlas {
 
 	return atlas
 }
+
+// HaveCommonY returns true if r1 and r2 have a common Y value
+func HaveCommonY(r1, r2 pixel.Rect) bool {
+	if r1.Min.Y > r2.Min.Y && r1.Min.Y < r2.Max.Y {
+		return true
+	}
+	if r1.Max.Y < r2.Max.Y && r1.Max.Y > r2.Min.Y {
+		return true
+	}
+
+	if r2.Min.Y > r1.Min.Y && r2.Min.Y < r1.Max.Y {
+		return true
+	}
+	if r2.Max.Y < r1.Max.Y && r2.Max.Y > r1.Min.Y {
+		return true
+	}
+	return false
+}

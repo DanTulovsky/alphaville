@@ -69,7 +69,7 @@ func (b *DefaultBehavior) Update(w *World, o Object) {
 	phys := o.NextPhys()
 
 	// if on the ground and X velocity is 0, reset it - this seems to be a bug
-	if phys.OnGround(w) && phys.Stopped() {
+	if phys.OnGround(w) && phys.StoppedX() {
 		v := o.NextPhys().Vel()
 		v.X = o.NextPhys().PreviousVel().X
 		if v.X == 0 {
@@ -80,7 +80,11 @@ func (b *DefaultBehavior) Update(w *World, o Object) {
 	}
 
 	// check if object should rise or fall, these checks not based on collisions
-	b.changeVerticalDirection(w, o)
+	// if anything changes, leave actual movement until next turn, otherwise
+	// collision detection gets confused
+	if b.changeVerticalDirection(w, o) {
+		return
+	}
 
 	// check collisions and adjust movement parameters
 	// if a collision is detected, no movement happens this round
@@ -93,8 +97,9 @@ func (b *DefaultBehavior) Update(w *World, o Object) {
 }
 
 // changeVerticalDirection updates the vertical direction if needed
-func (b *DefaultBehavior) changeVerticalDirection(w *World, o Object) {
+func (b *DefaultBehavior) changeVerticalDirection(w *World, o Object) bool {
 	phys := o.NextPhys()
+	currentY := phys.Vel().Y
 
 	if phys.IsAboveGround(w) {
 		// fall speed based on mass and gravity
@@ -129,6 +134,12 @@ func (b *DefaultBehavior) changeVerticalDirection(w *World, o Object) {
 			phys.SetVel(v)
 		}
 	}
+	// something was changed
+	if currentY != phys.Vel().Y {
+		return true
+	}
+
+	return false
 }
 
 // HandleCollisions returns true if o has any collisions
@@ -192,7 +203,8 @@ func (b *DefaultBehavior) avoidHorizontalCollision(phys ObjectPhys) {
 
 	// Going to bump, 50/50 chance of rising up or changing direction
 	if utils.RandomInt(0, 100) > 50 {
-		phys.SetCurrentMass(0)
+		// phys.SetCurrentMass(0)
+		b.ChangeHorizontalDirection(phys)
 	} else {
 		b.ChangeHorizontalDirection(phys)
 	}
@@ -243,7 +255,12 @@ func (b *DefaultBehavior) Move(w *World, o Object, v pixel.Vec) {
 		phys.SetCurrentMass(o.Mass())
 
 	default:
-		phys.SetLocation(phys.Location().Moved(pixel.V(v.X, v.Y)))
+		newLocation := phys.Location().Moved(pixel.V(v.X, v.Y))
+		// log.Printf("name=%v) from: %v to: %v", o.Name(), phys.Location(), newLocation)
+		// CheckIntersectRect(w, newLocation, o.ID())
+		phys.SetLocation(newLocation)
+		// log.Printf("checking intersect of: %v", o.Name())
+		// o.CheckIntersect(w)
 	}
 }
 
@@ -271,5 +288,7 @@ func (b *ManualBehavior) Update(w *World, o Object) {
 
 // Move moves the object
 func (b *ManualBehavior) Move(w *World, o Object, v pixel.Vec) {
-	o.NextPhys().SetLocation(o.NextPhys().Location().Moved(pixel.V(v.X, v.Y)))
+	newLocation := o.NextPhys().Location().Moved(pixel.V(v.X, v.Y))
+	CheckIntersectRect(w, newLocation, o.ID())
+	o.NextPhys().SetLocation(newLocation)
 }

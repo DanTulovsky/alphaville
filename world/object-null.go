@@ -80,3 +80,6 @@ func (o *NullObject) SetNextPhys(ObjectPhys) {}
 
 // SetPhys does nothing
 func (o *NullObject) SetPhys(ObjectPhys) {}
+
+// CheckIntersect does nothing
+func (o *NullObject) CheckIntersect(*World) {}

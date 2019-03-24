@@ -237,3 +237,6 @@ func (g *Gate) SetNextPhys(ObjectPhys) {}
 
 // SetPhys does nothing
 func (g *Gate) SetPhys(ObjectPhys) {}
+
+// CheckIntersect does nothing
+func (g *Gate) CheckIntersect(*World) {}

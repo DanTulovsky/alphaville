@@ -76,8 +76,8 @@ func RandomRectangles(w *world.World, n int) {
 
 	minWidth, maxWidth = 10, 81
 	minHeight, maxHeight = 10, 81
-	minMass, maxMass = 1, 10
-	minSpeed, maxSpeed = 1, 10
+	minMass, maxMass = 6, 10
+	minSpeed, maxSpeed = 6, 10
 
 	for i := 0; i < n; i++ {
 		randomColor := colornames.Map[colornames.Names[utils.RandomInt(0, len(colornames.Names))]]
@@ -107,7 +107,7 @@ func AddManualObject(w *world.World, width, height float64) {
 	o := world.NewRectObject(
 		"manual",
 		colornames.Red,
-		2,      // speed
+		3,      // speed
 		1,      // mass
 		width,  // width
 		height, // height
@@ -143,7 +143,7 @@ func AddGates(w *world.World, coolDown time.Duration) {
 		{
 			name:     "One",
 			location: pixel.V(600, 600),
-			status:   world.GateOpen,
+			status:   world.GateClosed,
 			coolDown: 10 * time.Second,
 			radius:   20,
 		},

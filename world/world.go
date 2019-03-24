@@ -250,7 +250,7 @@ func (w *World) ShowStats() {
 
 // ObjectClicked returns the object at coordinates v
 func (w *World) ObjectClicked(v pixel.Vec) (Object, error) {
-	for _, o := range append(w.Objects) {
+	for _, o := range append(w.SpawnedObjects()) {
 		if o.Phys().Location().Contains(v) {
 			return o, nil
 		}
