@@ -29,28 +29,28 @@ func NewTargetEvent(d string, t time.Time, data ...observer.EventData) observer.
 
 // Target is something that target seekers hunt
 type Target interface {
+	observer.EventNotifier
+
 	ID() uuid.UUID
 	Destroy()
 	Draw(*pixelgl.Window)
-	EventNotifier() observer.EventNotifier
 	Location() pixel.Vec
 	Name() string
 }
 
 type simpleTarget struct {
-	id            uuid.UUID
-	name          string
-	location      pixel.Vec
-	eventNotifier observer.EventNotifier
+	id        uuid.UUID
+	name      string
+	location  pixel.Vec
+	observers []observer.EventObserver
 }
 
 // NewSimpleTarget returns a new simple target
 func NewSimpleTarget(name string, l pixel.Vec) Target {
 	return &simpleTarget{
-		id:            uuid.New(),
-		name:          name,
-		location:      l,
-		eventNotifier: observer.NewEventNotifier(),
+		id:       uuid.New(),
+		name:     name,
+		location: l,
 	}
 }
 
@@ -59,9 +59,27 @@ func (t *simpleTarget) ID() uuid.UUID {
 	return t.id
 }
 
-// EventNotifier returns the event notifier
-func (t *simpleTarget) EventNotifier() observer.EventNotifier {
-	return t.eventNotifier
+// Implement the observer.EventNotifier interface
+
+// Register registers a new observer for notifying on.
+func (t *simpleTarget) Register(obs observer.EventObserver) {
+	t.observers = append(t.observers, obs)
+}
+
+// Deregister de-registers an observer for notifying on.
+func (t *simpleTarget) Deregister(obs observer.EventObserver) {
+	for i := 0; i < len(t.observers); i++ {
+		if obs == t.observers[i] {
+			t.observers = append(t.observers[:i], t.observers[i+1:]...)
+		}
+	}
+}
+
+// Notify notifies all observers on an event.
+func (t *simpleTarget) Notify(event observer.Event) {
+	for i := 0; i < len(t.observers); i++ {
+		t.observers[i].OnNotify(event)
+	}
 }
 
 // Location returns the target's location
@@ -76,7 +94,7 @@ func (t *simpleTarget) Name() string {
 // Destroy destroys this target
 // A notification is issued and the world is updated via it
 func (t *simpleTarget) Destroy() {
-	t.eventNotifier.Notify(NewTargetEvent(
+	t.Notify(NewTargetEvent(
 		"target destroyed", time.Now(), observer.EventData{Key: "destroyed", Value: t.id.String()}))
 }
 

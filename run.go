@@ -86,7 +86,10 @@ func addTargets(w *world.World) {
 		return
 	}
 
-	t := world.NewSimpleTarget("t", pixel.V(utils.RandomFloat64(0, w.X), utils.RandomFloat64(0, w.Y)))
+	t := world.NewSimpleTarget("t",
+		pixel.V(
+			utils.RandomFloat64(0, w.X),
+			utils.RandomFloat64(w.Ground.Phys().Location().Max.Y, w.Y)))
 	w.AddTarget(t)
 }
 
@@ -105,7 +108,7 @@ func run() {
 	// populate the world
 	populate.AddTargets(w)
 	populate.AddTargetSeeker(w)
-	// populate.RandomCircles(w, 2)
+	populate.RandomCircles(w, 2)
 	// populate.RandomRectangles(w, 2)
 	// populate.RandomEllipses(w, 2)
 	// populate.AddManualObject(w, 60, 60)
@@ -135,7 +138,7 @@ func run() {
 	ticker := time.NewTicker(time.Second * 5)
 	go func() {
 		for range ticker.C {
-			// w.ShowStats()
+			w.ShowStats()
 		}
 	}()
 
@@ -171,7 +174,7 @@ func run() {
 		select {
 		case <-second:
 			win.SetTitle(fmt.Sprintf("%s | FPS: %d", cfg.Title, frames))
-			w.EventNotifier.Notify(
+			w.Notify(
 				w.NewWorldEvent(fmt.Sprintf("fps"), time.Now(),
 					observer.EventData{Key: "fps", Value: strconv.Itoa(frames)},
 					observer.EventData{Key: "ups", Value: strconv.Itoa(updates)}))

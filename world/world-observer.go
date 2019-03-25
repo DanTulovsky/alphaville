@@ -61,3 +61,26 @@ func (w *World) NewWorldEvent(d string, t time.Time, data ...observer.EventData)
 
 	return e
 }
+
+// Implement the observer.EventNotifier interface
+
+// Register registers a new observer for notifying on.
+func (w *World) Register(obs observer.EventObserver) {
+	w.observers = append(w.observers, obs)
+}
+
+// Deregister de-registers an observer for notifying on.
+func (w *World) Deregister(obs observer.EventObserver) {
+	for i := 0; i < len(w.observers); i++ {
+		if obs == w.observers[i] {
+			w.observers = append(w.observers[:i], w.observers[i+1:]...)
+		}
+	}
+}
+
+// Notify notifies all observers on an event.
+func (w *World) Notify(event observer.Event) {
+	for i := 0; i < len(w.observers); i++ {
+		w.observers[i].OnNotify(event)
+	}
+}

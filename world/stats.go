@@ -53,8 +53,6 @@ func (s *Stats) processWorldEvent(e *worldEvent) {
 			s.Fps = utils.Atoi(data.Value)
 		case "ups":
 			s.Ups = utils.Atoi(data.Value)
-		case "spawn":
-			s.ObjectsSpawned++
 		}
 	}
 }
@@ -66,6 +64,7 @@ func (s *Stats) processGateEvent(e *GateEvent) {
 			log.Printf("gate [%v] created", data.Value)
 		case "spawn":
 			log.Printf("gate spawned [%v]", data.Value)
+			s.ObjectsSpawned++
 		}
 	}
 }

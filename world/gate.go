@@ -60,7 +60,8 @@ type Gate struct {
 
 	Radius float64 // size
 
-	eventNotifier observer.EventNotifier
+	// who to notify on events
+	observers []observer.EventObserver
 
 	// filters controls what object is allowed to use (reserver and spawn) this gate
 	// if any filter denies (returns false), usage is not allowed
@@ -86,7 +87,6 @@ func NewGate(n string, l pixel.Vec, s GateStatus, coolDown time.Duration, radius
 		Reserved:      false,
 		SpawnCoolDown: coolDown,
 		Radius:        radius,
-		eventNotifier: observer.NewEventNotifier(),
 		filters:       filters,
 	}
 
@@ -96,11 +96,6 @@ func NewGate(n string, l pixel.Vec, s GateStatus, coolDown time.Duration, radius
 // String returns the gate as string
 func (g *Gate) String() string {
 	return fmt.Sprintf("[%v] L: %v, S: %v, R: %v, C: %v (%v)", g.name, g.Location, g.Status, g.Reserved, g.SpawnCoolDown, g.LastSpawn)
-}
-
-// EventNotifier returns the event notifier
-func (g *Gate) EventNotifier() observer.EventNotifier {
-	return g.eventNotifier
 }
 
 // CanSpawn returns true if the gate can spawn
@@ -127,7 +122,7 @@ func (g *Gate) Reserve(o Object) error {
 	if g.CanSpawn() {
 		g.Reserved = true
 		g.ReservedBy = o.ID()
-		g.eventNotifier.Notify(NewGateEvent(fmt.Sprintf("gate [%v] reserved for [%v]", g, o.ID()), time.Now()))
+		g.Notify(NewGateEvent(fmt.Sprintf("gate [%v] reserved for [%v]", g, o.ID()), time.Now()))
 
 		return nil
 	}
@@ -136,7 +131,7 @@ func (g *Gate) Reserve(o Object) error {
 
 // Release removes a gates reservation
 func (g *Gate) Release() {
-	g.eventNotifier.Notify(NewGateEvent(fmt.Sprintf("gate [%v] reservation released", g), time.Now()))
+	g.Notify(NewGateEvent(fmt.Sprintf("gate [%v] reservation released", g), time.Now()))
 	g.Reserved = false
 	g.LastSpawn = time.Now()
 }
@@ -176,6 +171,29 @@ func (g *Gate) Draw(win *pixelgl.Window) {
 
 	fmt.Fprintf(txt, label)
 	txt.Draw(win, pixel.IM)
+}
+
+// Implement the observer.EventNotifier interface
+
+// Register registers a new observer for notifying on.
+func (g *Gate) Register(obs observer.EventObserver) {
+	g.observers = append(g.observers, obs)
+}
+
+// Deregister de-registers an observer for notifying on.
+func (g *Gate) Deregister(obs observer.EventObserver) {
+	for i := 0; i < len(g.observers); i++ {
+		if obs == g.observers[i] {
+			g.observers = append(g.observers[:i], g.observers[i+1:]...)
+		}
+	}
+}
+
+// Notify notifies all observers on an event.
+func (g *Gate) Notify(event observer.Event) {
+	for i := 0; i < len(g.observers); i++ {
+		g.observers[i].OnNotify(event)
+	}
 }
 
 // Implement the Object interface

@@ -22,27 +22,28 @@ type World struct {
 	fixtures      []Object // walls, floors, rocks, etc...
 	gravity       float64
 	Stats         *Stats // world stats, an observer of events happening in the world
-	EventNotifier observer.EventNotifier
+
+	observers []observer.EventObserver
 }
 
 // NewWorld returns a new worldof size x, y
 func NewWorld(x, y float64, ground Object, gravity float64) *World {
 
 	w := &World{
-		Objects:       []Object{},
-		Gates:         []*Gate{},
-		targets:       []Target{},
-		X:             x,
-		Y:             y,
-		Ground:        ground,
-		gravity:       gravity,
-		Stats:         NewStats(),
-		EventNotifier: observer.NewEventNotifier(),
+		Objects: []Object{},
+		Gates:   []*Gate{},
+		targets: []Target{},
+		X:       x,
+		Y:       y,
+		Ground:  ground,
+		gravity: gravity,
+		Stats:   NewStats(),
+		// EventNotifier: observer.NewEventNotifier(),
 		ManualControl: NewNullObject(),
 	}
 
-	w.EventNotifier.Register(w.Stats)
-	w.EventNotifier.Notify(w.NewWorldEvent(fmt.Sprintf("The world is created..."), time.Now()))
+	w.Register(w.Stats)
+	w.Notify(w.NewWorldEvent(fmt.Sprintf("The world is created..."), time.Now()))
 	return w
 }
 
@@ -173,10 +174,10 @@ func (w *World) AddTarget(t Target) error {
 	w.targets = append(w.targets, t)
 
 	// register those who should be notified of events
-	t.EventNotifier().Register(w.Stats)
-	t.EventNotifier().Register(w)
+	t.Register(w.Stats)
+	t.Register(w)
 
-	t.EventNotifier().Notify(NewTargetEvent(fmt.Sprintf("target [%v] created", t), time.Now(),
+	t.Notify(NewTargetEvent(fmt.Sprintf("target [%v] created", t), time.Now(),
 		observer.EventData{Key: "created", Value: t.ID().String()}))
 	return nil
 }
@@ -210,10 +211,10 @@ func (w *World) AddGate(g *Gate) error {
 	}
 	w.Gates = append(w.Gates, g)
 
-	g.EventNotifier().Register(w.Stats)
-	g.EventNotifier().Register(w)
+	g.Register(w.Stats)
+	g.Register(w)
 
-	g.EventNotifier().Notify(NewGateEvent(fmt.Sprintf("gate [%v] created", g), time.Now(),
+	g.Notify(NewGateEvent(fmt.Sprintf("gate [%v] created", g), time.Now(),
 		observer.EventData{Key: "created", Value: g.Name()}))
 	return nil
 }
@@ -241,8 +242,6 @@ func (w *World) SpawnObject(o Object) error {
 		}
 	}
 
-	// phys.SetVel(pixel.V(o.Speed(), w.gravity*o.Mass()))
-
 	// Don't set velocity for manual objects
 	switch o.Behavior().(type) {
 	case *ManualBehavior:
@@ -255,7 +254,7 @@ func (w *World) SpawnObject(o Object) error {
 	o.SetNextPhys(o.Phys().Copy())
 
 	g.Release()
-	g.EventNotifier().Notify(NewGateEvent(
+	g.Notify(NewGateEvent(
 		fmt.Sprintf(
 			"object [%v] spawned", o.Name()), time.Now(),
 		observer.EventData{Key: "spawn", Value: fmt.Sprintf("%T", o)}))
@@ -299,7 +298,7 @@ func (w *World) CheckIntersect() {
 
 // End destroys the world
 func (w *World) End() {
-	w.EventNotifier.Notify(w.NewWorldEvent(fmt.Sprint("The world dies..."), time.Now()))
+	w.Notify(w.NewWorldEvent(fmt.Sprint("The world dies..."), time.Now()))
 	w = nil
 }
 
