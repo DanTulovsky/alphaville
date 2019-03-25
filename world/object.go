@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"image/color"
 	"log"
+	"time"
 
 	"golang.org/x/image/colornames"
 
+	"gogs.wetsnow.com/dant/alphaville/observer"
 	"gogs.wetsnow.com/dant/alphaville/utils"
 
 	"github.com/faiface/pixel"
@@ -18,6 +20,8 @@ import (
 
 // Object is an object in the world
 type Object interface {
+	observer.EventNotifier
+
 	Behavior() Behavior
 	BoundingBox(pixel.Vec) pixel.Rect
 	CheckIntersect(*World)
@@ -35,6 +39,21 @@ type Object interface {
 	SetManualVelocity(v pixel.Vec)
 	SetNextPhys(ObjectPhys)
 	SetPhys(ObjectPhys)
+}
+
+// ObjectEvent implements the observer.Event interface to send events to other components
+type ObjectEvent struct {
+	observer.BaseEvent
+}
+
+// NewObjectEvent create a new Object event
+func NewObjectEvent(d string, t time.Time, data ...observer.EventData) observer.Event {
+	e := &ObjectEvent{}
+	e.SetData(data)
+	e.SetDescription(d)
+	e.SetTime(t)
+
+	return e
 }
 
 // BaseObject is the base object
@@ -59,6 +78,9 @@ type BaseObject struct {
 
 	// behavior of the object (movement, etc...)
 	behavior Behavior
+
+	// who to notify on events
+	observers []observer.EventObserver
 }
 
 // NewBaseObject return a new rectangular object
@@ -195,4 +217,27 @@ func (o *BaseObject) Draw(win *pixelgl.Window) {
 func (o *BaseObject) SetManualVelocity(v pixel.Vec) {
 	o.NextPhys().SetManualVelocity(v)
 	o.Phys().SetManualVelocity(v)
+}
+
+// Implement the observer.EventNotifier interface
+
+// Register registers a new observer for notifying on.
+func (o *BaseObject) Register(obs observer.EventObserver) {
+	o.observers = append(o.observers, obs)
+}
+
+// Deregister de-registers an observer for notifying on.
+func (o *BaseObject) Deregister(obs observer.EventObserver) {
+	for i := 0; i < len(o.observers); i++ {
+		if obs == o.observers[i] {
+			o.observers = append(o.observers[:i], o.observers[i+1:]...)
+		}
+	}
+}
+
+// Notify notifies all observers on an event.
+func (o *BaseObject) Notify(event observer.Event) {
+	for i := 0; i < len(o.observers); i++ {
+		o.observers[i].OnNotify(event)
+	}
 }

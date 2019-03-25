@@ -2,10 +2,13 @@ package world
 
 import (
 	"bytes"
+	"fmt"
 	"html/template"
 	"log"
+	"time"
 
 	"github.com/faiface/pixel"
+	"gogs.wetsnow.com/dant/alphaville/observer"
 	"gogs.wetsnow.com/dant/alphaville/utils"
 )
 
@@ -333,9 +336,13 @@ func (b *TargetSeekerBehavior) nextDirectionToTarget(w *World, o Object) string 
 // isAtTarget returns true if any part of the object covers the target
 func (b *TargetSeekerBehavior) isAtTarget(o Object) bool {
 	if o.Phys().Location().Contains(b.target.Location()) {
-		// log.Printf("found target %v", b.target.Location())
+
+		o.Notify(NewObjectEvent(
+			fmt.Sprintf("[%v] found target [%v]", o.Name(), b.target.Name()), time.Now(),
+			observer.EventData{Key: "target_found", Value: b.target.Name()}))
 		b.target.Destroy()
 		b.target = nil
+
 		return true
 	}
 	return false

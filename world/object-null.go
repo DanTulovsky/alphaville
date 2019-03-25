@@ -4,6 +4,7 @@ import (
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/pixelgl"
 	"github.com/google/uuid"
+	"gogs.wetsnow.com/dant/alphaville/observer"
 )
 
 // NullObject implements the Object interface, but doesn't do anything
@@ -83,3 +84,17 @@ func (o *NullObject) SetPhys(ObjectPhys) {}
 
 // CheckIntersect does nothing
 func (o *NullObject) CheckIntersect(*World) {}
+
+// Implement the observer.EventNotifier interface
+
+// Register does nothing
+func (o *NullObject) Register(obs observer.EventObserver) {
+}
+
+// Deregister does nothing
+func (o *NullObject) Deregister(obs observer.EventObserver) {
+}
+
+// Notify does nothing
+func (o *NullObject) Notify(event observer.Event) {
+}

@@ -80,6 +80,17 @@ func (s *Stats) processTargetEvent(e *TargetEvent) {
 	}
 }
 
+func (s *Stats) processObjectEvent(e *ObjectEvent) {
+	for _, data := range e.Data() {
+		switch data.Key {
+		case "created":
+			log.Printf("object [%v] created", data.Value)
+		case "target_found":
+			log.Printf("target [%v] found", data.Value)
+		}
+	}
+}
+
 // OnNotify runs when a notification is received
 func (s *Stats) OnNotify(e observer.Event) {
 	switch event := e.(type) {
@@ -91,5 +102,7 @@ func (s *Stats) OnNotify(e observer.Event) {
 		s.processGateEvent(event)
 	case *TargetEvent:
 		s.processTargetEvent(event)
+	case *ObjectEvent:
+		s.processObjectEvent(event)
 	}
 }

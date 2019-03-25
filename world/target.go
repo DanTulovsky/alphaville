@@ -96,6 +96,7 @@ func (t *simpleTarget) Name() string {
 func (t *simpleTarget) Destroy() {
 	t.Notify(NewTargetEvent(
 		"target destroyed", time.Now(), observer.EventData{Key: "destroyed", Value: t.id.String()}))
+	t = nil
 }
 
 // Draw draws the target
