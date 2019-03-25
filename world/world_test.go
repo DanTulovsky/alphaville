@@ -3,8 +3,6 @@ package world
 import (
 	"testing"
 
-	"gogs.wetsnow.com/dant/alphaville/observer"
-
 	"github.com/go-test/deep"
 )
 
@@ -36,7 +34,6 @@ func TestNewWorld(t *testing.T) {
 				Ground:        nil,
 				gravity:       2,
 				Stats:         NewStats(),
-				EventNotifier: observer.NewEventNotifier(),
 				ManualControl: NewNullObject(),
 			},
 		},
