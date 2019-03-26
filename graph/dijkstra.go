@@ -15,43 +15,47 @@ A trivial example of a graph definition is:
 	}
 
 */
-package dijkstra
+package graph
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/faiface/pixel"
+)
 
 type node struct {
-	key  string
+	key  *Node
 	cost int
 }
 
 // Graph is a rappresentation of how the points in our graph are connected
 // between each other
-type Graph map[string]map[string]int
+// type Graph map[string]map[string]int
 
-// Path finds the shortest path between start and target, also returning the
+// DijkstraPath finds the shortest path between start and target, also returning the
 // total cost of the found path.
-func (g Graph) Path(start, target string) (path []string, cost int, err error) {
-	if len(g) == 0 {
-		err = fmt.Errorf("cannot find path in empty map")
+func (g *Graph) DijkstraPath(start, target pixel.Vec) (path []*Node, cost int, err error) {
+	if len(g.nodes) == 0 {
+		err = fmt.Errorf("cannot find path in empty graph")
 		return
 	}
 
 	// ensure start and target are part of the graph
-	if _, ok := g[start]; !ok {
+	if g.FindNode(start) == nil {
 		err = fmt.Errorf("cannot find start %v in graph", start)
 		return
 	}
-	if _, ok := g[target]; !ok {
+	if g.FindNode(target) == nil {
 		err = fmt.Errorf("cannot find target %v in graph", target)
 		return
 	}
 
-	explored := make(map[string]bool)   // set of nodes we already explored
-	frontier := NewQueue()              // queue of the nodes to explore
-	previous := make(map[string]string) // previously visited node
+	explored := make(map[*Node]bool)  // set of nodes we already explored
+	frontier := NewQueue()            // queue of the nodes to explore
+	previous := make(map[*Node]*Node) // previously visited node
 
 	// add starting point to the frontier as it'll be the first node visited
-	frontier.Set(start, 0)
+	frontier.Set(g.FindNode(start), 0)
 
 	// run until we visited every node in the frontier
 	for !frontier.IsEmpty() {
@@ -61,11 +65,11 @@ func (g Graph) Path(start, target string) (path []string, cost int, err error) {
 
 		// when the node with the lowest cost in the frontier is target, we can
 		// compute the cost and path and exit the loop
-		if n.key == target {
+		if n.key.value.V == target {
 			cost = n.cost
 
 			nKey := n.key
-			for nKey != start {
+			for nKey.value.V != start {
 				path = append(path, nKey)
 				nKey = previous[nKey]
 			}
@@ -77,11 +81,12 @@ func (g Graph) Path(start, target string) (path []string, cost int, err error) {
 		explored[n.key] = true
 
 		// loop all the neighboring nodes
-		for nKey, nCost := range g[n.key] {
-			// skip alreadt-explored nodes
+		for _, nKey := range g.edges[*n.key] {
+			// skip already-explored nodes
 			if explored[nKey] {
 				continue
 			}
+			nCost := nKey.cost
 
 			// if the node is not yet in the frontier add it with the cost
 			if _, ok := frontier.Get(nKey); !ok {
@@ -103,7 +108,7 @@ func (g Graph) Path(start, target string) (path []string, cost int, err error) {
 	}
 
 	// add the origin at the end of the path
-	path = append(path, start)
+	path = append(path, g.FindNode(start))
 
 	// reverse the path because it was popilated
 	// in reverse, form target to start

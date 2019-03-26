@@ -1,12 +1,14 @@
-package dijkstra
+package graph
 
 import "sort"
+
+// From: https://github.com/albertorestifo/dijkstra
 
 // Queue is a basic priority queue implementation, where the node with the
 // lowest priority is kept as first element in the queue
 type Queue struct {
-	keys  []string
-	nodes map[string]int
+	keys  []*Node
+	nodes map[*Node]int
 }
 
 // Len is part of sort.Interface
@@ -28,7 +30,7 @@ func (q *Queue) Less(i, j int) bool {
 }
 
 // Set updates or inserts a new key in the priority queue
-func (q *Queue) Set(key string, priority int) {
+func (q *Queue) Set(key *Node, priority int) {
 	// inserts a new key if we don't have it already
 	if _, ok := q.nodes[key]; !ok {
 		q.keys = append(q.keys, key)
@@ -42,7 +44,7 @@ func (q *Queue) Set(key string, priority int) {
 }
 
 // Next removes the first element from the queue and retuns it's key and priority
-func (q *Queue) Next() (key string, priority int) {
+func (q *Queue) Next() (key *Node, priority int) {
 	// shift the key form the queue
 	key, keys := q.keys[0], q.keys[1:]
 	q.keys = keys
@@ -60,7 +62,7 @@ func (q *Queue) IsEmpty() bool {
 }
 
 // Get returns the priority of a passed key
-func (q *Queue) Get(key string) (priority int, ok bool) {
+func (q *Queue) Get(key *Node) (priority int, ok bool) {
 	priority, ok = q.nodes[key]
 	return
 }
@@ -68,6 +70,6 @@ func (q *Queue) Get(key string) (priority int, ok bool) {
 // NewQueue creates a new empty priority queue
 func NewQueue() *Queue {
 	var q Queue
-	q.nodes = make(map[string]int)
+	q.nodes = make(map[*Node]int)
 	return &q
 }

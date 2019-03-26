@@ -293,6 +293,8 @@ type TargetSeekerBehavior struct {
 	DefaultBehavior
 	target    Target
 	moveGraph *graph.Graph
+	path      []*graph.Node
+	cost      int
 }
 
 // NewTargetSeekerBehavior return a TargetSeekerBehavior
@@ -313,7 +315,9 @@ func (b *TargetSeekerBehavior) allCollisionVerticies(w *World, o Object) []pixel
 		if o.ID() == other.ID() {
 			continue // skip yourself
 		}
-		for _, v := range utils.RectVerticies(other.Phys().Location()) {
+		scaleX := (other.Phys().Location().Max.X - other.Phys().Location().Min.X) / 2
+		scaleY := (other.Phys().Location().Max.Y - other.Phys().Location().Min.Y) / 2
+		for _, v := range utils.RectVerticiesScaled(other.Phys().Location(), scaleX, scaleY, w.X, w.Y) {
 			l = append(l, v)
 		}
 	}
@@ -328,7 +332,12 @@ func (b *TargetSeekerBehavior) allCollisionEdges(w *World, o Object) []graph.Edg
 		if o.ID() == other.ID() {
 			continue // skip yourself
 		}
-		for _, v := range graph.RectEdges(other.Phys().Location()) {
+		scaleX := (other.Phys().Location().Max.X - other.Phys().Location().Min.X) / 2
+		scaleY := (other.Phys().Location().Max.Y - other.Phys().Location().Min.Y) / 2
+		v := utils.RectVerticiesScaled(other.Phys().Location(), scaleX, scaleY, w.X, w.Y)
+		r := pixel.R(v[0].X, v[0].Y, v[2].X, v[2].Y)
+
+		for _, v := range graph.RectEdges(r) {
 			l = append(l, v)
 		}
 	}
@@ -357,15 +366,15 @@ func (b *TargetSeekerBehavior) populateVisibilityGraph(w *World, o Object) {
 
 	// Add all verticies (except source) to the graph
 	for _, v := range verticies {
-		g.AddNode(graph.NewItemNode(v))
+		g.AddNode(graph.NewItemNode(v, 1))
 	}
 
 	// source node
-	p := graph.NewItemNode(o.Phys().Location().Center())
+	p := graph.NewItemNode(o.Phys().Location().Center(), 0)
 	g.AddNode(p)
 
 	// target node
-	t := graph.NewItemNode(b.target.Location())
+	t := graph.NewItemNode(b.target.Location(), 1)
 	g.AddNode(t)
 	log.Printf("target: %v", t.Value().V)
 
@@ -399,19 +408,30 @@ func (b *TargetSeekerBehavior) Target() Target {
 // nextDirectionToTarget returns the next direction to travel to the target
 // up, down, left, right
 func (b *TargetSeekerBehavior) nextDirectionToTarget(w *World, o Object) string {
-	t := b.Target()
+	if len(b.path) > 0 && o.Phys().Location().Contains(b.path[0].Value().V) {
+		log.Printf("removing node: %v", b.path[0])
+		b.path = append(b.path[:0], b.path[1:]...)
+		log.Printf("path is now: %v", b.path)
+	}
+
+	if len(b.path) == 0 {
+		// log.Printf("path ran out...")
+		return ""
+	}
+
+	t := b.path[0].Value().V
 	c := o.Phys().Location().Center()
 
-	to := t.Location().To(c)
+	to := t.To(c)
 
 	switch {
-	case to.X < 0 && !o.Phys().Location().Contains(pixel.V(t.Location().X, c.Y)):
+	case to.X < 0 && !o.Phys().Location().Contains(pixel.V(t.X, c.Y)):
 		return "right"
-	case to.X > 0 && !o.Phys().Location().Contains(pixel.V(t.Location().X, c.Y)):
+	case to.X > 0 && !o.Phys().Location().Contains(pixel.V(t.X, c.Y)):
 		return "left"
-	case to.Y < 0 && !o.Phys().Location().Contains(pixel.V(c.X, t.Location().Y)):
+	case to.Y < 0 && !o.Phys().Location().Contains(pixel.V(c.X, t.Y)):
 		return "up"
-	case to.Y > 0 && !o.Phys().Location().Contains(pixel.V(c.X, t.Location().Y)):
+	case to.Y > 0 && !o.Phys().Location().Contains(pixel.V(c.X, t.Y)):
 		return "down"
 	}
 
@@ -475,6 +495,17 @@ func (b *TargetSeekerBehavior) Update(w *World, o Object) {
 
 	if b.moveGraph == nil {
 		b.populateVisibilityGraph(w, o)
+	}
+
+	if b.path == nil {
+		log.Printf("looking for path from %v to %v", o.Name(), b.target.Name())
+		path, cost, err := b.moveGraph.DijkstraPath(o.Phys().Location().Center(), b.target.Location())
+		if err != nil {
+			log.Printf("error finding path: %v", err)
+		}
+
+		b.path = path
+		log.Printf("path (cost=%v): %v", cost, path)
 	}
 
 	phys := o.NextPhys()

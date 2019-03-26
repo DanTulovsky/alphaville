@@ -23,6 +23,7 @@ func NewItem(v pixel.Vec) Item {
 // Node is a single node in the graph
 type Node struct {
 	value Item
+	cost  int
 }
 
 // NewNode returns a new graph node
@@ -38,7 +39,7 @@ func (n Node) Value() Item {
 }
 
 // NewItemNode creates and return a new node with v as the item
-func NewItemNode(v pixel.Vec) *Node {
+func NewItemNode(v pixel.Vec, cost int) *Node {
 	return &Node{
 		value: Item{
 			V: v,
@@ -73,6 +74,16 @@ func NewGraph() *Graph {
 // Nodes returns all the nodes in the graph
 func (g *Graph) Nodes() []*Node {
 	return g.nodes
+}
+
+// FindNode returns the node with the provide value
+func (g *Graph) FindNode(v pixel.Vec) *Node {
+	for _, n := range g.nodes {
+		if n.value.V == v {
+			return n
+		}
+	}
+	return nil
 }
 
 // AddNode adds a node to the graph
