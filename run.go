@@ -138,7 +138,7 @@ func run() {
 	ticker := time.NewTicker(time.Second * 5)
 	go func() {
 		for range ticker.C {
-			w.ShowStats()
+			// w.ShowStats()
 		}
 	}()
 

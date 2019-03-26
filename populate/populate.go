@@ -215,6 +215,9 @@ func AddFixtures(w *world.World) {
 
 	f := world.NewFixture("block1", colornames.Green, width, height)
 	f.Place(pixel.V(580, w.Ground.Phys().Location().Max.Y+100))
+	w.AddFixture(f)
 
+	f = world.NewFixture("block2", colornames.Green, width, height)
+	f.Place(pixel.V(10, w.Ground.Phys().Location().Max.Y+100))
 	w.AddFixture(f)
 }
