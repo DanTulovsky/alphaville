@@ -358,6 +358,8 @@ func (b *TargetSeekerBehavior) isVisbile(w *World, p, v pixel.Vec, edges []graph
 	return true
 }
 
+// TODO
+// A vertex must be visible from verticies on the same edge!!!
 func (b *TargetSeekerBehavior) populateVisibilityGraph(w *World, o Object) {
 	log.Printf("Populating visibility graph for %v", o.Name())
 	g := graph.NewGraph()
