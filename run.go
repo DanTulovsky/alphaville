@@ -32,7 +32,7 @@ const (
 	visibleWinMaxX, visibleWinMaxY = 1024, 768
 	groundHeight                   = 40
 
-	maxTargets = 2
+	maxTargets = 1
 )
 
 // processMouseLeftInput handles left click
@@ -82,7 +82,7 @@ func draw(w *world.World, win *pixelgl.Window) {
 
 // addTargets adds targets into the world as they are caught
 func addTargets(w *world.World) {
-	if len(w.Targets()) >= 2 {
+	if len(w.Targets()) >= maxTargets {
 		return
 	}
 
@@ -108,12 +108,12 @@ func run() {
 	// populate the world
 	populate.AddTargets(w)
 	populate.AddTargetSeeker(w)
-	populate.RandomCircles(w, 2)
+	// populate.RandomCircles(w, 2)
 	// populate.RandomRectangles(w, 2)
 	// populate.RandomEllipses(w, 2)
 	// populate.AddManualObject(w, 60, 60)
 	populate.AddGates(w, time.Second*1)
-	// populate.AddFixtures(w)
+	populate.AddFixtures(w)
 
 	cfg := pixelgl.WindowConfig{
 		Title:  "Play!",

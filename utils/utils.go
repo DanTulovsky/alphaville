@@ -44,15 +44,8 @@ func D2R(d float64) float64 {
 func RotateRect(r pixel.Rect, angle float64) pixel.Rect {
 
 	theta := D2R(angle)
-
 	center := r.Center()
-
-	points := []pixel.Vec{
-		pixel.V(r.Min.X, r.Min.Y),
-		pixel.V(r.Min.X, r.Max.Y),
-		pixel.V(r.Max.X, r.Min.Y),
-		pixel.V(r.Max.X, r.Max.Y),
-	}
+	points := RectVerticies(r)
 
 	var minX, minY float64 = math.MaxFloat64, math.MaxFloat64
 	var maxX, maxY float64
@@ -147,4 +140,14 @@ func HaveCommonY(r1, r2 pixel.Rect) bool {
 		return true
 	}
 	return false
+}
+
+// RectVerticies returns a list of verticies for the given Rect
+func RectVerticies(r pixel.Rect) []pixel.Vec {
+	return []pixel.Vec{
+		pixel.V(r.Min.X, r.Min.Y),
+		pixel.V(r.Min.X, r.Max.Y),
+		pixel.V(r.Max.X, r.Max.Y),
+		pixel.V(r.Max.X, r.Min.Y),
+	}
 }

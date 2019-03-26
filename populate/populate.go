@@ -104,12 +104,12 @@ func AddTargetSeeker(w *world.World) {
 
 	var minWidth, maxWidth, minHeight, maxHeight, minMass, maxMass, minSpeed, maxSpeed float64
 
-	minWidth, maxWidth = 10, 81
-	minHeight, maxHeight = 10, 81
+	minWidth, maxWidth = 40, 41
+	minHeight, maxHeight = 40, 41
 	minMass, maxMass = 6, 10
 	minSpeed, maxSpeed = 6, 10
 
-	width := utils.RandomFloat64(minWidth, maxWidth+1)
+	width := utils.RandomFloat64(minWidth, maxWidth)
 	height := utils.RandomFloat64(minHeight, maxHeight)
 
 	o := world.NewRectObject(
@@ -176,7 +176,7 @@ func AddGates(w *world.World, coolDown time.Duration) {
 		{
 			name:     "Two",
 			location: pixel.V(200, 600),
-			status:   world.GateOpen,
+			status:   world.GateClosed,
 			coolDown: 1 * time.Second,
 			radius:   25,
 		},
@@ -202,7 +202,7 @@ func AddGates(w *world.World, coolDown time.Duration) {
 // AddTargets adds targets to the world
 func AddTargets(w *world.World) {
 
-	t := world.NewSimpleTarget("one", pixel.V(100, 100))
+	t := world.NewSimpleTarget("one", pixel.V(600, 50))
 	w.AddTarget(t)
 
 }
@@ -210,11 +210,11 @@ func AddTargets(w *world.World) {
 // AddFixtures add fixtures to the world
 func AddFixtures(w *world.World) {
 
-	var width float64 = 10
+	var width float64 = 100
 	var height float64 = 100
 
 	f := world.NewFixture("block1", colornames.Green, width, height)
-	f.Place(pixel.V(300, w.Ground.Phys().Location().Max.Y+100))
+	f.Place(pixel.V(580, w.Ground.Phys().Location().Max.Y+100))
 
 	w.AddFixture(f)
 }

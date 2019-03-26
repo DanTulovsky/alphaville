@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/faiface/pixel"
+	"gogs.wetsnow.com/dant/alphaville/graph"
 	"gogs.wetsnow.com/dant/alphaville/observer"
 	"gogs.wetsnow.com/dant/alphaville/utils"
 )
@@ -290,15 +291,99 @@ func (b *ManualBehavior) Move(w *World, o Object, v pixel.Vec) {
 // TargetSeekerBehavior moves in shortest path to the target
 type TargetSeekerBehavior struct {
 	DefaultBehavior
-	target Target
+	target    Target
+	moveGraph *graph.Graph
 }
 
 // NewTargetSeekerBehavior return a TargetSeekerBehavior
 func NewTargetSeekerBehavior() *TargetSeekerBehavior {
-	b := &TargetSeekerBehavior{}
+	b := &TargetSeekerBehavior{
+		moveGraph: nil,
+	}
 	b.name = "target_seeker"
 	b.description = "Travels in shortest path to target, if given, otherwise stands still."
 	return b
+}
+
+// allCollisionVerticies returns a list of all verticies of all collision object
+func (b *TargetSeekerBehavior) allCollisionVerticies(w *World, o Object) []pixel.Vec {
+	l := []pixel.Vec{}
+
+	for _, other := range w.CollisionObjects() {
+		if o.ID() == other.ID() {
+			continue // skip yourself
+		}
+		for _, v := range utils.RectVerticies(other.Phys().Location()) {
+			l = append(l, v)
+		}
+	}
+	return l
+}
+
+// allCollisionEdges returns a list of all edges of all collision object
+func (b *TargetSeekerBehavior) allCollisionEdges(w *World, o Object) []graph.Edge {
+	l := []graph.Edge{}
+
+	for _, other := range w.CollisionObjects() {
+		if o.ID() == other.ID() {
+			continue // skip yourself
+		}
+		for _, v := range graph.RectEdges(other.Phys().Location()) {
+			l = append(l, v)
+		}
+	}
+	return l
+}
+
+// isVisbile returns true if v is visibile from p (no intersecting edges)
+func (b *TargetSeekerBehavior) isVisbile(w *World, p, v pixel.Vec, edges []graph.Edge) bool {
+	for _, e := range edges {
+		// exclude edges that include v
+		if e.A == v || e.B == v {
+			continue
+		}
+		if graph.EdgesIntersect(graph.Edge{p, v}, e) {
+			return false
+		}
+	}
+	return true
+}
+
+func (b *TargetSeekerBehavior) populateVisibilityGraph(w *World, o Object) {
+	log.Printf("Populating visibility graph for %v", o.Name())
+	g := graph.NewGraph()
+	verticies := b.allCollisionVerticies(w, o)
+	edges := b.allCollisionEdges(w, o)
+
+	// Add all verticies (except source) to the graph
+	for _, v := range verticies {
+		g.AddNode(graph.NewItemNode(v))
+	}
+
+	// source node
+	p := graph.NewItemNode(o.Phys().Location().Center())
+	g.AddNode(p)
+
+	// target node
+	t := graph.NewItemNode(b.target.Location())
+	g.AddNode(t)
+	log.Printf("target: %v", t.Value().V)
+
+	// populate visibility information for all nodes
+	for _, n := range g.Nodes() {
+		for _, other := range g.Nodes() {
+			if n.Value().V == other.Value().V {
+				continue
+			}
+			// check if  v is visible from p
+			if b.isVisbile(w, n.Value().V, other.Value().V, edges) {
+				g.AddEdge(n, other)
+			}
+		}
+	}
+
+	b.moveGraph = g
+	log.Printf("%v", b.moveGraph)
 }
 
 // SetTarget sets the target
@@ -386,6 +471,10 @@ func (b *TargetSeekerBehavior) Update(w *World, o Object) {
 
 	if b.isAtTarget(o) {
 		return
+	}
+
+	if b.moveGraph == nil {
+		b.populateVisibilityGraph(w, o)
 	}
 
 	phys := o.NextPhys()
