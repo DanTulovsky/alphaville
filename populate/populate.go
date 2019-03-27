@@ -220,7 +220,6 @@ func AddTargets(w *world.World) {
 		valid = true
 	}
 	w.AddTarget(t)
-
 }
 
 // AddFixtures add fixtures to the world

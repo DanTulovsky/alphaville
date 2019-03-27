@@ -348,26 +348,20 @@ func (b *TargetSeekerBehavior) allCollisionEdges(w *World, o Object) []graph.Edg
 
 // isVisbile returns true if v is visibile from p (no intersecting edges)
 func (b *TargetSeekerBehavior) isVisbile(w *World, p, v pixel.Vec, edges []graph.Edge) bool {
-	log.Printf("points: %v, %v", p, v)
 	for _, e := range edges {
-		log.Printf("checking edge: %v", e)
 		if (e.A == p || e.B == p) && (e.A == v || e.B == v) {
 			// point are on the same segment, so visible
-			log.Println("same segment")
 			return true
 		}
 
 		// exclude edges that include v
 		if e.A == v || e.B == v {
-			log.Println("  excluded")
 			continue
 		}
 		if graph.EdgesIntersect(graph.Edge{A: p, B: v}, e) {
-			log.Println("  intersect")
 			return false
 		}
 	}
-	log.Printf("  included")
 	return true
 }
 
@@ -507,6 +501,7 @@ func (b *TargetSeekerBehavior) FindPath(start, target pixel.Vec) ([]*graph.Node,
 		log.Printf("error finding path: %v", err)
 		return nil, 0, err
 	}
+	log.Printf("Path found (cost = %v): %v", cost, path)
 	return path, cost, err
 }
 

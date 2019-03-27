@@ -44,6 +44,7 @@ func NewItemNode(v pixel.Vec, cost int) *Node {
 		value: Item{
 			V: v,
 		},
+		cost: cost,
 	}
 
 }
