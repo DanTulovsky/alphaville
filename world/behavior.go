@@ -308,6 +308,7 @@ type TargetSeekerBehavior struct {
 	target    Target
 	moveGraph *graph.Graph
 	path      []*graph.Node
+	fullpath  []graph.Node
 	cost      int
 	finder    graph.PathFinder // path finder function
 }
@@ -518,6 +519,12 @@ func (b *TargetSeekerBehavior) Update(w *World, o Object) {
 			if err != nil {
 				log.Printf("error finding path: %v", err)
 			}
+
+			b.fullpath = []graph.Node{}
+			for _, n := range b.path {
+				b.fullpath = append(b.fullpath, *n)
+			}
+
 		} else {
 			log.Printf("error picking target: %v", err)
 		}
@@ -528,20 +535,6 @@ func (b *TargetSeekerBehavior) Update(w *World, o Object) {
 		log.Println("is at target")
 		return
 	}
-
-	// if b.moveGraph == nil {
-	// 	b.populateVisibilityGraph(w, o)
-	// }
-
-	// if b.path == nil {
-	// 	path, cost, err := b.FindPath(o.Phys().Location().Center(), b.target.Location())
-	// 	if err != nil {
-	// 		log.Printf("error finding path: %v", err)
-	// 	}
-
-	// 	b.path = path
-	// 	log.Printf("path (cost=%v): %v", cost, path)
-	// }
 
 	phys := o.NextPhys()
 
@@ -570,7 +563,7 @@ func (b *TargetSeekerBehavior) Draw(win *pixelgl.Window) {
 	imd := imdraw.New(nil)
 
 	imd.Color = b.target.Color()
-	for _, p := range b.path {
+	for _, p := range b.fullpath {
 		imd.Push(p.Value().V)
 	}
 	imd.Line(1)

@@ -155,24 +155,24 @@ func RectVerticies(r pixel.Rect) []pixel.Vec {
 // RectVerticiesScaled returns a list of verticies for the given Rect scaled by int
 // This is used to make the obstacle seem larger so that the object can pass by it
 // x is the max X coordinate, Y is the max Y coordinate
-func RectVerticiesScaled(r pixel.Rect, scaleX, scaleY, x, y float64) []pixel.Vec {
-	log.Printf("scaling by: %v, %v", scaleX, scaleY)
-	return []pixel.Vec{
-		pixel.V(r.Min.X-scaleX, r.Min.Y-scaleY),
-		pixel.V(r.Min.X-scaleX, r.Max.Y+scaleY),
-		pixel.V(r.Max.X+scaleX, r.Max.Y+scaleY),
-		pixel.V(r.Max.X+scaleX, r.Min.Y-scaleY),
-	}
-}
+// func RectVerticiesScaled(r pixel.Rect, scaleX, scaleY, x, y float64) []pixel.Vec {
+// 	return []pixel.Vec{
+// 		pixel.V(r.Min.X-scaleX, r.Min.Y-scaleY),
+// 		pixel.V(r.Min.X-scaleX, r.Max.Y+scaleY),
+// 		pixel.V(r.Max.X+scaleX, r.Max.Y+scaleY),
+// 		pixel.V(r.Max.X+scaleX, r.Min.Y-scaleY),
+// 	}
+// }
 
 // RectVerticiesScaled returns a list of verticies for the given Rect scaled by int
 // This is used to make the obstacle seem larger so that the object can pass by it
 // x is the max X coordinate, Y is the max Y coordinate
-// func RectVerticiesScaled(r pixel.Rect, scaleX, scaleY, x, y float64) []pixel.Vec {
-// 	return []pixel.Vec{
-// 		pixel.V(math.Max(x, r.Min.X-scaleX), math.Max(y, r.Min.Y-scaleY)),
-// 		pixel.V(math.Max(x, r.Min.X-scaleX), math.Min(y, r.Max.Y+scaleY)),
-// 		pixel.V(math.Min(x, r.Max.X+scaleX), math.Min(y, r.Max.Y+scaleY)),
-// 		pixel.V(math.Min(x, r.Max.X+scaleX), math.Max(y, r.Min.Y-scaleY)),
-// 	}
-// }
+// do not allow boundaries to go outside the world
+func RectVerticiesScaled(r pixel.Rect, scaleX, scaleY, maxX, maxY float64) []pixel.Vec {
+	return []pixel.Vec{
+		pixel.V(math.Max(0, r.Min.X-scaleX), math.Max(0, r.Min.Y-scaleY)),
+		pixel.V(math.Max(0, r.Min.X-scaleX), math.Min(maxY, r.Max.Y+scaleY)),
+		pixel.V(math.Min(maxX, r.Max.X+scaleX), math.Min(maxY, r.Max.Y+scaleY)),
+		pixel.V(math.Min(maxX, r.Max.X+scaleX), math.Max(0, r.Min.Y-scaleY)),
+	}
+}

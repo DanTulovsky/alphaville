@@ -108,7 +108,7 @@ func AddTargetSeeker(w *world.World) {
 	minWidth, maxWidth = 40, 41
 	minHeight, maxHeight = 40, 41
 	minMass, maxMass = 6, 10
-	minSpeed, maxSpeed = 6, 10
+	minSpeed, maxSpeed = 10, 11
 
 	width := utils.RandomFloat64(minWidth, maxWidth)
 	height := utils.RandomFloat64(minHeight, maxHeight)
@@ -246,7 +246,17 @@ func AddFixtures(w *world.World) {
 	f.Place(pixel.V(10, w.Ground.Phys().Location().Max.Y+100))
 	w.AddFixture(f)
 
-	f = world.NewFixture("block2", colornames.Green, width, height)
+	f = world.NewFixture("block3", colornames.Green, width, height)
 	f.Place(pixel.V(600, 400))
+	w.AddFixture(f)
+
+	f = world.NewFixture("block4", colornames.Green, width, height)
+	f.Place(pixel.V(60, 400))
+	w.AddFixture(f)
+
+	width = 20
+	height = 400
+	f = world.NewFixture("block5", colornames.Green, width, height)
+	f.Place(pixel.V(300, 100))
 	w.AddFixture(f)
 }
