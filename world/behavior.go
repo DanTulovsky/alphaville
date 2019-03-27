@@ -332,8 +332,8 @@ func (b *TargetSeekerBehavior) allCollisionVerticies(w *World, o Object) []pixel
 		if o.ID() == other.ID() {
 			continue // skip yourself
 		}
-		scaleX := (other.Phys().Location().Max.X - other.Phys().Location().Min.X) / 2
-		scaleY := (other.Phys().Location().Max.Y - other.Phys().Location().Min.Y) / 2
+		scaleX := (o.Phys().Location().Max.X-o.Phys().Location().Min.X)/2 + 2
+		scaleY := (o.Phys().Location().Max.Y-o.Phys().Location().Min.Y)/2 + 2
 		for _, v := range utils.RectVerticiesScaled(other.Phys().Location(), scaleX, scaleY, w.X, w.Y) {
 			l = append(l, v)
 		}
@@ -349,8 +349,8 @@ func (b *TargetSeekerBehavior) allCollisionEdges(w *World, o Object) []graph.Edg
 		if o.ID() == other.ID() {
 			continue // skip yourself
 		}
-		scaleX := (other.Phys().Location().Max.X - other.Phys().Location().Min.X) / 2
-		scaleY := (other.Phys().Location().Max.Y - other.Phys().Location().Min.Y) / 2
+		scaleX := (o.Phys().Location().Max.X-o.Phys().Location().Min.X)/2 + 2
+		scaleY := (o.Phys().Location().Max.Y-o.Phys().Location().Min.Y)/2 + 2
 		v := utils.RectVerticiesScaled(other.Phys().Location(), scaleX, scaleY, w.X, w.Y)
 		r := pixel.R(v[0].X, v[0].Y, v[2].X, v[2].Y)
 
@@ -462,24 +462,44 @@ func (b *TargetSeekerBehavior) Direction(w *World, o Object) pixel.Vec {
 
 	var moves []pixel.Vec
 
+	// Sets velocity to do the collision check, this could be better.
+	// The velocity gets reset by the caller of this function
 	if to.X < 0 {
-		moves = append(moves, pixel.V(1, 0))
+		v := pixel.V(1, 0)
+		o.SetManualVelocity(v)
+		if !o.NextPhys().CollisionRight(w) {
+			moves = append(moves, v)
+		}
 	}
 	if to.X > 0 {
-		moves = append(moves, pixel.V(-1, 0))
+		v := pixel.V(-1, 0)
+		o.SetManualVelocity(v)
+		if !o.NextPhys().CollisionLeft(w) {
+			moves = append(moves, v)
+		}
 	}
 	if to.Y < 0 {
-		moves = append(moves, pixel.V(0, 1))
+		v := pixel.V(0, 1)
+		o.SetManualVelocity(v)
+		if !o.NextPhys().CollisionAbove(w) {
+			moves = append(moves, v)
+		}
 	}
 	if to.Y > 0 {
-		moves = append(moves, pixel.V(0, -1))
+		v := pixel.V(0, -1)
+		o.SetManualVelocity(v)
+		if !o.NextPhys().CollisionAbove(w) {
+			moves = append(moves, v)
+		}
 	}
 
 	if len(moves) > 0 {
+		// log.Println(moves)
 		return moves[utils.RandomInt(0, len(moves))]
 	}
 
-	return pixel.V(0, 0)
+	o.SetManualVelocity(pixel.ZV)
+	return pixel.ZV
 }
 
 // pickNewTarget sets a new random target if available
