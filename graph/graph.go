@@ -153,9 +153,9 @@ func orientation(p, q, r pixel.Vec) int {
 	return 0 // collinear
 }
 
-// Given three colinear points p, q, r, the function checks if
+// OnSegment Given three colinear points p, q, r, the function checks if
 // point q lies on line segment 'pr'
-func onSegment(p, q, r pixel.Vec) bool {
+func OnSegment(p, q, r pixel.Vec) bool {
 	if q.X <= math.Max(p.X, r.X) && q.X >= math.Min(p.X, r.X) &&
 		q.Y <= math.Max(p.Y, r.Y) && q.Y >= math.Min(p.Y, r.Y) {
 		return true
@@ -178,25 +178,28 @@ func EdgesIntersect(l1, l2 Edge) bool {
 	// colinear
 	switch {
 	case s1 == 0:
-		if onSegment(l1.A, l2.A, l1.B) {
+		if OnSegment(l1.A, l2.A, l1.B) {
 			return true
 		}
 		fallthrough
 	case s2 == 0:
-		if onSegment(l1.A, l2.B, l1.B) {
+		if OnSegment(l1.A, l2.B, l1.B) {
 			return true
 		}
 		fallthrough
 	case s3 == 0:
-		if onSegment(l2.A, l1.A, l2.B) {
+		if OnSegment(l2.A, l1.A, l2.B) {
 			return true
 		}
 		fallthrough
 	case s4 == 0:
-		if onSegment(l2.A, l1.B, l2.B) {
+		if OnSegment(l2.A, l1.B, l2.B) {
 			return true
 		}
 	}
 
 	return false
 }
+
+// PathFinder is a function that returns the path between start and dest
+type PathFinder func(*Graph, pixel.Vec, pixel.Vec) ([]*Node, int, error)

@@ -295,12 +295,14 @@ type TargetSeekerBehavior struct {
 	moveGraph *graph.Graph
 	path      []*graph.Node
 	cost      int
+	finder    graph.PathFinder // path finder function
 }
 
 // NewTargetSeekerBehavior return a TargetSeekerBehavior
-func NewTargetSeekerBehavior() *TargetSeekerBehavior {
+func NewTargetSeekerBehavior(f graph.PathFinder) *TargetSeekerBehavior {
 	b := &TargetSeekerBehavior{
 		moveGraph: nil,
+		finder:    f,
 	}
 	b.name = "target_seeker"
 	b.description = "Travels in shortest path to target, if given, otherwise stands still."
@@ -346,20 +348,29 @@ func (b *TargetSeekerBehavior) allCollisionEdges(w *World, o Object) []graph.Edg
 
 // isVisbile returns true if v is visibile from p (no intersecting edges)
 func (b *TargetSeekerBehavior) isVisbile(w *World, p, v pixel.Vec, edges []graph.Edge) bool {
+	log.Printf("points: %v, %v", p, v)
 	for _, e := range edges {
+		log.Printf("checking edge: %v", e)
+		if (e.A == p || e.B == p) && (e.A == v || e.B == v) {
+			// point are on the same segment, so visible
+			log.Println("same segment")
+			return true
+		}
+
 		// exclude edges that include v
 		if e.A == v || e.B == v {
+			log.Println("  excluded")
 			continue
 		}
-		if graph.EdgesIntersect(graph.Edge{p, v}, e) {
+		if graph.EdgesIntersect(graph.Edge{A: p, B: v}, e) {
+			log.Println("  intersect")
 			return false
 		}
 	}
+	log.Printf("  included")
 	return true
 }
 
-// TODO
-// A vertex must be visible from verticies on the same edge!!!
 func (b *TargetSeekerBehavior) populateVisibilityGraph(w *World, o Object) {
 	log.Printf("Populating visibility graph for %v", o.Name())
 	g := graph.NewGraph()
@@ -475,40 +486,65 @@ func (b *TargetSeekerBehavior) Direction(w *World, o Object) pixel.Vec {
 }
 
 // pickNewTarget sets a new random target if available
-func (b *TargetSeekerBehavior) pickNewTarget(w *World) {
+func (b *TargetSeekerBehavior) pickNewTarget(w *World) (Target, error) {
+	log.Println("Picking new target...")
 	targets := w.AvailableTargets()
 	if len(targets) == 0 {
-		return
+		return nil, fmt.Errorf("no available targets")
 	}
-	new := targets[utils.RandomInt(0, len(targets))]
-	b.SetTarget(new)
+
+	t := targets[utils.RandomInt(0, len(targets))]
+	log.Printf("Picked new target %v", t.Location())
+	return t, nil
+}
+
+// FindPath returns the path and cost between start and target
+func (b *TargetSeekerBehavior) FindPath(start, target pixel.Vec) ([]*graph.Node, int, error) {
+
+	log.Printf("looking for path from %v to %v", start, target)
+	path, cost, err := b.finder(b.moveGraph, start, target)
+	if err != nil {
+		log.Printf("error finding path: %v", err)
+		return nil, 0, err
+	}
+	return path, cost, err
 }
 
 // Update implements the Behavior Update method
 func (b *TargetSeekerBehavior) Update(w *World, o Object) {
 	if b.target == nil {
-		b.pickNewTarget(w)
+		if t, err := b.pickNewTarget(w); err == nil {
+			b.SetTarget(t)
+			b.populateVisibilityGraph(w, o)
+
+			b.path, b.cost, err = b.FindPath(o.Phys().Location().Center(), b.target.Location())
+			if err != nil {
+				log.Printf("error finding path: %v", err)
+			}
+		} else {
+			log.Printf("error picking target: %v", err)
+		}
 		return
 	}
 
 	if b.isAtTarget(o) {
+		log.Println("is at target")
 		return
 	}
 
-	if b.moveGraph == nil {
-		b.populateVisibilityGraph(w, o)
-	}
+	// if b.moveGraph == nil {
+	// 	b.populateVisibilityGraph(w, o)
+	// }
 
-	if b.path == nil {
-		log.Printf("looking for path from %v to %v", o.Name(), b.target.Name())
-		path, cost, err := b.moveGraph.DijkstraPath(o.Phys().Location().Center(), b.target.Location())
-		if err != nil {
-			log.Printf("error finding path: %v", err)
-		}
+	// if b.path == nil {
+	// 	path, cost, err := b.FindPath(o.Phys().Location().Center(), b.target.Location())
+	// 	if err != nil {
+	// 		log.Printf("error finding path: %v", err)
+	// 	}
 
-		b.path = path
-		log.Printf("path (cost=%v): %v", cost, path)
-	}
+	// 	b.path = path
+	// 	log.Printf("path (cost=%v): %v", cost, path)
+	// }
 
 	phys := o.NextPhys()
 

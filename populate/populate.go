@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/faiface/pixel"
+	"gogs.wetsnow.com/dant/alphaville/graph"
 	"gogs.wetsnow.com/dant/alphaville/utils"
 	"gogs.wetsnow.com/dant/alphaville/world"
 	"golang.org/x/image/colornames"
@@ -112,14 +113,17 @@ func AddTargetSeeker(w *world.World) {
 	width := utils.RandomFloat64(minWidth, maxWidth)
 	height := utils.RandomFloat64(minHeight, maxHeight)
 
+	// path finder algorithm
+	finder := graph.PathFinder(graph.DijkstraPath)
+
 	o := world.NewRectObject(
 		fmt.Sprintf("ts1"),
 		colornames.Yellow,
 		utils.RandomFloat64(minSpeed, maxSpeed)/10, // speed
 		utils.RandomFloat64(minMass, maxMass)/10,   // mass
-		width,                           // width
-		height,                          // height
-		world.NewTargetSeekerBehavior(), // default behavior
+		width,  // width
+		height, // height
+		world.NewTargetSeekerBehavior(finder), // default behavior
 	)
 
 	w.AddObject(o)
@@ -202,7 +206,19 @@ func AddGates(w *world.World, coolDown time.Duration) {
 // AddTargets adds targets to the world
 func AddTargets(w *world.World) {
 
-	t := world.NewSimpleTarget("one", pixel.V(600, 50))
+	var valid bool
+	var t world.Target
+
+	// don't let targets appear inside fixtures
+	for !valid {
+		t = world.NewSimpleTarget("one", pixel.V(600, 50))
+		for _, f := range w.Fixtures() {
+			if f.Phys().Location().Contains(t.Location()) {
+				valid = false
+			}
+		}
+		valid = true
+	}
 	w.AddTarget(t)
 
 }

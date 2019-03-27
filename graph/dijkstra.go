@@ -34,7 +34,7 @@ type node struct {
 
 // DijkstraPath finds the shortest path between start and target, also returning the
 // total cost of the found path.
-func (g *Graph) DijkstraPath(start, target pixel.Vec) (path []*Node, cost int, err error) {
+func DijkstraPath(g *Graph, start, target pixel.Vec) (path []*Node, cost int, err error) {
 	if len(g.nodes) == 0 {
 		err = fmt.Errorf("cannot find path in empty graph")
 		return
