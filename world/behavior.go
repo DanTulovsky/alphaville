@@ -466,28 +466,28 @@ func (b *TargetSeekerBehavior) Direction(w *World, o Object) pixel.Vec {
 	// The velocity gets reset by the caller of this function
 	if to.X < 0 {
 		v := pixel.V(1, 0)
-		o.SetManualVelocity(v)
+		o.SetManualVelocity(pixel.V(o.Phys().ParentObject().Speed()*-1, 0))
 		if !o.NextPhys().CollisionRight(w) {
 			moves = append(moves, v)
 		}
 	}
 	if to.X > 0 {
 		v := pixel.V(-1, 0)
-		o.SetManualVelocity(v)
+		o.SetManualVelocity(pixel.V(o.Phys().ParentObject().Speed(), 0))
 		if !o.NextPhys().CollisionLeft(w) {
 			moves = append(moves, v)
 		}
 	}
 	if to.Y < 0 {
 		v := pixel.V(0, 1)
-		o.SetManualVelocity(v)
+		o.SetManualVelocity(pixel.V(0, o.Phys().ParentObject().Speed()*-1))
 		if !o.NextPhys().CollisionAbove(w) {
 			moves = append(moves, v)
 		}
 	}
 	if to.Y > 0 {
 		v := pixel.V(0, -1)
-		o.SetManualVelocity(v)
+		o.SetManualVelocity(pixel.V(0, o.Phys().ParentObject().Speed()))
 		if !o.NextPhys().CollisionAbove(w) {
 			moves = append(moves, v)
 		}
