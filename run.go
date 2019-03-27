@@ -12,7 +12,6 @@ import (
 	"github.com/faiface/pixel/pixelgl"
 	"gogs.wetsnow.com/dant/alphaville/observer"
 	"gogs.wetsnow.com/dant/alphaville/populate"
-	"gogs.wetsnow.com/dant/alphaville/utils"
 	"gogs.wetsnow.com/dant/alphaville/world"
 	"golang.org/x/image/colornames"
 )
@@ -80,19 +79,6 @@ func draw(w *world.World, win *pixelgl.Window) {
 	w.Draw(win)
 }
 
-// addTargets adds targets into the world as they are caught
-func addTargets(w *world.World) {
-	if len(w.Targets()) >= maxTargets {
-		return
-	}
-
-	t := world.NewSimpleTarget("t",
-		pixel.V(
-			utils.RandomFloat64(0, w.X),
-			utils.RandomFloat64(w.Ground.Phys().Location().Max.Y, w.Y)))
-	w.AddTarget(t)
-}
-
 func run() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	rand.Seed(time.Now().UnixNano())
@@ -106,7 +92,6 @@ func run() {
 	w := world.NewWorld(worldMaxX, worldMaxY, ground, gravity)
 
 	// populate the world
-	populate.AddTargets(w)
 	populate.AddTargetSeeker(w)
 	// populate.RandomCircles(w, 2)
 	// populate.RandomRectangles(w, 2)
@@ -114,6 +99,8 @@ func run() {
 	// populate.AddManualObject(w, 60, 60)
 	populate.AddGates(w, time.Second*1)
 	populate.AddFixtures(w)
+	// add targets AFTER fixtures
+	populate.AddTarget(w, 10, maxTargets)
 
 	cfg := pixelgl.WindowConfig{
 		Title:  "Play!",
@@ -153,7 +140,7 @@ func run() {
 		// user input
 		processInput(win, w, ctrl)
 
-		addTargets(w)
+		populate.AddTarget(w, 10, maxTargets)
 
 		update(w)
 		updates++

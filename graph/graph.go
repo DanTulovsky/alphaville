@@ -177,26 +177,17 @@ func EdgesIntersect(l1, l2 Edge) bool {
 	}
 
 	// colinear
-	switch {
-	case s1 == 0:
-		if OnSegment(l1.A, l2.A, l1.B) {
-			return true
-		}
-		fallthrough
-	case s2 == 0:
-		if OnSegment(l1.A, l2.B, l1.B) {
-			return true
-		}
-		fallthrough
-	case s3 == 0:
-		if OnSegment(l2.A, l1.A, l2.B) {
-			return true
-		}
-		fallthrough
-	case s4 == 0:
-		if OnSegment(l2.A, l1.B, l2.B) {
-			return true
-		}
+	if s1 == 0 && OnSegment(l1.A, l2.A, l1.B) {
+		return true
+	}
+	if s2 == 0 && OnSegment(l1.A, l2.B, l1.B) {
+		return true
+	}
+	if s3 == 0 && OnSegment(l2.A, l1.A, l2.B) {
+		return true
+	}
+	if s4 == 0 && OnSegment(l2.A, l1.B, l2.B) {
+		return true
 	}
 
 	return false

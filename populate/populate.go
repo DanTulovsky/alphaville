@@ -114,7 +114,7 @@ func AddTargetSeeker(w *world.World) {
 	height := utils.RandomFloat64(minHeight, maxHeight)
 
 	// path finder algorithm
-	finder := graph.PathFinder(graph.DijkstraPath)
+	finder := graph.DijkstraPath
 
 	o := world.NewRectObject(
 		fmt.Sprintf("ts1"),
@@ -123,7 +123,7 @@ func AddTargetSeeker(w *world.World) {
 		utils.RandomFloat64(minMass, maxMass)/10,   // mass
 		width,  // width
 		height, // height
-		world.NewTargetSeekerBehavior(finder), // default behavior
+		world.NewTargetSeekerBehavior(graph.PathFinder(finder)), // default behavior
 	)
 
 	w.AddObject(o)
@@ -203,17 +203,27 @@ func AddGates(w *world.World, coolDown time.Duration) {
 	}
 }
 
-// AddTargets adds targets to the world
-func AddTargets(w *world.World) {
+// AddTarget adds targets to the world
+func AddTarget(w *world.World, radius float64, maxTargets int) {
+
+	if len(w.Targets()) >= maxTargets {
+		return
+	}
 
 	var valid bool
 	var t world.Target
 
 	// don't let targets appear inside fixtures
 	for !valid {
-		t = world.NewSimpleTarget("one", pixel.V(600, 50))
+		l := pixel.V(
+			utils.RandomFloat64(0, w.X),
+			utils.RandomFloat64(w.Ground.Phys().Location().Max.Y, w.Y))
+
+		t = world.NewSimpleTarget("one", l, radius)
 		for _, f := range w.Fixtures() {
-			if f.Phys().Location().Contains(t.Location()) {
+			// for now assume seekers are always 40, 40 rectangles, don't let targets end up inside
+			// augmented area of fixtures, do this by resizing the circle by half the width of the rect
+			if f.Phys().Location().IntersectCircle(t.Circle().Resized(20)) != pixel.ZV {
 				valid = false
 			}
 		}
@@ -229,11 +239,14 @@ func AddFixtures(w *world.World) {
 	var height float64 = 100
 
 	f := world.NewFixture("block1", colornames.Green, width, height)
-	// f.Place(pixel.V(580, w.Ground.Phys().Location().Max.Y+100))
-	f.Place(pixel.V(600, 200))
+	f.Place(pixel.V(580, w.Ground.Phys().Location().Max.Y+100))
 	w.AddFixture(f)
 
-	// f = world.NewFixture("block2", colornames.Green, width, height)
-	// f.Place(pixel.V(10, w.Ground.Phys().Location().Max.Y+100))
-	// w.AddFixture(f)
+	f = world.NewFixture("block2", colornames.Green, width, height)
+	f.Place(pixel.V(10, w.Ground.Phys().Location().Max.Y+100))
+	w.AddFixture(f)
+
+	f = world.NewFixture("block2", colornames.Green, width, height)
+	f.Place(pixel.V(600, 400))
+	w.AddFixture(f)
 }

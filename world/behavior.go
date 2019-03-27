@@ -412,42 +412,9 @@ func (b *TargetSeekerBehavior) Target() Target {
 	return b.target
 }
 
-// nextDirectionToTarget returns the next direction to travel to the target
-// up, down, left, right
-func (b *TargetSeekerBehavior) nextDirectionToTarget(w *World, o Object) string {
-	if len(b.path) > 0 && o.Phys().Location().Contains(b.path[0].Value().V) {
-		log.Printf("removing node: %v", b.path[0])
-		b.path = append(b.path[:0], b.path[1:]...)
-		log.Printf("path is now: %v", b.path)
-	}
-
-	if len(b.path) == 0 {
-		// log.Printf("path ran out...")
-		return ""
-	}
-
-	t := b.path[0].Value().V
-	c := o.Phys().Location().Center()
-
-	to := t.To(c)
-
-	switch {
-	case to.X < 0 && !o.Phys().Location().Contains(pixel.V(t.X, c.Y)):
-		return "right"
-	case to.X > 0 && !o.Phys().Location().Contains(pixel.V(t.X, c.Y)):
-		return "left"
-	case to.Y < 0 && !o.Phys().Location().Contains(pixel.V(c.X, t.Y)):
-		return "up"
-	case to.Y > 0 && !o.Phys().Location().Contains(pixel.V(c.X, t.Y)):
-		return "down"
-	}
-
-	return ""
-}
-
 // isAtTarget returns true if any part of the object covers the target
 func (b *TargetSeekerBehavior) isAtTarget(o Object) bool {
-	if o.Phys().Location().Contains(b.target.Location()) {
+	if o.Phys().Location().IntersectCircle(b.target.Circle()) != pixel.ZV {
 
 		o.Notify(NewObjectEvent(
 			fmt.Sprintf("[%v] found target [%v]", o.Name(), b.target.Name()), time.Now(),
@@ -460,23 +427,44 @@ func (b *TargetSeekerBehavior) isAtTarget(o Object) bool {
 	return false
 }
 
-// Direction returns the velocity vector setting the correct direction to travel
+// Direction returns the next direction to travel to the target
 func (b *TargetSeekerBehavior) Direction(w *World, o Object) pixel.Vec {
-
-	// find direction to move and set x, y based on velocity
-	d := b.nextDirectionToTarget(w, o)
-
-	switch d {
-	case "up":
-		return pixel.V(0, 1)
-	case "down":
-		return pixel.V(0, -1)
-	case "right":
-		return pixel.V(1, 0)
-	case "left":
-		return pixel.V(-1, 0)
+	if len(b.path) > 0 && o.Phys().Location().Contains(b.path[0].Value().V) {
+		b.path = append(b.path[:0], b.path[1:]...)
 	}
-	return pixel.V(0, 0) // default is not to move
+
+	if len(b.path) == 0 {
+		// log.Printf("path ran out...")
+		return pixel.ZV
+	}
+
+	// target is the next node in the path
+	t := b.path[0].Value().V
+	// center of our target seeker
+	c := o.Phys().Location().Center()
+
+	to := t.To(c)
+
+	var moves []pixel.Vec
+
+	if to.X < 0 {
+		moves = append(moves, pixel.V(1, 0))
+	}
+	if to.X > 0 {
+		moves = append(moves, pixel.V(-1, 0))
+	}
+	if to.Y < 0 {
+		moves = append(moves, pixel.V(0, 1))
+	}
+	if to.Y > 0 {
+		moves = append(moves, pixel.V(0, -1))
+	}
+
+	if len(moves) > 0 {
+		return moves[utils.RandomInt(0, len(moves))]
+	}
+
+	return pixel.V(0, 0)
 }
 
 // pickNewTarget sets a new random target if available
