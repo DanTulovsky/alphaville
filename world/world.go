@@ -77,6 +77,7 @@ func (w *World) Draw(win *pixelgl.Window) {
 
 	for _, o := range w.Objects {
 		o.Draw(win)
+		o.Behavior().Draw(win)
 	}
 }
 

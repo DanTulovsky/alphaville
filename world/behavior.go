@@ -7,6 +7,9 @@ import (
 	"log"
 	"time"
 
+	"github.com/faiface/pixel/imdraw"
+	"github.com/faiface/pixel/pixelgl"
+
 	"github.com/faiface/pixel"
 	"gogs.wetsnow.com/dant/alphaville/graph"
 	"gogs.wetsnow.com/dant/alphaville/observer"
@@ -16,6 +19,7 @@ import (
 // Behavior is the interface for all behaviors
 type Behavior interface {
 	Description() string
+	Draw(win *pixelgl.Window)
 	Name() string
 	Update(*World, Object)
 }
@@ -260,6 +264,11 @@ func (b *DefaultBehavior) Move(w *World, o Object, v pixel.Vec) {
 	}
 }
 
+// Draw draws any artifacts of the behavior
+func (b *DefaultBehavior) Draw(win *pixelgl.Window) {
+
+}
+
 // ManualBehavior is human controlled
 type ManualBehavior struct {
 	DefaultBehavior
@@ -286,6 +295,11 @@ func (b *ManualBehavior) Update(w *World, o Object) {
 func (b *ManualBehavior) Move(w *World, o Object, v pixel.Vec) {
 	newLocation := o.NextPhys().Location().Moved(pixel.V(v.X, v.Y))
 	o.NextPhys().SetLocation(newLocation)
+}
+
+// Draw draws any artifacts of the behavior
+func (b *ManualBehavior) Draw(win *pixelgl.Window) {
+
 }
 
 // TargetSeekerBehavior moves in shortest path to the target
@@ -545,4 +559,20 @@ func (b *TargetSeekerBehavior) Update(w *World, o Object) {
 func (b *TargetSeekerBehavior) Move(w *World, o Object, v pixel.Vec) {
 	newLocation := o.NextPhys().Location().Moved(pixel.V(v.X, v.Y))
 	o.NextPhys().SetLocation(newLocation)
+}
+
+// Draw draws any artifacts of the behavior
+func (b *TargetSeekerBehavior) Draw(win *pixelgl.Window) {
+	if b.target == nil {
+		return
+	}
+	// Draw the path
+	imd := imdraw.New(nil)
+
+	imd.Color = b.target.Color()
+	for _, p := range b.path {
+		imd.Push(p.Value().V)
+	}
+	imd.Line(1)
+	imd.Draw(win)
 }

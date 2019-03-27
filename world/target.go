@@ -1,15 +1,15 @@
 package world
 
 import (
+	"image/color"
 	"time"
-
-	"golang.org/x/image/colornames"
 
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/imdraw"
 	"github.com/faiface/pixel/pixelgl"
 	"github.com/google/uuid"
 	"gogs.wetsnow.com/dant/alphaville/observer"
+	"golang.org/x/image/colornames"
 )
 
 // TargetEvent implements the observer.Event interface to send events to other components
@@ -31,6 +31,7 @@ func NewTargetEvent(d string, t time.Time, data ...observer.EventData) observer.
 type Target interface {
 	observer.EventNotifier
 
+	Color() color.Color
 	Circle() pixel.Circle
 	ID() uuid.UUID
 	Destroy()
@@ -43,6 +44,7 @@ type simpleTarget struct {
 	id        uuid.UUID
 	name      string
 	circle    pixel.Circle // targets are circles
+	color     color.Color
 	observers []observer.EventObserver
 }
 
@@ -52,7 +54,13 @@ func NewSimpleTarget(name string, l pixel.Vec, r float64) Target {
 		id:     uuid.New(),
 		name:   name,
 		circle: pixel.C(l, r),
+		color:  colornames.Red,
 	}
+}
+
+// Color returns the color of the target
+func (t *simpleTarget) Color() color.Color {
+	return t.color
 }
 
 // Circle returns the underlying circle of the target
@@ -108,7 +116,7 @@ func (t *simpleTarget) Destroy() {
 // Draw draws the target
 func (t *simpleTarget) Draw(win *pixelgl.Window) {
 	imd := imdraw.New(nil)
-	imd.Color = colornames.Red
+	imd.Color = t.color
 	imd.Push(t.Location())
 	imd.Circle(t.circle.Radius, 0)
 	imd.Draw(win)
