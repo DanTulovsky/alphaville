@@ -210,7 +210,7 @@ func AddTarget(w *world.World, radius float64, maxTargets int) {
 		return
 	}
 
-	var valid bool = true
+	var valid bool
 	var t world.Target
 
 	// don't let targets appear inside fixtures
@@ -220,6 +220,7 @@ func AddTarget(w *world.World, radius float64, maxTargets int) {
 			utils.RandomFloat64(w.Ground.Phys().Location().Max.Y, w.Y))
 
 		t = world.NewSimpleTarget("one", l, radius)
+		valid = true
 		for _, f := range w.Fixtures() {
 			log.Printf("checking fixture: %v (target: %v)", f.Phys().Location(), t.Circle().Resized(20))
 			// for now assume seekers are always 40, 40 rectangles, don't let targets end up inside
@@ -229,6 +230,7 @@ func AddTarget(w *world.World, radius float64, maxTargets int) {
 			}
 		}
 	}
+	log.Printf("%v", t)
 	w.AddTarget(t)
 }
 
