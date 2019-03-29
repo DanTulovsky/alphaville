@@ -123,3 +123,51 @@ func TestLinesIntersect(t *testing.T) {
 		})
 	}
 }
+
+func Test_orientation(t *testing.T) {
+	type args struct {
+		p pixel.Vec
+		q pixel.Vec
+		r pixel.Vec
+	}
+	tests := []struct {
+		name string
+		args args
+		want int
+	}{
+		{
+			name: "above",
+			args: args{
+				p: pixel.V(0, 0),
+				q: pixel.V(10, 0),
+				r: pixel.V(5, 10),
+			},
+			want: 2,
+		},
+		{
+			name: "below",
+			args: args{
+				p: pixel.V(0, 0),
+				q: pixel.V(10, 0),
+				r: pixel.V(5, -10),
+			},
+			want: 1,
+		},
+		{
+			name: "colinear",
+			args: args{
+				p: pixel.V(0, 0),
+				q: pixel.V(10, 0),
+				r: pixel.V(20, 0),
+			},
+			want: 0,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := orientation(tt.args.p, tt.args.q, tt.args.r); got != tt.want {
+				t.Errorf("orientation() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

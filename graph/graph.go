@@ -136,12 +136,12 @@ func RectEdges(r pixel.Rect) []Edge {
 	}
 }
 
-// orientation returns 1 if the point is on the right side,
+// orientation returns point orientation vs a line
 // 0 --> p, q and r are colinear
-// 1 --> Clockwise
-// 2 --> Counterclockwise
+// 1 --> Clockwise, below
+// 2 --> Counterclockwise, above
 // From: https://www.geeksforgeeks.org/check-if-two-given-line-segments-intersect/
-func orientation(p, q, r pixel.Vec) int {
+func Orientation(p, q, r pixel.Vec) int {
 	val := (q.Y-p.Y)*(r.X-q.X) - (q.X-p.X)*(r.Y-q.Y)
 
 	switch {
@@ -167,10 +167,10 @@ func OnSegment(p, q, r pixel.Vec) bool {
 // EdgesIntersect returns true if l1 and l2 intersect at any point
 func EdgesIntersect(l1, l2 Edge) bool {
 
-	s1 := orientation(l1.A, l1.B, l2.A)
-	s2 := orientation(l1.A, l1.B, l2.B)
-	s3 := orientation(l2.A, l2.B, l1.A)
-	s4 := orientation(l2.A, l2.B, l1.B)
+	s1 := Orientation(l1.A, l1.B, l2.A)
+	s2 := Orientation(l1.A, l1.B, l2.B)
+	s3 := Orientation(l2.A, l2.B, l1.A)
+	s4 := Orientation(l2.A, l2.B, l1.B)
 
 	if s1 != s2 && s3 != s4 {
 		return true

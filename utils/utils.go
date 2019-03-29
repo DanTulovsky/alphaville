@@ -32,7 +32,24 @@ func RandomInt(min, max int) int {
 
 // RandomFloat64 returns a random number in [min, max)
 func RandomFloat64(min, max float64) float64 {
-	return float64(rand.Int63n(int64(max-min)) + int64(min))
+	// return float64(rand.Int63n(int64(max-min)) + int64(min))
+	return AffineTransform(rand.Float64(), 0, 1, min, max)
+}
+
+// AffineTransform x (in the range [a, b] to a number in [c, d]
+func AffineTransform(x, a, b, c, d float64) float64 {
+	// log.Printf("in: %v [%v, %v] -> [%v, %v]", x, a, b, c, d)
+	if x < a {
+		log.Print("invalid input into AffineTransform, returning min.")
+		log.Printf("AffineTransform -> in: %v [%v, %v] -> [%v, %v]", x, a, b, c, d)
+		return c
+	}
+	if x > b {
+		log.Print("invalid input into AffineTransform, returning max.")
+		log.Printf("AffineTransform -> in: %v [%v, %v] -> [%v, %v]", x, a, b, c, d)
+		return d
+	}
+	return (x-a)*((d-c)/(b-a)) + c
 }
 
 // D2R converts degrees to radians
@@ -175,4 +192,9 @@ func RectVerticiesScaled(r pixel.Rect, scaleX, scaleY, maxX, maxY float64) []pix
 		pixel.V(math.Min(maxX, r.Max.X+scaleX), math.Min(maxY, r.Max.Y+scaleY)),
 		pixel.V(math.Min(maxX, r.Max.X+scaleX), math.Max(0, r.Min.Y-scaleY)),
 	}
+}
+
+// LineSlope returns the slope of the line passing through a and b
+func LineSlope(a, b pixel.Vec) float64 {
+	return (b.Y - a.Y) / (b.X - a.X)
 }

@@ -20,6 +20,7 @@ var (
 	frames  = 0
 	updates = 0
 	second  = time.Tick(time.Second)
+	paused  = false
 )
 
 const (
@@ -44,6 +45,11 @@ func processMouseLeftInput(w *world.World, v pixel.Vec) {
 
 func processInput(win *pixelgl.Window, w *world.World, ctrl pixel.Vec) {
 
+	switch {
+	case win.JustPressed(pixelgl.KeySpace):
+		togglePause()
+	}
+
 	mo := w.ManualControl
 	if !mo.IsSpawned() {
 		return
@@ -64,6 +70,10 @@ func processInput(win *pixelgl.Window, w *world.World, ctrl pixel.Vec) {
 
 	mo.SetManualVelocity(ctrl)
 
+}
+
+func togglePause() {
+	paused = !paused
 }
 
 // update calls each object's update
@@ -140,10 +150,11 @@ func run() {
 		// user input
 		processInput(win, w, ctrl)
 
-		populate.AddTarget(w, 10, maxTargets)
-
-		update(w)
-		updates++
+		if !paused {
+			populate.AddTarget(w, 10, maxTargets)
+			update(w)
+			updates++
+		}
 
 		// // update the game state
 		// for lag >= MsPerUpdate {

@@ -20,7 +20,7 @@ func RandomEllipses(w *world.World, n int) {
 	minRadius = 10
 	maxRadius = 60
 	minMass, maxMass = 1, 10
-	minSpeed, maxSpeed = 1, 10
+	minSpeed, maxSpeed = 0.1, w.MaxObjectSpeed
 
 	for i := 0; i < n; i++ {
 		randomColor := colornames.Map[colornames.Names[utils.RandomInt(0, len(colornames.Names))]]
@@ -31,8 +31,8 @@ func RandomEllipses(w *world.World, n int) {
 		o := world.NewEllipseObject(
 			fmt.Sprintf("%v", i),
 			randomColor,
-			utils.RandomFloat64(minSpeed, maxSpeed)/10, // speed
-			utils.RandomFloat64(minMass, maxMass)/10,   // mass
+			utils.RandomFloat64(minSpeed, maxSpeed),  // speed
+			utils.RandomFloat64(minMass, maxMass)/10, // mass
 			a,   // x radius
 			b,   // y radius
 			nil, // default behavior
@@ -50,7 +50,7 @@ func RandomCircles(w *world.World, n int) {
 	minRadius = 10
 	maxRadius = 60
 	minMass, maxMass = 1, 10
-	minSpeed, maxSpeed = 1, 10
+	minSpeed, maxSpeed = 0.1, w.MaxObjectSpeed
 
 	for i := 0; i < n; i++ {
 		randomColor := colornames.Map[colornames.Names[utils.RandomInt(0, len(colornames.Names))]]
@@ -60,8 +60,8 @@ func RandomCircles(w *world.World, n int) {
 		o := world.NewCircleObject(
 			fmt.Sprintf("%v", i),
 			randomColor,
-			utils.RandomFloat64(minSpeed, maxSpeed)/10, // speed
-			utils.RandomFloat64(minMass, maxMass)/10,   // mass
+			utils.RandomFloat64(minSpeed, maxSpeed),  // speed
+			utils.RandomFloat64(minMass, maxMass)/10, // mass
 			radius, // radius
 			nil,    // default behavior
 		)
@@ -78,7 +78,7 @@ func RandomRectangles(w *world.World, n int) {
 	minWidth, maxWidth = 10, 81
 	minHeight, maxHeight = 10, 81
 	minMass, maxMass = 6, 10
-	minSpeed, maxSpeed = 6, 10
+	minSpeed, maxSpeed = 0.1, w.MaxObjectSpeed
 
 	for i := 0; i < n; i++ {
 		randomColor := colornames.Map[colornames.Names[utils.RandomInt(0, len(colornames.Names))]]
@@ -89,8 +89,8 @@ func RandomRectangles(w *world.World, n int) {
 		o := world.NewRectObject(
 			fmt.Sprintf("%v", i),
 			randomColor,
-			utils.RandomFloat64(minSpeed, maxSpeed)/10, // speed
-			utils.RandomFloat64(minMass, maxMass)/10,   // mass
+			utils.RandomFloat64(minSpeed, maxSpeed),  // speed
+			utils.RandomFloat64(minMass, maxMass)/10, // mass
 			width,  // width
 			height, // height
 			nil,    // default behavior
@@ -108,7 +108,7 @@ func AddTargetSeeker(w *world.World) {
 	minWidth, maxWidth = 40, 41
 	minHeight, maxHeight = 40, 41
 	minMass, maxMass = 6, 10
-	minSpeed, maxSpeed = 10, 11
+	minSpeed, maxSpeed = 0.1, w.MaxObjectSpeed
 
 	width := utils.RandomFloat64(minWidth, maxWidth)
 	height := utils.RandomFloat64(minHeight, maxHeight)
@@ -119,8 +119,8 @@ func AddTargetSeeker(w *world.World) {
 	o := world.NewRectObject(
 		fmt.Sprintf("ts1"),
 		colornames.Yellow,
-		utils.RandomFloat64(minSpeed, maxSpeed)/10, // speed
-		utils.RandomFloat64(minMass, maxMass)/10,   // mass
+		utils.RandomFloat64(minSpeed, maxSpeed),  // speed
+		utils.RandomFloat64(minMass, maxMass)/10, // mass
 		width,  // width
 		height, // height
 		world.NewTargetSeekerBehavior(graph.PathFinder(finder)), // default behavior
@@ -216,8 +216,9 @@ func AddTarget(w *world.World, radius float64, maxTargets int) {
 	// don't let targets appear inside fixtures
 	for !valid {
 		l := pixel.V(
-			utils.RandomFloat64(0, w.X),
-			utils.RandomFloat64(w.Ground.Phys().Location().Max.Y, w.Y))
+			// TODO fix these!
+			utils.RandomFloat64(21, w.X-21),
+			utils.RandomFloat64(w.Ground.Phys().Location().Max.Y+21, w.Y-21))
 
 		t = world.NewSimpleTarget("one", l, radius)
 		valid = true
