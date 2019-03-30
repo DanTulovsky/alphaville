@@ -208,3 +208,20 @@ func EdgesIntersect(l1, l2 Edge) bool {
 
 // PathFinder is a function that returns the path between start and dest
 type PathFinder func(*Graph, pixel.Vec, pixel.Vec) ([]*Node, int, error)
+
+// MinkowskiSum returns the minkowski sum of two rectangles
+// b is the moving object
+// func MinkowskiSum(a, b pixel.Rect) []pixel.Vec {
+// 	sum := []pixel.Vec{}
+
+// 	// b verticies are defined relative to the origin (center of rect)
+// 	brelative := pixel.R(0-b.W()/2, 0-b.H()/2, b.W()/2, b.H()/2)
+
+// 	for _, av := range utils.RectVerticies(a) {
+// 		for _, bv := range utils.RectVerticies(brelative) {
+// 			sum = append(sum, pixel.V(av.X+bv.X, av.Y+bv.Y))
+// 		}
+// 	}
+
+// 	return sum
+// }

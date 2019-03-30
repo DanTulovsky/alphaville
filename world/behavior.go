@@ -347,6 +347,7 @@ func (b *TargetSeekerBehavior) allCollisionVerticies(w *World, o Object) []verte
 		for _, v := range utils.RectVerticiesScaled(other.Phys().Location(), scaleX, scaleY, w.X, w.Y) {
 			l = append(l, vertecy{V: v, O: other.ID()})
 		}
+		log.Printf(">>>> %v", l)
 	}
 	return l
 }
@@ -373,20 +374,27 @@ func (b *TargetSeekerBehavior) allCollisionEdges(w *World, o Object) []graph.Edg
 }
 
 // isVisbile returns true if v is visibile from p (no intersecting edges)
-func (b *TargetSeekerBehavior) isVisbile(w *World, p, v pixel.Vec, edges []graph.Edge) bool {
+func (b *TargetSeekerBehavior) isVisbile(w *World, p, v pixel.Vec, edges []graph.Edge, n, other *graph.Node) bool {
 	for _, e := range edges {
-		if (e.A == p || e.B == p) && (e.A == v || e.B == v) {
+		log.Printf("p: %v; v: %v; e: %v", p, v, e)
+		if (e.A == p && e.B == v) || (e.A == v && e.B == p) {
 			// point are on the same segment, so visible
 			return true
 		}
 
+		// exclude points on the same object if they are not on the same edge (we only deal with Rectangles here)
+		if n.Object() == other.Object() {
+			if p.X != v.X && p.Y != v.Y {
+				return false
+			}
+		}
 		// exclude edges that include v or p
 		if e.A == v || e.B == v || e.A == p || e.B == p {
 			continue
 		}
 		ge := graph.Edge{A: p, B: v}
 		if graph.EdgesIntersect(ge, e) {
-			log.Printf("***** %v intersects with %v", ge, e)
+			// log.Printf("***** %v intersects with %v", ge, e)
 			return false
 		}
 	}
@@ -411,26 +419,22 @@ func (b *TargetSeekerBehavior) populateVisibilityGraph(w *World, o Object) {
 	// target, not part of any object
 	t := graph.NewItemNode(b.target.ID(), b.target.Location(), 1)
 	g.AddNode(t)
-	log.Printf("target: %v", t.Value().V)
+	// log.Printf("target: %v", t.Value().V)
 
 	// populate visibility information for all nodes
 	for _, n := range g.Nodes() {
-		log.Printf(">> checking visibility from %v", n)
+		// log.Printf(">> checking visibility from %v", n)
 		for _, other := range g.Nodes() {
 			if n.Value().V == other.Value().V {
 				continue
 			}
-			if n.Object() == other.Object() {
-				// continue, same object
-				continue
-			}
 			// check if  v is visible from p
-			log.Printf("  ++ checking visibility to %v", other)
-			if b.isVisbile(w, n.Value().V, other.Value().V, edges) {
-				log.Println("    -- is visible")
+			// log.Printf("  ++ checking visibility to %v", other)
+			if b.isVisbile(w, n.Value().V, other.Value().V, edges, n, other) {
+				// log.Println("    -- is visible")
 				g.AddEdge(n, other)
 			} else {
-				log.Println("    -- not visible")
+				// log.Println("    -- not visible")
 			}
 		}
 	}
@@ -622,7 +626,6 @@ func (b *TargetSeekerBehavior) Direction(w *World, o Object) pixel.Vec {
 		// move y towards target
 		if target.Y > source.Y {
 			// move up
-			log.Println("12: on, moving up")
 			v := pixel.V(0, 1)
 			o.SetManualVelocity(pixel.V(0, o.Phys().ParentObject().Speed()*-1))
 			if !o.NextPhys().CollisionAbove(w) {
@@ -631,7 +634,6 @@ func (b *TargetSeekerBehavior) Direction(w *World, o Object) pixel.Vec {
 		}
 		if target.Y < source.Y {
 			// move down
-			log.Println("13: on, moving down")
 			v := pixel.V(0, -1)
 			o.SetManualVelocity(pixel.V(0, o.Phys().ParentObject().Speed()*-1))
 			if !o.NextPhys().CollisionAbove(w) {
@@ -644,7 +646,6 @@ func (b *TargetSeekerBehavior) Direction(w *World, o Object) pixel.Vec {
 		// move x towards target
 		if target.X > source.X {
 			// move right
-			log.Println("14: below, moving right")
 			v := pixel.V(1, 0)
 			o.SetManualVelocity(pixel.V(o.Phys().ParentObject().Speed()*-1, 0))
 			if !o.NextPhys().CollisionRight(w) {
@@ -653,7 +654,6 @@ func (b *TargetSeekerBehavior) Direction(w *World, o Object) pixel.Vec {
 		}
 		if target.X < source.X {
 			// move left
-			log.Println("15: above, moving left")
 			v := pixel.V(-1, 0)
 			o.SetManualVelocity(pixel.V(o.Phys().ParentObject().Speed(), 0))
 			if !o.NextPhys().CollisionLeft(w) {

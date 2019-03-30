@@ -32,7 +32,7 @@ const (
 	visibleWinMaxX, visibleWinMaxY = 1024, 768
 	groundHeight                   = 40
 
-	maxTargets = 1
+	maxTargets = 2
 )
 
 // processMouseLeftInput handles left click
@@ -103,6 +103,7 @@ func run() {
 
 	// populate the world
 	populate.AddTargetSeeker(w)
+	// populate.AddTargetSeeker(w)
 	// populate.RandomCircles(w, 2)
 	// populate.RandomRectangles(w, 2)
 	// populate.RandomEllipses(w, 2)

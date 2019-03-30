@@ -117,7 +117,7 @@ func AddTargetSeeker(w *world.World) {
 	finder := graph.DijkstraPath
 
 	o := world.NewRectObject(
-		fmt.Sprintf("ts1"),
+		fmt.Sprintf("ts-%v", utils.RandomInt(0, 9)),
 		colornames.Yellow,
 		utils.RandomFloat64(minSpeed, maxSpeed),  // speed
 		utils.RandomFloat64(minMass, maxMass)/10, // mass
@@ -251,7 +251,7 @@ func AddFixtures(w *world.World) {
 	var height float64 = 100
 
 	f := world.NewFixture("block1", colornames.Green, width, height)
-	f.Place(pixel.V(580, w.Ground.Phys().Location().Max.Y+100))
+	f.Place(pixel.V(400, w.Ground.Phys().Location().Max.Y+160))
 	w.AddFixture(f)
 
 	f = world.NewFixture("block2", colornames.Green, width, height)
@@ -266,21 +266,21 @@ func AddFixtures(w *world.World) {
 	f.Place(pixel.V(60, 400))
 	w.AddFixture(f)
 
-	width = 20
-	height = 400
-	f = world.NewFixture("block5", colornames.Green, width, height)
-	f.Place(pixel.V(300, 100))
-	w.AddFixture(f)
+	// width = 20
+	// height = 400
+	// f = world.NewFixture("block5", colornames.Green, width, height)
+	// f.Place(pixel.V(300, 100))
+	// w.AddFixture(f)
 
-	width = 200
-	height = 10
-	f = world.NewFixture("block5", colornames.Green, width, height)
-	f.Place(pixel.V(300, 100))
-	w.AddFixture(f)
+	// width = 200
+	// height = 10
+	// f = world.NewFixture("block5", colornames.Green, width, height)
+	// f.Place(pixel.V(300, 100))
+	// w.AddFixture(f)
 
-	width = 200
-	height = 10
-	f = world.NewFixture("block5", colornames.Green, width, height)
-	f.Place(pixel.V(300, 650))
-	w.AddFixture(f)
+	// width = 200
+	// height = 10
+	// f = world.NewFixture("block5", colornames.Green, width, height)
+	// f.Place(pixel.V(300, 650))
+	// w.AddFixture(f)
 }
