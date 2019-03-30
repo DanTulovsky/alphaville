@@ -486,7 +486,7 @@ func (b *TargetSeekerBehavior) Direction(w *World, o Object) pixel.Vec {
 	// current location of target seeker
 	c := o.Phys().Location().Center()
 
-	log.Printf("source: %v; dest: %v; c: %v", source, target, c)
+	// log.Printf("source: %v; dest: %v; c: %v", source, target, c)
 
 	// vector from current location to target
 	// to := c.To(target)
@@ -663,7 +663,7 @@ func (b *TargetSeekerBehavior) Direction(w *World, o Object) pixel.Vec {
 	}
 
 	if len(moves) > 0 {
-		log.Println(moves)
+		// log.Println(moves)
 		return moves[utils.RandomInt(0, len(moves))]
 	}
 
