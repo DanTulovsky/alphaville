@@ -7,8 +7,11 @@ import (
 	"log"
 	"time"
 
+	"golang.org/x/image/colornames"
+
 	"github.com/faiface/pixel/imdraw"
 	"github.com/faiface/pixel/pixelgl"
+	"github.com/google/uuid"
 
 	"github.com/faiface/pixel"
 	"gogs.wetsnow.com/dant/alphaville/graph"
@@ -325,18 +328,24 @@ func NewTargetSeekerBehavior(f graph.PathFinder) *TargetSeekerBehavior {
 	return b
 }
 
+type vertecy struct {
+	V pixel.Vec
+	O uuid.UUID
+}
+
 // allCollisionVerticies returns a list of all verticies of all collision object
-func (b *TargetSeekerBehavior) allCollisionVerticies(w *World, o Object) []pixel.Vec {
-	l := []pixel.Vec{}
+func (b *TargetSeekerBehavior) allCollisionVerticies(w *World, o Object) []vertecy {
+	l := []vertecy{}
 
 	for _, other := range w.CollisionObjects() {
 		if o.ID() == other.ID() {
 			continue // skip yourself
 		}
+		log.Printf("adding [%v] verticies...", other.Name())
 		scaleX := (o.Phys().Location().Max.X-o.Phys().Location().Min.X)/2 + 5
 		scaleY := (o.Phys().Location().Max.Y-o.Phys().Location().Min.Y)/2 + 5
 		for _, v := range utils.RectVerticiesScaled(other.Phys().Location(), scaleX, scaleY, w.X, w.Y) {
-			l = append(l, v)
+			l = append(l, vertecy{V: v, O: other.ID()})
 		}
 	}
 	return l
@@ -350,6 +359,7 @@ func (b *TargetSeekerBehavior) allCollisionEdges(w *World, o Object) []graph.Edg
 		if o.ID() == other.ID() {
 			continue // skip yourself
 		}
+		log.Printf("adding [%v] edges...", other.Name())
 		scaleX := (o.Phys().Location().Max.X-o.Phys().Location().Min.X)/2 + 5
 		scaleY := (o.Phys().Location().Max.Y-o.Phys().Location().Min.Y)/2 + 5
 		v := utils.RectVerticiesScaled(other.Phys().Location(), scaleX, scaleY, w.X, w.Y)
@@ -370,11 +380,13 @@ func (b *TargetSeekerBehavior) isVisbile(w *World, p, v pixel.Vec, edges []graph
 			return true
 		}
 
-		// exclude edges that include v
-		if e.A == v || e.B == v {
+		// exclude edges that include v or p
+		if e.A == v || e.B == v || e.A == p || e.B == p {
 			continue
 		}
-		if graph.EdgesIntersect(graph.Edge{A: p, B: v}, e) {
+		ge := graph.Edge{A: p, B: v}
+		if graph.EdgesIntersect(ge, e) {
+			log.Printf("***** %v intersects with %v", ge, e)
 			return false
 		}
 	}
@@ -389,27 +401,36 @@ func (b *TargetSeekerBehavior) populateVisibilityGraph(w *World, o Object) {
 
 	// Add all verticies (except source) to the graph
 	for _, v := range verticies {
-		g.AddNode(graph.NewItemNode(v, 1))
+		g.AddNode(graph.NewItemNode(v.O, v.V, 1))
 	}
 
 	// source node
-	p := graph.NewItemNode(o.Phys().Location().Center(), 0)
+	p := graph.NewItemNode(o.ID(), o.Phys().Location().Center(), 0)
 	g.AddNode(p)
 
-	// target node
-	t := graph.NewItemNode(b.target.Location(), 1)
+	// target, not part of any object
+	t := graph.NewItemNode(b.target.ID(), b.target.Location(), 1)
 	g.AddNode(t)
 	log.Printf("target: %v", t.Value().V)
 
 	// populate visibility information for all nodes
 	for _, n := range g.Nodes() {
+		log.Printf(">> checking visibility from %v", n)
 		for _, other := range g.Nodes() {
 			if n.Value().V == other.Value().V {
 				continue
 			}
+			if n.Object() == other.Object() {
+				// continue, same object
+				continue
+			}
 			// check if  v is visible from p
+			log.Printf("  ++ checking visibility to %v", other)
 			if b.isVisbile(w, n.Value().V, other.Value().V, edges) {
+				log.Println("    -- is visible")
 				g.AddEdge(n, other)
+			} else {
+				log.Println("    -- not visible")
 			}
 		}
 	}
@@ -473,13 +494,11 @@ func (b *TargetSeekerBehavior) Direction(w *World, o Object) pixel.Vec {
 	var moves []pixel.Vec
 
 	orient := graph.Orientation(source, target, c)
-	log.Printf("orient: %v", orient)
 
 	if target.X > source.X {
 		if utils.LineSlope(source, target) > 0 {
 			// if above, move x right
 			if orient == 2 {
-				log.Println("1: above, moving right")
 				v := pixel.V(1, 0)
 				o.SetManualVelocity(pixel.V(o.Phys().ParentObject().Speed()*-1, 0))
 				if !o.NextPhys().CollisionRight(w) {
@@ -489,7 +508,6 @@ func (b *TargetSeekerBehavior) Direction(w *World, o Object) pixel.Vec {
 
 			// if below, move y up
 			if orient == 1 {
-				log.Println("2: below, moving up")
 				v := pixel.V(0, 1)
 				o.SetManualVelocity(pixel.V(0, o.Phys().ParentObject().Speed()*-1))
 				if !o.NextPhys().CollisionAbove(w) {
@@ -499,7 +517,6 @@ func (b *TargetSeekerBehavior) Direction(w *World, o Object) pixel.Vec {
 
 			// if on the line, move in either direction
 			if orient == 0 {
-				log.Println("3: on the line, moving up")
 				v := pixel.V(0, 1)
 				o.SetManualVelocity(pixel.V(0, o.Phys().ParentObject().Speed()*-1))
 				if !o.NextPhys().CollisionAbove(w) {
@@ -511,7 +528,6 @@ func (b *TargetSeekerBehavior) Direction(w *World, o Object) pixel.Vec {
 		if utils.LineSlope(source, target) < 0 {
 			// if above, move y down
 			if orient == 2 {
-				log.Println("4: above, moving down")
 				v := pixel.V(0, -1)
 				o.SetManualVelocity(pixel.V(0, o.Phys().ParentObject().Speed()))
 				if !o.NextPhys().CollisionAbove(w) {
@@ -521,7 +537,6 @@ func (b *TargetSeekerBehavior) Direction(w *World, o Object) pixel.Vec {
 
 			// if below, move x right
 			if orient == 1 {
-				log.Println("5: below, moving right")
 				v := pixel.V(1, 0)
 				o.SetManualVelocity(pixel.V(o.Phys().ParentObject().Speed()*-1, 0))
 				if !o.NextPhys().CollisionRight(w) {
@@ -531,7 +546,6 @@ func (b *TargetSeekerBehavior) Direction(w *World, o Object) pixel.Vec {
 
 			// if on the line, move in either direction
 			if orient == 0 {
-				log.Println("6: on, moving down")
 				v := pixel.V(0, -1)
 				o.SetManualVelocity(pixel.V(0, o.Phys().ParentObject().Speed()*-1))
 				if !o.NextPhys().CollisionAbove(w) {
@@ -547,7 +561,6 @@ func (b *TargetSeekerBehavior) Direction(w *World, o Object) pixel.Vec {
 		if utils.LineSlope(source, target) > 0 {
 			// if above, move y down
 			if orient == 1 {
-				log.Println("7: above, moving down")
 				v := pixel.V(0, -1)
 				o.SetManualVelocity(pixel.V(0, o.Phys().ParentObject().Speed()))
 				if !o.NextPhys().CollisionAbove(w) {
@@ -557,7 +570,6 @@ func (b *TargetSeekerBehavior) Direction(w *World, o Object) pixel.Vec {
 
 			// if below, move x left
 			if orient == 2 {
-				log.Println("8: below, moving left")
 				v := pixel.V(-1, 0)
 				o.SetManualVelocity(pixel.V(o.Phys().ParentObject().Speed(), 0))
 				if !o.NextPhys().CollisionLeft(w) {
@@ -567,7 +579,6 @@ func (b *TargetSeekerBehavior) Direction(w *World, o Object) pixel.Vec {
 
 			// if on the line, move in either direction
 			if orient == 0 {
-				log.Println("8.1: on, moving down")
 				v := pixel.V(0, -1)
 				o.SetManualVelocity(pixel.V(0, o.Phys().ParentObject().Speed()*-1))
 				if !o.NextPhys().CollisionAbove(w) {
@@ -580,7 +591,6 @@ func (b *TargetSeekerBehavior) Direction(w *World, o Object) pixel.Vec {
 		if utils.LineSlope(source, target) < 0 {
 			// if above, move x left
 			if orient == 1 {
-				log.Println("9: above, moving left")
 				v := pixel.V(-1, 0)
 				o.SetManualVelocity(pixel.V(o.Phys().ParentObject().Speed(), 0))
 				if !o.NextPhys().CollisionLeft(w) {
@@ -590,7 +600,6 @@ func (b *TargetSeekerBehavior) Direction(w *World, o Object) pixel.Vec {
 
 			// if below, move y up
 			if orient == 2 {
-				log.Println("10: below, moving up")
 				v := pixel.V(0, 1)
 				o.SetManualVelocity(pixel.V(0, o.Phys().ParentObject().Speed()*-1))
 				if !o.NextPhys().CollisionAbove(w) {
@@ -600,7 +609,6 @@ func (b *TargetSeekerBehavior) Direction(w *World, o Object) pixel.Vec {
 
 			// if on the line, move in either direction
 			if orient == 0 {
-				log.Println("11: on, moving up")
 				v := pixel.V(0, 1)
 				o.SetManualVelocity(pixel.V(0, o.Phys().ParentObject().Speed()*-1))
 				if !o.NextPhys().CollisionAbove(w) {
@@ -662,49 +670,6 @@ func (b *TargetSeekerBehavior) Direction(w *World, o Object) pixel.Vec {
 	o.SetManualVelocity(pixel.ZV)
 	return pixel.ZV
 
-	// log.Printf("%v -> %v via %v (%v; speed = %v)", b.lastPathVec, t, to, 0.1, o.Speed())
-	// return to.Sub(fromPath.Value().V)
-
-	// var moves []pixel.Vec
-
-	// // Sets velocity to do the collision check, this could be better.
-	// // The velocity gets reset by the caller of this function
-	// if to.X < 0 {
-	// 	v := pixel.V(1, 0)
-	// 	o.SetManualVelocity(pixel.V(o.Phys().ParentObject().Speed()*-1, 0))
-	// 	if !o.NextPhys().CollisionRight(w) {
-	// 		moves = append(moves, v)
-	// 	}
-	// }
-	// if to.X > 0 {
-	// 	v := pixel.V(-1, 0)
-	// 	o.SetManualVelocity(pixel.V(o.Phys().ParentObject().Speed(), 0))
-	// 	if !o.NextPhys().CollisionLeft(w) {
-	// 		moves = append(moves, v)
-	// 	}
-	// }
-	// if to.Y < 0 {
-	// 	v := pixel.V(0, 1)
-	// 	o.SetManualVelocity(pixel.V(0, o.Phys().ParentObject().Speed()*-1))
-	// 	if !o.NextPhys().CollisionAbove(w) {
-	// 		moves = append(moves, v)
-	// 	}
-	// }
-	// if to.Y > 0 {
-	// 	v := pixel.V(0, -1)
-	// 	o.SetManualVelocity(pixel.V(0, o.Phys().ParentObject().Speed()))
-	// 	if !o.NextPhys().CollisionAbove(w) {
-	// 		moves = append(moves, v)
-	// 	}
-	// }
-
-	// if len(moves) > 0 {
-	// 	// log.Println(moves)
-	// 	return moves[utils.RandomInt(0, len(moves))]
-	// }
-
-	// o.SetManualVelocity(pixel.ZV)
-	// return pixel.ZV
 }
 
 // pickNewTarget sets a new random target if available
@@ -761,17 +726,29 @@ func (b *TargetSeekerBehavior) Update(w *World, o Object) {
 		return
 	}
 
+	///////////////////////////////////////////
+	// var err error
+	// b.populateVisibilityGraph(w, o)
+
+	// b.path, b.cost, err = b.FindPath(o.Phys().Location().Center(), b.target.Location())
+	// if err != nil {
+	// 	log.Printf("error finding path: %v", err)
+	// }
+
+	// b.fullpath = []graph.Node{}
+	// for _, n := range b.path {
+	// 	b.fullpath = append(b.fullpath, *n)
+	// }
+	/////////////////////////////////////////////////
+
 	phys := o.NextPhys()
 
 	d := b.Direction(w, o)
-	log.Printf("d: %v", d)
 	phys.SetManualVelocity(d)
 	// o.Phys().SetManualVelocity(d)
 
 	// check collisions with objects
-	if !phys.HaveCollision(w) {
-		b.Move(w, o, phys.CollisionBorders(w, phys.Vel()))
-	}
+	b.Move(w, o, phys.CollisionBorders(w, phys.Vel()))
 }
 
 // Move moves the object
@@ -785,13 +762,25 @@ func (b *TargetSeekerBehavior) Draw(win *pixelgl.Window) {
 	if b.target == nil {
 		return
 	}
-	// Draw the path
 	imd := imdraw.New(nil)
 
+	// Draw the path
+	imd.Color = colornames.Lightblue
+	// Draw the graph lines
+	for n, other := range b.moveGraph.Edges() {
+		for _, o := range other {
+			imd.Push(n.Value().V)
+			imd.Push(o.Value().V)
+			imd.Line(1)
+		}
+	}
+
+	// draw the graph
 	imd.Color = b.target.Color()
 	for _, p := range b.fullpath {
 		imd.Push(p.Value().V)
 	}
 	imd.Line(1)
 	imd.Draw(win)
+
 }

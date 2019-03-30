@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/faiface/pixel"
+	"github.com/google/uuid"
 )
 
 // Item is the data contained in the node
@@ -22,8 +23,9 @@ func NewItem(v pixel.Vec) Item {
 
 // Node is a single node in the graph
 type Node struct {
-	value Item
-	cost  int
+	value  Item
+	cost   int
+	partof uuid.UUID // what node this object is part of
 }
 
 // NewNode returns a new graph node
@@ -38,13 +40,19 @@ func (n Node) Value() Item {
 	return n.value
 }
 
+// Object returns the uuid of the object this node is part of
+func (n Node) Object() uuid.UUID {
+	return n.partof
+}
+
 // NewItemNode creates and return a new node with v as the item
-func NewItemNode(v pixel.Vec, cost int) *Node {
+func NewItemNode(u uuid.UUID, v pixel.Vec, cost int) *Node {
 	return &Node{
 		value: Item{
 			V: v,
 		},
-		cost: cost,
+		cost:   cost,
+		partof: u,
 	}
 
 }
@@ -75,6 +83,11 @@ func NewGraph() *Graph {
 // Nodes returns all the nodes in the graph
 func (g *Graph) Nodes() []*Node {
 	return g.nodes
+}
+
+// Edges returns all the edges in the graph
+func (g *Graph) Edges() map[Node][]*Node {
+	return g.edges
 }
 
 // FindNode returns the node with the provide value

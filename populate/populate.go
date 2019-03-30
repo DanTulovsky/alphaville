@@ -108,7 +108,7 @@ func AddTargetSeeker(w *world.World) {
 	minWidth, maxWidth = 40, 41
 	minHeight, maxHeight = 40, 41
 	minMass, maxMass = 6, 10
-	minSpeed, maxSpeed = 0.1, w.MaxObjectSpeed
+	minSpeed, maxSpeed = 0.9, w.MaxObjectSpeed
 
 	width := utils.RandomFloat64(minWidth, maxWidth)
 	height := utils.RandomFloat64(minHeight, maxHeight)
@@ -159,6 +159,14 @@ func AddGates(w *world.World, coolDown time.Duration) {
 		return false
 	}
 
+	var filterTargetSeekerOnly world.GateFilter = func(o world.Object) bool {
+		switch o.Behavior().(type) {
+		case *world.TargetSeekerBehavior:
+			return true
+		}
+		return false
+	}
+
 	type gate struct {
 		name     string
 		location pixel.Vec
@@ -176,11 +184,12 @@ func AddGates(w *world.World, coolDown time.Duration) {
 			status:   world.GateOpen,
 			coolDown: 1 * time.Second,
 			radius:   20,
+			filters:  []world.GateFilter{filterTargetSeekerOnly},
 		},
 		{
 			name:     "Two",
 			location: pixel.V(200, 600),
-			status:   world.GateClosed,
+			status:   world.GateOpen,
 			coolDown: 1 * time.Second,
 			radius:   25,
 		},
@@ -246,7 +255,7 @@ func AddFixtures(w *world.World) {
 	w.AddFixture(f)
 
 	f = world.NewFixture("block2", colornames.Green, width, height)
-	f.Place(pixel.V(10, w.Ground.Phys().Location().Max.Y+100))
+	f.Place(pixel.V(50, w.Ground.Phys().Location().Max.Y+100))
 	w.AddFixture(f)
 
 	f = world.NewFixture("block3", colornames.Green, width, height)
@@ -261,5 +270,17 @@ func AddFixtures(w *world.World) {
 	height = 400
 	f = world.NewFixture("block5", colornames.Green, width, height)
 	f.Place(pixel.V(300, 100))
+	w.AddFixture(f)
+
+	width = 200
+	height = 10
+	f = world.NewFixture("block5", colornames.Green, width, height)
+	f.Place(pixel.V(300, 100))
+	w.AddFixture(f)
+
+	width = 200
+	height = 10
+	f = world.NewFixture("block5", colornames.Green, width, height)
+	f.Place(pixel.V(300, 650))
 	w.AddFixture(f)
 }
