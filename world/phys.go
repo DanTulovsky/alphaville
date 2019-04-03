@@ -5,8 +5,6 @@ import (
 	"html/template"
 	"log"
 
-	"gogs.wetsnow.com/dant/alphaville/utils"
-
 	"github.com/faiface/pixel"
 )
 
@@ -14,16 +12,13 @@ import (
 type ObjectPhys interface {
 	Copy() ObjectPhys
 
-	CollisionAbove(*World) bool
-	CollisionBelow(*World) bool
-	CollisionBorders(*World, pixel.Vec) pixel.Vec
-	CollisionLeft(*World) bool
-	CollisionRight(*World) bool
+	CollisionBordersVector(*World, pixel.Vec) pixel.Vec
 	CurrentMass() float64
-	HaveCollision(*World) bool
+	HaveCollisionAt(*World) string
 	IsAboveGround(w *World) bool
 	IsZeroMass() bool
 	Location() pixel.Rect
+	LocationOf(Object) string
 	OnGround(*World) bool
 	MovingUp() bool
 	MovingDown() bool
@@ -206,65 +201,55 @@ func (o *BaseObjectPhys) MovingRight() bool {
 	return o.Vel().X > 0
 }
 
-// shouldCheckVerticalCollision returns true if we need to do a more thourough check of the collision
-func (o *BaseObjectPhys) shouldCheckVerticalCollision(other Object) bool {
+// LocationOf returns the location of other (above, below, left, right)
+func (o *BaseObjectPhys) LocationOf(other Object) string {
 
-	if o.parentObject.ID() == other.ID() {
-		return false // skip yourself
+	oMin := o.Location().Min
+	oMax := o.Location().Max
+	otherMin := other.Phys().Location().Min
+	otherMax := other.Phys().Location().Max
+
+	switch {
+	case oMin.Y > otherMax.Y:
+		return "below"
+	case oMax.Y < otherMin.Y:
+		return "above"
+	case oMin.X > otherMax.X:
+		return "left"
+	case oMax.X < otherMin.X:
+		return "right"
 	}
 
-	// other is moving left, would cross, but cannot due to Y intersect
-	if o.Location().Max.X > other.Phys().Location().Min.X+other.Phys().Vel().X {
-		if utils.HaveCommonY(o.Location(), other.Phys().Location()) {
-			return false
-		}
-	}
-
-	// other is moving left and would cross
-	if o.Location().Max.X < other.Phys().Location().Min.X+other.Phys().Vel().X &&
-		o.Location().Max.X < other.Phys().Location().Min.X {
-		return false
-	}
-
-	// other is moving right, would cross, but cannot due to Y intersect
-	if o.Location().Min.X < other.Phys().Location().Max.X+other.Phys().Vel().X {
-		if utils.HaveCommonY(o.Location(), other.Phys().Location()) {
-			return false
-		}
-	}
-
-	// other is moving right and would cross
-	if o.Location().Min.X > other.Phys().Location().Max.X+other.Phys().Vel().X &&
-		o.Location().Min.X > other.Phys().Location().Max.X {
-		return false
-	}
-
-	return true
+	return ""
 }
 
-// HaveCollision returns true if the object has a collision with current trajectory
-func (o *BaseObjectPhys) HaveCollision(w *World) bool {
-
+// HaveCollisionAt returns the location of the collision (above, below, left, right) if there
+// is a collision, otherwise ""
+func (o *BaseObjectPhys) HaveCollisionAt(w *World) string {
 	for _, other := range w.CollisionObjects() {
 		if o.parentObject.ID() == other.ID() {
-			return false // skip yourself
+			continue // skip yourself
 		}
+
+		// location of other compared to o (above, below, right, left)
+		l := o.LocationOf(other)
+
 		// other moves as planned based on current velocity
 		if HaveCollisions(o.Location(), other.Phys().Location(), o.Vel(), other.Phys().Vel()) {
-			return true
+			return l
 		}
 		// other doesn't move
 		if HaveCollisions(o.Location(), other.Phys().Location(), o.Vel(), pixel.V(0, 0)) {
-			return true
+			return l
 		}
 	}
 
-	return false
+	return ""
 }
 
-// CollisionBorders returns a movement vector that avoids collision with outside world border given vel vector
+// CollisionBordersVector returns a movement vector that avoids collision with outside world border given vel vector
 // If no collisions detected, vel is returned as is
-func (o *BaseObjectPhys) CollisionBorders(w *World, vel pixel.Vec) pixel.Vec {
+func (o *BaseObjectPhys) CollisionBordersVector(w *World, vel pixel.Vec) pixel.Vec {
 
 	switch {
 	case o.MovingLeft() && o.Location().Min.X+vel.X <= 0:
@@ -281,115 +266,6 @@ func (o *BaseObjectPhys) CollisionBorders(w *World, vel pixel.Vec) pixel.Vec {
 		return pixel.V(0, w.Y-o.Location().Max.Y)
 	}
 	return vel
-}
-
-// CollisionBelow returns true if object will collide with anything while moving down
-func (o *BaseObjectPhys) CollisionBelow(w *World) bool {
-	// if about to fall on another, rise back up
-	for _, other := range w.CollisionObjects() {
-		if !o.shouldCheckVerticalCollision(other) {
-			continue
-		}
-
-		if o.Location().Min.Y < other.Phys().Location().Max.Y &&
-			o.Location().Max.Y < other.Phys().Location().Min.Y {
-			continue
-		}
-
-		// Check if other moves as expected, or decides to stay in place (due to a third object)
-		if o.Location().Min.Y+o.Vel().Y > other.Phys().Location().Max.Y+other.Phys().Vel().Y &&
-			o.Location().Min.Y+o.Vel().Y > other.Phys().Location().Max.Y {
-			// too far apart
-			continue
-		}
-
-		return true
-	}
-
-	return false
-}
-
-// CollisionAbove returns true if object will collide with anything while moveing up
-func (o *BaseObjectPhys) CollisionAbove(w *World) bool {
-	for _, other := range w.CollisionObjects() {
-		if !o.shouldCheckVerticalCollision(other) {
-			continue
-		}
-
-		if other.Phys().Location().Min.Y < o.Location().Max.Y &&
-			other.Phys().Location().Max.Y < o.Location().Min.Y {
-			continue
-		}
-
-		// Check if other moves as expected, or decides to stay in place (due to a third object)
-		if other.Phys().Location().Min.Y+other.Phys().Vel().Y > o.Location().Max.Y+o.Vel().Y &&
-			other.Phys().Location().Min.Y > o.Location().Max.Y+o.Vel().Y {
-			// too far apart
-			continue
-		}
-		return true
-	}
-	return false
-}
-
-// shouldCheckHorizontalCollision returns true if we need to do a more thourough check of the collision
-func (o *BaseObjectPhys) shouldCheckHorizontalCollision(other Object) bool {
-
-	if o.parentObject.ID() == other.ID() {
-		return false // skip yourself
-	}
-
-	if other.Phys().Location().Min.Y > o.Location().Max.Y {
-		return false // ignore falling BaseObjects higher than you
-	}
-
-	if other.Phys().Location().Max.Y < o.Location().Min.Y {
-		return false // ignore objects lower than you
-	}
-
-	return true
-}
-
-// CollisionLeft returns true if object will collide moving left
-func (o *BaseObjectPhys) CollisionLeft(w *World) bool {
-	for _, other := range w.CollisionObjects() {
-		if !o.shouldCheckHorizontalCollision(other) {
-			continue
-		}
-
-		if o.Location().Max.X < other.Phys().Location().Min.X {
-			continue // no intersection in X axis
-		}
-
-		// Check if other moves as expected, or decides to stay in place (due to a third object)
-		if o.Location().Min.X+o.Vel().X > other.Phys().Location().Max.X+other.Phys().Vel().X &&
-			o.Location().Min.X+o.Vel().X > other.Phys().Location().Max.X {
-			continue // will not bump
-		}
-		return true
-	}
-	return false
-}
-
-// CollisionRight returns true if object will collide moving right
-func (o *BaseObjectPhys) CollisionRight(w *World) bool {
-	for _, other := range w.CollisionObjects() {
-		if !o.shouldCheckHorizontalCollision(other) {
-			continue
-		}
-
-		if o.Location().Min.X > other.Phys().Location().Max.X {
-			continue // no intersection in X axis
-		}
-
-		// Check if other moves as expected, or decides to stay in place (due to a third object)
-		if o.Location().Max.X+o.Vel().X < other.Phys().Location().Min.X+other.Phys().Vel().X &&
-			o.Location().Max.X+o.Vel().X < other.Phys().Location().Min.X {
-			continue // will not bump
-		}
-		return true
-	}
-	return false
 }
 
 // Stop stops the object

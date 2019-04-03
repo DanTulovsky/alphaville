@@ -10,6 +10,14 @@ import (
 // v1 and v2 are r1 and r2 velocity vectors
 func HaveCollisions(r1, r2 pixel.Rect, v1, v2 pixel.Vec) bool {
 
+	// do the quick check first, this does not handle movements that "jump over" the object
+	// only returns true if the objects would intersect during movement
+	// if r1.Moved(v1).Intersect(r2.Moved(v2)) != pixel.R(0, 0, 0, 0) {
+	// 	return true
+	// }
+
+	// otherwise do the longer check from
+	// https://gamedev.stackexchange.com/questions/93035/whats-the-fastest-way-checking-if-two-moving-aabbs-intersect
 	r1 = r1.Norm()
 	r2 = r2.Norm()
 

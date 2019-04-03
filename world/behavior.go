@@ -147,27 +147,21 @@ func (b *DefaultBehavior) changeVerticalDirection(w *World, o Object) bool {
 func (b *DefaultBehavior) HandleCollisions(w *World, o Object) bool {
 	phys := o.NextPhys()
 
+	clocation := phys.HaveCollisionAt(w)
+
 	switch {
-	case phys.MovingDown():
-		if phys.CollisionBelow(w) {
-			b.avoidCollisionBelow(phys)
-			return true
-		}
-	case phys.MovingUp():
-		if phys.CollisionAbove(w) {
-			b.avoidCollisionAbove(phys, w)
-			return true
-		}
-	case phys.MovingRight():
-		if phys.CollisionRight(w) {
-			b.avoidCollisionRight(phys)
-			return true
-		}
-	case phys.MovingLeft():
-		if phys.CollisionLeft(w) {
-			b.avoidCollisionLeft(phys)
-			return true
-		}
+	case phys.MovingDown() && clocation == "below":
+		b.avoidCollisionBelow(phys)
+		return true
+	case phys.MovingUp() && clocation == "above":
+		b.avoidCollisionAbove(phys, w)
+		return true
+	case phys.MovingRight() && clocation == "right":
+		b.avoidCollisionRight(phys)
+		return true
+	case phys.MovingLeft() && clocation == "left":
+		b.avoidCollisionLeft(phys)
+		return true
 	}
 	return false
 }
@@ -227,10 +221,12 @@ func (b *DefaultBehavior) avoidCollisionRight(phys ObjectPhys) {
 func (b *DefaultBehavior) Move(w *World, o Object, v pixel.Vec) {
 	phys := o.NextPhys()
 
-	if phys.Vel().X != 0 && phys.Vel().Y != 0 {
-		// cannot currently move in both X and Y direction
-		log.Fatalf("o:%+#v\nx: %v; y: %v\n", o, phys.Vel().X, phys.Vel().Y)
-	}
+	// if phys.Vel().X != 0 && phys.Vel().Y != 0 {
+	// 	// cannot currently move in both X and Y direction
+	// 	log.Fatalf("o:%+#v\nx: %v; y: %v\n", o, phys.Vel().X, phys.Vel().Y)
+	// }
+
+	// mv := phys.CollisionBordersVector(w, phys.Vel())
 
 	// TODO: refactor to use CollisionBorders() function
 	switch {
@@ -288,8 +284,8 @@ func NewManualBehavior() *ManualBehavior {
 func (b *ManualBehavior) Update(w *World, o Object) {
 	phys := o.NextPhys()
 
-	if !phys.HaveCollision(w) {
-		b.Move(w, o, phys.CollisionBorders(w, phys.Vel()))
+	if phys.HaveCollisionAt(w) == "" {
+		b.Move(w, o, phys.CollisionBordersVector(w, phys.Vel()))
 	}
 }
 
@@ -340,13 +336,11 @@ func (b *TargetSeekerBehavior) allCollisionVerticies(w *World, o Object) []verte
 		if o.ID() == other.ID() {
 			continue // skip yourself
 		}
-		log.Printf("adding [%v] verticies...", other.Name())
-		scaleX := (o.Phys().Location().Max.X-o.Phys().Location().Min.X)/2 + 5
-		scaleY := (o.Phys().Location().Max.Y-o.Phys().Location().Min.Y)/2 + 5
+		scaleX := (o.Phys().Location().Max.X-o.Phys().Location().Min.X)/2 + 2
+		scaleY := (o.Phys().Location().Max.Y-o.Phys().Location().Min.Y)/2 + 2
 		for _, v := range utils.RectVerticiesScaled(other.Phys().Location(), scaleX, scaleY, w.X, w.Y) {
 			l = append(l, vertecy{V: v, O: other.ID()})
 		}
-		log.Printf(">>>> %v", l)
 	}
 	return l
 }
@@ -359,9 +353,8 @@ func (b *TargetSeekerBehavior) allCollisionEdges(w *World, o Object) []graph.Edg
 		if o.ID() == other.ID() {
 			continue // skip yourself
 		}
-		log.Printf("adding [%v] edges...", other.Name())
-		scaleX := (o.Phys().Location().Max.X-o.Phys().Location().Min.X)/2 + 5
-		scaleY := (o.Phys().Location().Max.Y-o.Phys().Location().Min.Y)/2 + 5
+		scaleX := (o.Phys().Location().Max.X-o.Phys().Location().Min.X)/2 + 2
+		scaleY := (o.Phys().Location().Max.Y-o.Phys().Location().Min.Y)/2 + 2
 		v := utils.RectVerticiesScaled(other.Phys().Location(), scaleX, scaleY, w.X, w.Y)
 		r := pixel.R(v[0].X, v[0].Y, v[2].X, v[2].Y)
 
@@ -375,7 +368,6 @@ func (b *TargetSeekerBehavior) allCollisionEdges(w *World, o Object) []graph.Edg
 // isVisbile returns true if v is visibile from p (no intersecting edges)
 func (b *TargetSeekerBehavior) isVisbile(w *World, p, v pixel.Vec, edges []graph.Edge, n, other *graph.Node) bool {
 	for _, e := range edges {
-		log.Printf("p: %v; v: %v; e: %v", p, v, e)
 		if (e.A == p && e.B == v) || (e.A == v && e.B == p) {
 			// point are on the same segment, so visible
 			return true
@@ -393,7 +385,6 @@ func (b *TargetSeekerBehavior) isVisbile(w *World, p, v pixel.Vec, edges []graph
 		}
 		ge := graph.Edge{A: p, B: v}
 		if graph.EdgesIntersect(ge, e) {
-			// log.Printf("***** %v intersects with %v", ge, e)
 			return false
 		}
 	}
@@ -654,9 +645,9 @@ func (b *TargetSeekerBehavior) Update(w *World, o Object) {
 	phys.SetManualVelocity(d)
 	// o.Phys().SetManualVelocity(d)
 
-	if !phys.HaveCollision(w) {
+	if phys.HaveCollisionAt(w) == "" {
 		// move, checking collisions with world borders
-		b.Move(w, o, phys.CollisionBorders(w, phys.Vel()))
+		b.Move(w, o, phys.CollisionBordersVector(w, phys.Vel()))
 	}
 }
 
