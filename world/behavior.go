@@ -472,7 +472,6 @@ func (b *TargetSeekerBehavior) isAtTarget(o Object) bool {
 // Direction returns the next direction to travel to the target
 func (b *TargetSeekerBehavior) Direction(w *World, o Object) pixel.Vec {
 	// remove the current location from path
-	// if len(b.path) > 0 && o.Phys().Location().Contains(b.path[0].Value().V) {
 	circle := pixel.C(o.Phys().Location().Center(), 2)
 	if len(b.path) > 0 && circle.Contains(b.path[0].Value().V) {
 		b.source = b.path[0].Value().V
@@ -503,28 +502,19 @@ func (b *TargetSeekerBehavior) Direction(w *World, o Object) pixel.Vec {
 			// if above, move x right
 			if orient == 2 {
 				v := pixel.V(1, 0)
-				o.SetManualVelocity(pixel.V(o.Phys().ParentObject().Speed()*-1, 0))
-				if !o.NextPhys().CollisionRight(w) {
-					moves = append(moves, v)
-				}
+				moves = append(moves, v)
 			}
 
 			// if below, move y up
 			if orient == 1 {
 				v := pixel.V(0, 1)
-				o.SetManualVelocity(pixel.V(0, o.Phys().ParentObject().Speed()*-1))
-				if !o.NextPhys().CollisionAbove(w) {
-					moves = append(moves, v)
-				}
+				moves = append(moves, v)
 			}
 
 			// if on the line, move in either direction
 			if orient == 0 {
 				v := pixel.V(0, 1)
-				o.SetManualVelocity(pixel.V(0, o.Phys().ParentObject().Speed()*-1))
-				if !o.NextPhys().CollisionAbove(w) {
-					moves = append(moves, v)
-				}
+				moves = append(moves, v)
 			}
 		}
 
@@ -532,28 +522,19 @@ func (b *TargetSeekerBehavior) Direction(w *World, o Object) pixel.Vec {
 			// if above, move y down
 			if orient == 2 {
 				v := pixel.V(0, -1)
-				o.SetManualVelocity(pixel.V(0, o.Phys().ParentObject().Speed()))
-				if !o.NextPhys().CollisionAbove(w) {
-					moves = append(moves, v)
-				}
+				moves = append(moves, v)
 			}
 
 			// if below, move x right
 			if orient == 1 {
 				v := pixel.V(1, 0)
-				o.SetManualVelocity(pixel.V(o.Phys().ParentObject().Speed()*-1, 0))
-				if !o.NextPhys().CollisionRight(w) {
-					moves = append(moves, v)
-				}
+				moves = append(moves, v)
 			}
 
 			// if on the line, move in either direction
 			if orient == 0 {
 				v := pixel.V(0, -1)
-				o.SetManualVelocity(pixel.V(0, o.Phys().ParentObject().Speed()*-1))
-				if !o.NextPhys().CollisionAbove(w) {
-					moves = append(moves, v)
-				}
+				moves = append(moves, v)
 			}
 
 		}
@@ -565,28 +546,19 @@ func (b *TargetSeekerBehavior) Direction(w *World, o Object) pixel.Vec {
 			// if above, move y down
 			if orient == 1 {
 				v := pixel.V(0, -1)
-				o.SetManualVelocity(pixel.V(0, o.Phys().ParentObject().Speed()))
-				if !o.NextPhys().CollisionAbove(w) {
-					moves = append(moves, v)
-				}
+				moves = append(moves, v)
 			}
 
 			// if below, move x left
 			if orient == 2 {
 				v := pixel.V(-1, 0)
-				o.SetManualVelocity(pixel.V(o.Phys().ParentObject().Speed(), 0))
-				if !o.NextPhys().CollisionLeft(w) {
-					moves = append(moves, v)
-				}
+				moves = append(moves, v)
 			}
 
 			// if on the line, move in either direction
 			if orient == 0 {
 				v := pixel.V(0, -1)
-				o.SetManualVelocity(pixel.V(0, o.Phys().ParentObject().Speed()*-1))
-				if !o.NextPhys().CollisionAbove(w) {
-					moves = append(moves, v)
-				}
+				moves = append(moves, v)
 			}
 
 		}
@@ -595,28 +567,19 @@ func (b *TargetSeekerBehavior) Direction(w *World, o Object) pixel.Vec {
 			// if above, move x left
 			if orient == 1 {
 				v := pixel.V(-1, 0)
-				o.SetManualVelocity(pixel.V(o.Phys().ParentObject().Speed(), 0))
-				if !o.NextPhys().CollisionLeft(w) {
-					moves = append(moves, v)
-				}
+				moves = append(moves, v)
 			}
 
 			// if below, move y up
 			if orient == 2 {
 				v := pixel.V(0, 1)
-				o.SetManualVelocity(pixel.V(0, o.Phys().ParentObject().Speed()*-1))
-				if !o.NextPhys().CollisionAbove(w) {
-					moves = append(moves, v)
-				}
+				moves = append(moves, v)
 			}
 
 			// if on the line, move in either direction
 			if orient == 0 {
 				v := pixel.V(0, 1)
-				o.SetManualVelocity(pixel.V(0, o.Phys().ParentObject().Speed()*-1))
-				if !o.NextPhys().CollisionAbove(w) {
-					moves = append(moves, v)
-				}
+				moves = append(moves, v)
 			}
 		}
 	}
@@ -626,18 +589,12 @@ func (b *TargetSeekerBehavior) Direction(w *World, o Object) pixel.Vec {
 		if target.Y > source.Y {
 			// move up
 			v := pixel.V(0, 1)
-			o.SetManualVelocity(pixel.V(0, o.Phys().ParentObject().Speed()*-1))
-			if !o.NextPhys().CollisionAbove(w) {
-				moves = append(moves, v)
-			}
+			moves = append(moves, v)
 		}
 		if target.Y < source.Y {
 			// move down
 			v := pixel.V(0, -1)
-			o.SetManualVelocity(pixel.V(0, o.Phys().ParentObject().Speed()*-1))
-			if !o.NextPhys().CollisionAbove(w) {
-				moves = append(moves, v)
-			}
+			moves = append(moves, v)
 		}
 	}
 
@@ -646,18 +603,12 @@ func (b *TargetSeekerBehavior) Direction(w *World, o Object) pixel.Vec {
 		if target.X > source.X {
 			// move right
 			v := pixel.V(1, 0)
-			o.SetManualVelocity(pixel.V(o.Phys().ParentObject().Speed()*-1, 0))
-			if !o.NextPhys().CollisionRight(w) {
-				moves = append(moves, v)
-			}
+			moves = append(moves, v)
 		}
 		if target.X < source.X {
 			// move left
 			v := pixel.V(-1, 0)
-			o.SetManualVelocity(pixel.V(o.Phys().ParentObject().Speed(), 0))
-			if !o.NextPhys().CollisionLeft(w) {
-				moves = append(moves, v)
-			}
+			moves = append(moves, v)
 		}
 	}
 
@@ -725,29 +676,16 @@ func (b *TargetSeekerBehavior) Update(w *World, o Object) {
 		return
 	}
 
-	///////////////////////////////////////////
-	// var err error
-	// b.populateVisibilityGraph(w, o)
-
-	// b.path, b.cost, err = b.FindPath(o.Phys().Location().Center(), b.target.Location())
-	// if err != nil {
-	// 	log.Printf("error finding path: %v", err)
-	// }
-
-	// b.fullpath = []graph.Node{}
-	// for _, n := range b.path {
-	// 	b.fullpath = append(b.fullpath, *n)
-	// }
-	/////////////////////////////////////////////////
-
 	phys := o.NextPhys()
 
 	d := b.Direction(w, o)
 	phys.SetManualVelocity(d)
 	// o.Phys().SetManualVelocity(d)
 
-	// check collisions with objects
-	b.Move(w, o, phys.CollisionBorders(w, phys.Vel()))
+	if !phys.HaveCollision(w) {
+		// move, checking collisions with world borders
+		b.Move(w, o, phys.CollisionBorders(w, phys.Vel()))
+	}
 }
 
 // Move moves the object

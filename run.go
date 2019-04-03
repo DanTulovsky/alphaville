@@ -102,16 +102,16 @@ func run() {
 	w := world.NewWorld(worldMaxX, worldMaxY, ground, gravity)
 
 	// populate the world
-	// populate.AddTargetSeeker(w)
+	populate.AddTargetSeeker(w)
 	// populate.AddTargetSeeker(w)
 	// populate.RandomCircles(w, 2)
-	populate.RandomRectangles(w, 10)
+	// populate.RandomRectangles(w, 10)
 	// populate.RandomEllipses(w, 2)
-	populate.AddManualObject(w, 60, 60)
+	// populate.AddManualObject(w, 60, 60)
 	populate.AddGates(w, time.Second*1)
-	// populate.AddFixtures(w)
+	populate.AddFixtures(w)
 	// add targets AFTER fixtures
-	// populate.AddTarget(w, 10, maxTargets)
+	populate.AddTarget(w, 10, maxTargets)
 
 	cfg := pixelgl.WindowConfig{
 		Title:  "Play!",
@@ -152,7 +152,7 @@ func run() {
 		processInput(win, w, ctrl)
 
 		if !paused {
-			// populate.AddTarget(w, 10, maxTargets)
+			populate.AddTarget(w, 10, maxTargets)
 			update(w)
 			updates++
 		}
