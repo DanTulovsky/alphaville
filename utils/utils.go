@@ -198,3 +198,14 @@ func RectVerticiesScaled(r pixel.Rect, scaleX, scaleY, maxX, maxY float64) []pix
 func LineSlope(a, b pixel.Vec) float64 {
 	return (b.Y - a.Y) / (b.X - a.X)
 }
+
+// RotatedAroundOrigin returns r moved to origin and rotated 180 degrees
+func RotatedAroundOrigin(r pixel.Rect) pixel.Rect {
+	ro := r.Moved(pixel.V(-r.Center().X, -r.Center().Y))
+	return pixel.R(-ro.Min.X, -ro.Min.Y, -ro.Max.X, -ro.Max.Y).Norm()
+}
+
+// MinkowskiSum returns the minkowski sum of r1 and r2
+func MinkowskiSum(r1, r2 pixel.Rect) pixel.Rect {
+	return pixel.R(r1.Min.X+r2.Min.X, r1.Min.Y+r2.Min.Y, r1.Max.X+r2.Max.X, r1.Max.Y+r2.Max.Y)
+}

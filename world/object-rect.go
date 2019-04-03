@@ -115,14 +115,14 @@ func (o *RectObject) Draw(win *pixelgl.Window) {
 	txt.Draw(win, pixel.IM)
 
 	// draw bounding box
-	scaleX := float64(22)
-	scaleY := float64(22)
-	v := utils.RectVerticiesScaled(o.Phys().Location(), scaleX, scaleY, 1024, 768)
-	r := pixel.R(v[0].X, v[0].Y, v[2].X, v[2].Y)
+	// scaleX := float64(22)
+	// scaleY := float64(22)
+	// v := utils.RectVerticiesScaled(o.Phys().Location(), scaleX, scaleY, 1024, 768)
+	// r := pixel.R(v[0].X, v[0].Y, v[2].X, v[2].Y)
 
-	o.imd.Color = colornames.Yellow
-	o.imd.Push(r.Min)
-	o.imd.Push(r.Max)
-	o.imd.Rectangle(1)
-	o.imd.Draw(win)
+	// o.imd.Color = colornames.Yellow
+	// o.imd.Push(r.Min)
+	// o.imd.Push(r.Max)
+	// o.imd.Rectangle(1)
+	// o.imd.Draw(win)
 }

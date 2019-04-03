@@ -244,10 +244,25 @@ func (o *BaseObjectPhys) shouldCheckVerticalCollision(other Object) bool {
 
 // HaveCollision returns true if the object has a collision with current trajectory
 func (o *BaseObjectPhys) HaveCollision(w *World) bool {
-	return o.CollisionAbove(w) || o.CollisionBelow(w) || o.CollisionLeft(w) || o.CollisionRight(w)
+
+	for _, other := range w.CollisionObjects() {
+		if o.parentObject.ID() == other.ID() {
+			return false // skip yourself
+		}
+		// other moves as planned based on current velocity
+		if HaveCollisions(o.Location(), other.Phys().Location(), o.Vel(), other.Phys().Vel()) {
+			return true
+		}
+		// other doesn't move
+		if HaveCollisions(o.Location(), other.Phys().Location(), o.Vel(), pixel.V(0, 0)) {
+			return true
+		}
+	}
+
+	return false
 }
 
-// CollisionBorders returns a movement vector that avoids collision with border given vel vector
+// CollisionBorders returns a movement vector that avoids collision with outside world border given vel vector
 // If no collisions detected, vel is returned as is
 func (o *BaseObjectPhys) CollisionBorders(w *World, vel pixel.Vec) pixel.Vec {
 
