@@ -244,7 +244,7 @@ func AddTarget(w *world.World, radius float64, maxTargets int) {
 	w.AddTarget(t)
 }
 
-// AddFixtures add fixtures to the world
+// AddFixtures add fixtures to the world.
 func AddFixtures(w *world.World) {
 
 	var width float64 = 100
