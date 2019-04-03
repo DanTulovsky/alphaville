@@ -172,25 +172,13 @@ func RectVerticies(r pixel.Rect) []pixel.Vec {
 // RectVerticiesScaled returns a list of verticies for the given Rect scaled by int
 // This is used to make the obstacle seem larger so that the object can pass by it
 // x is the max X coordinate, Y is the max Y coordinate
-// func RectVerticiesScaled(r pixel.Rect, scaleX, scaleY, x, y float64) []pixel.Vec {
-// 	return []pixel.Vec{
-// 		pixel.V(r.Min.X-scaleX, r.Min.Y-scaleY),
-// 		pixel.V(r.Min.X-scaleX, r.Max.Y+scaleY),
-// 		pixel.V(r.Max.X+scaleX, r.Max.Y+scaleY),
-// 		pixel.V(r.Max.X+scaleX, r.Min.Y-scaleY),
-// 	}
-// }
-
-// RectVerticiesScaled returns a list of verticies for the given Rect scaled by int
-// This is used to make the obstacle seem larger so that the object can pass by it
-// x is the max X coordinate, Y is the max Y coordinate
 // do not allow boundaries to go outside the world
 func RectVerticiesScaled(r pixel.Rect, scaleX, scaleY, maxX, maxY float64) []pixel.Vec {
 	return []pixel.Vec{
-		pixel.V(math.Max(0, r.Min.X-scaleX), math.Max(0, r.Min.Y-scaleY)),
-		pixel.V(math.Max(0, r.Min.X-scaleX), math.Min(maxY, r.Max.Y+scaleY)),
-		pixel.V(math.Min(maxX, r.Max.X+scaleX), math.Min(maxY, r.Max.Y+scaleY)),
-		pixel.V(math.Min(maxX, r.Max.X+scaleX), math.Max(0, r.Min.Y-scaleY)),
+		pixel.V(math.Floor(math.Max(0, r.Min.X-scaleX)), math.Floor(math.Max(0, r.Min.Y-scaleY))),
+		pixel.V(math.Floor(math.Max(0, r.Min.X-scaleX)), math.Ceil(math.Min(maxY, r.Max.Y+scaleY))),
+		pixel.V(math.Ceil(math.Min(maxX, r.Max.X+scaleX)), math.Ceil(math.Min(maxY, r.Max.Y+scaleY))),
+		pixel.V(math.Ceil(math.Min(maxX, r.Max.X+scaleX)), math.Floor(math.Max(0, r.Min.Y-scaleY))),
 	}
 }
 
@@ -209,3 +197,9 @@ func RotatedAroundOrigin(r pixel.Rect) pixel.Rect {
 func MinkowskiSum(r1, r2 pixel.Rect) pixel.Rect {
 	return pixel.R(r1.Min.X+r2.Min.X, r1.Min.Y+r2.Min.Y, r1.Max.X+r2.Max.X, r1.Max.Y+r2.Max.Y)
 }
+
+// MinkowskiSum returns the minkowski sum of r1 and r2
+// func MinkowskiSum(r1, r2 pixel.Rect) pixel.Rect {
+// 	return pixel.R(math.Floor(r1.Min.X+r2.Min.X), math.Ceil(r1.Min.Y+r2.Min.Y),
+// 		math.Ceil(r1.Max.X+r2.Max.X), math.Ceil(r1.Max.Y+r2.Max.Y))
+// }
