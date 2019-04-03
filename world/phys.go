@@ -405,8 +405,3 @@ func (o *BaseObjectPhys) SetManualVelocity(v pixel.Vec) {
 
 	o.SetVel(v)
 }
-
-// SetManualVelocityXY sets the manual object's velocity (both x and y)
-// func (o *BaseObjectPhys) SetManualVelocityXY(v pixel.Vec) {
-// 	o.SetVel(v)
-// }

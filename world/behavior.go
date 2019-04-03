@@ -208,7 +208,6 @@ func (b *DefaultBehavior) avoidHorizontalCollision(phys ObjectPhys) {
 	// Going to bump, 50/50 chance of rising up or changing direction
 	if utils.RandomInt(0, 100) > 50 {
 		phys.SetCurrentMass(0)
-		// b.ChangeHorizontalDirection(phys)
 	} else {
 		b.ChangeHorizontalDirection(phys)
 	}

@@ -266,21 +266,15 @@ func AddFixtures(w *world.World) {
 	f.Place(pixel.V(60, 400))
 	w.AddFixture(f)
 
-	// width = 20
-	// height = 400
-	// f = world.NewFixture("block5", colornames.Green, width, height)
-	// f.Place(pixel.V(300, 100))
-	// w.AddFixture(f)
+	width = 20
+	height = 400
+	f = world.NewFixture("block5", colornames.Green, width, height)
+	f.Place(pixel.V(300, 100))
+	w.AddFixture(f)
 
-	// width = 200
-	// height = 10
-	// f = world.NewFixture("block5", colornames.Green, width, height)
-	// f.Place(pixel.V(300, 100))
-	// w.AddFixture(f)
-
-	// width = 200
-	// height = 10
-	// f = world.NewFixture("block5", colornames.Green, width, height)
-	// f.Place(pixel.V(300, 650))
-	// w.AddFixture(f)
+	width = 200
+	height = 10
+	f = world.NewFixture("block6", colornames.Green, width, height)
+	f.Place(pixel.V(300, 650))
+	w.AddFixture(f)
 }
