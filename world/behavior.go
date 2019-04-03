@@ -499,116 +499,88 @@ func (b *TargetSeekerBehavior) Direction(w *World, o Object) pixel.Vec {
 
 	if target.X > source.X {
 		if utils.LineSlope(source, target) > 0 {
-			// if above, move x right
-			if orient == 2 {
-				v := pixel.V(1, 0)
-				moves = append(moves, v)
-			}
+			switch orient {
+			case 2:
+				// if above, move x right
+				moves = append(moves, pixel.V(1, 0))
+			case 1:
+				// if below, move y up
+				moves = append(moves, pixel.V(0, 1))
+			case 0:
+				// if on the line, move in either direction
+				moves = append(moves, pixel.V(0, 1))
 
-			// if below, move y up
-			if orient == 1 {
-				v := pixel.V(0, 1)
-				moves = append(moves, v)
-			}
-
-			// if on the line, move in either direction
-			if orient == 0 {
-				v := pixel.V(0, 1)
-				moves = append(moves, v)
 			}
 		}
 
 		if utils.LineSlope(source, target) < 0 {
-			// if above, move y down
-			if orient == 2 {
-				v := pixel.V(0, -1)
-				moves = append(moves, v)
-			}
-
-			// if below, move x right
-			if orient == 1 {
-				v := pixel.V(1, 0)
-				moves = append(moves, v)
-			}
-
-			// if on the line, move in either direction
-			if orient == 0 {
-				v := pixel.V(0, -1)
-				moves = append(moves, v)
+			switch orient {
+			case 2:
+				// if above, move y down
+				moves = append(moves, pixel.V(0, -1))
+			case 1:
+				// if below, move x right
+				moves = append(moves, pixel.V(1, 0))
+			case 0:
+				// if on the line, move in either direction
+				moves = append(moves, pixel.V(0, -1))
 			}
 
 		}
 	}
 
 	if target.X < source.X {
-
 		if utils.LineSlope(source, target) > 0 {
-			// if above, move y down
-			if orient == 1 {
-				v := pixel.V(0, -1)
-				moves = append(moves, v)
-			}
-
-			// if below, move x left
-			if orient == 2 {
-				v := pixel.V(-1, 0)
-				moves = append(moves, v)
-			}
-
-			// if on the line, move in either direction
-			if orient == 0 {
-				v := pixel.V(0, -1)
-				moves = append(moves, v)
+			switch orient {
+			case 2:
+				// if below, move x left
+				moves = append(moves, pixel.V(-1, 0))
+			case 1:
+				// if above, move y down
+				moves = append(moves, pixel.V(0, -1))
+			case 0:
+				// if on the line, move in either direction
+				moves = append(moves, pixel.V(0, -1))
 			}
 
 		}
 
 		if utils.LineSlope(source, target) < 0 {
-			// if above, move x left
-			if orient == 1 {
-				v := pixel.V(-1, 0)
-				moves = append(moves, v)
-			}
-
-			// if below, move y up
-			if orient == 2 {
-				v := pixel.V(0, 1)
-				moves = append(moves, v)
-			}
-
-			// if on the line, move in either direction
-			if orient == 0 {
-				v := pixel.V(0, 1)
-				moves = append(moves, v)
+			switch orient {
+			case 2:
+				// if below, move y up
+				moves = append(moves, pixel.V(0, 1))
+			case 1:
+				// if above, move x left
+				moves = append(moves, pixel.V(-1, 0))
+			case 0:
+				// if on the line, move in either direction
+				moves = append(moves, pixel.V(0, 1))
 			}
 		}
 	}
 
 	if target.X == source.X {
+		switch {
 		// move y towards target
-		if target.Y > source.Y {
+		case target.Y > source.Y:
 			// move up
-			v := pixel.V(0, 1)
-			moves = append(moves, v)
-		}
-		if target.Y < source.Y {
+			moves = append(moves, pixel.V(0, 1))
+		case target.Y < source.Y:
 			// move down
-			v := pixel.V(0, -1)
-			moves = append(moves, v)
+			moves = append(moves, pixel.V(0, -1))
 		}
 	}
 
 	if target.Y == source.Y {
+		switch {
 		// move x towards target
-		if target.X > source.X {
+		case target.X > source.X:
 			// move right
-			v := pixel.V(1, 0)
-			moves = append(moves, v)
-		}
-		if target.X < source.X {
+			moves = append(moves, pixel.V(1, 0))
+		case target.X < source.X:
 			// move left
-			v := pixel.V(-1, 0)
-			moves = append(moves, v)
+			moves = append(moves, pixel.V(-1, 0))
 		}
 	}
 
