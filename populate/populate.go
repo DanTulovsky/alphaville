@@ -3,6 +3,7 @@ package populate
 import (
 	"fmt"
 	"log"
+	"math"
 	"time"
 
 	"github.com/faiface/pixel"
@@ -245,36 +246,71 @@ func AddTarget(w *world.World, radius float64, maxTargets int) {
 }
 
 // AddFixtures add fixtures to the world.
-func AddFixtures(w *world.World) {
+func AddFixtures(w *world.World, numFixtures int) {
 
-	var width float64 = 100
-	var height float64 = 100
+	var minWidth float64 = 60
+	var maxWidth float64 = 300
+	var minHeight float64 = 40
+	var maxHeight float64 = 400
 
-	f := world.NewFixture("block1", colornames.Green, width, height)
-	f.Place(pixel.V(400, w.Ground.Phys().Location().Max.Y+160))
-	w.AddFixture(f)
+	for x := 0; x < numFixtures; x++ {
 
-	f = world.NewFixture("block2", colornames.Green, width, height)
-	f.Place(pixel.V(50, w.Ground.Phys().Location().Max.Y+100))
-	w.AddFixture(f)
+		intersect := true
+		var f *world.Fixture
 
-	f = world.NewFixture("block3", colornames.Green, width, height)
-	f.Place(pixel.V(600, 400))
-	w.AddFixture(f)
+		// These can appear closer than target seeker size, and confuse the graphgenerating algorithm
+		// should be fixed  by switching to trapezoid map instead
+		for intersect {
+			intersect = false
+			width := math.Floor(utils.RandomFloat64(minWidth, maxWidth))
+			height := math.Floor(utils.RandomFloat64(minHeight, maxHeight))
+			lX := utils.RandomFloat64(width, w.X-width)
+			lY := utils.RandomFloat64(height, w.Y-height)
 
-	f = world.NewFixture("block4", colornames.Green, width, height)
-	f.Place(pixel.V(60, 400))
-	w.AddFixture(f)
+			f = world.NewFixture(fmt.Sprintf("block-%v", x), colornames.Green, width, height)
+			f.Place(pixel.V(lX, lY))
 
-	width = 20
-	height = 400
-	f = world.NewFixture("block5", colornames.Green, width, height)
-	f.Place(pixel.V(300, 100))
-	w.AddFixture(f)
+			for _, other := range w.Fixtures() {
+				if f.Phys().Location().Intersect(other.Phys().Location()) != pixel.R(0, 0, 0, 0) {
+					intersect = true
+				}
+			}
 
-	width = 200
-	height = 10
-	f = world.NewFixture("block6", colornames.Green, width, height)
-	f.Place(pixel.V(300, 650))
-	w.AddFixture(f)
+			for _, g := range w.Gates {
+				if f.Phys().Location().Intersect(g.BoundingBox(g.Location)) != pixel.R(0, 0, 0, 0) {
+					intersect = true
+				}
+			}
+
+		}
+		w.AddFixture(f)
+	}
+
+	// f := world.NewFixture("block1", colornames.Green, width, height)
+	// f.Place(pixel.V(400, w.Ground.Phys().Location().Max.Y+160))
+	// w.AddFixture(f)
+
+	// f = world.NewFixture("block2", colornames.Green, width, height)
+	// f.Place(pixel.V(50, w.Ground.Phys().Location().Max.Y+100))
+	// w.AddFixture(f)
+
+	// f = world.NewFixture("block3", colornames.Green, width, height)
+	// f.Place(pixel.V(600, 400))
+	// w.AddFixture(f)
+
+	// f = world.NewFixture("block4", colornames.Green, width, height)
+	// f.Place(pixel.V(60, 400))
+	// w.AddFixture(f)
+
+	// width = 20
+	// height = 400
+	// f = world.NewFixture("block5", colornames.Green, width, height)
+	// f.Place(pixel.V(300, 100))
+	// w.AddFixture(f)
+
+	// width = 200
+	// height = 10
+	// f = world.NewFixture("block6", colornames.Green, width, height)
+	// f.Place(pixel.V(300, 650))
+	// w.AddFixture(f)
 }

@@ -203,7 +203,7 @@ func (g *Gate) Behavior() Behavior {
 	return nil
 }
 
-// BoundingBox returns nil
+// BoundingBox returns the bonding box of the gate
 func (g *Gate) BoundingBox(v pixel.Vec) pixel.Rect {
 	min := pixel.V(g.Location.X-g.Radius, g.Location.Y-g.Radius)
 	max := pixel.V(g.Location.X+g.Radius, g.Location.Y+g.Radius)
