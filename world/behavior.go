@@ -221,28 +221,21 @@ func (b *DefaultBehavior) avoidCollisionRight(phys ObjectPhys) {
 func (b *DefaultBehavior) Move(w *World, o Object, v pixel.Vec) {
 	phys := o.NextPhys()
 
-	// if phys.Vel().X != 0 && phys.Vel().Y != 0 {
-	// 	// cannot currently move in both X and Y direction
-	// 	log.Fatalf("o:%+#v\nx: %v; y: %v\n", o, phys.Vel().X, phys.Vel().Y)
-	// }
+	// move vector that takes into account border collisions
+	mv := phys.CollisionBordersVector(w, v)
 
-	// mv := phys.CollisionBordersVector(w, phys.Vel())
-
-	// TODO: refactor to use CollisionBorders() function
+	// TODO: Clean this so code is not duplicated with above function
 	switch {
 	case phys.MovingLeft() && phys.Location().Min.X+phys.Vel().X <= 0:
 		// left border
-		phys.SetLocation(phys.Location().Moved(pixel.V(0-phys.Location().Min.X, 0)))
 		b.ChangeHorizontalDirection(phys)
 
 	case phys.MovingRight() && phys.Location().Max.X+phys.Vel().X >= w.X:
 		// right border
-		phys.SetLocation(phys.Location().Moved(pixel.V(w.X-phys.Location().Max.X, 0)))
 		b.ChangeHorizontalDirection(phys)
 
 	case phys.MovingDown() && phys.Location().Min.Y+phys.Vel().Y < w.Ground.Phys().Location().Max.Y:
 		// stop at ground level
-		phys.SetLocation(phys.Location().Moved(pixel.V(0, w.Ground.Phys().Location().Max.Y-phys.Location().Min.Y)))
 		v := phys.Vel()
 		v.Y = 0
 		v.X = phys.PreviousVel().X
@@ -250,16 +243,13 @@ func (b *DefaultBehavior) Move(w *World, o Object, v pixel.Vec) {
 
 	case phys.MovingUp() && phys.Location().Max.Y+phys.Vel().Y >= w.Y && phys.Vel().Y > 0:
 		// stop at ceiling if going up
-		phys.SetLocation(phys.Location().Moved(pixel.V(0, w.Y-phys.Location().Max.Y)))
 		v := phys.Vel()
 		v.Y = 0
 		phys.SetVel(v)
 		phys.SetCurrentMass(o.Mass())
 
-	default:
-		newLocation := phys.Location().Moved(pixel.V(v.X, v.Y))
-		phys.SetLocation(newLocation)
 	}
+	phys.SetLocation(phys.Location().Moved(mv))
 }
 
 // Draw draws any artifacts of the behavior
