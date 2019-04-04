@@ -435,6 +435,12 @@ func (b *TargetSeekerBehavior) populateVisibilityGraph(w *World, o Object) {
 // https://www.dis.uniroma1.it/~oriolo/amr/slides/MotionPlanning1_Slides.pdf
 func (b *TargetSeekerBehavior) populateVisibilityGraph2(w *World, o Object) {
 	log.Printf("Populating visibility graph for %v", o.Name())
+
+	// first build a quadtree to the desired level
+	//    do this incrementally as per pdf above
+	// then convert to graph
+	// then find path
+
 	// g := graph.NewGraph()
 
 	// augmented fixtures, these are what we check collisions against
