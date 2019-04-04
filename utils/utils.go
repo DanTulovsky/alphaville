@@ -197,3 +197,22 @@ func RotatedAroundOrigin(r pixel.Rect) pixel.Rect {
 func MinkowskiSum(r1, r2 pixel.Rect) pixel.Rect {
 	return pixel.R(r1.Min.X+r2.Min.X, r1.Min.Y+r2.Min.Y, r1.Max.X+r2.Max.X, r1.Max.Y+r2.Max.Y)
 }
+
+// Intersect returns true if the two rectangles intersect
+func Intersect(r1, r2 pixel.Rect) bool {
+	return r1.Intersect(r2) != pixel.R(0, 0, 0, 0)
+}
+
+// IntersectAny returns true if r1 intersects any rect in r2
+func IntersectAny(r1 pixel.Rect, r2 []pixel.Rect) bool {
+
+	for _, f := range r2 {
+		if r1 == f {
+			continue // skip yourself
+		}
+		if Intersect(r1, f) {
+			return true
+		}
+	}
+	return false
+}

@@ -381,6 +381,11 @@ func (b *TargetSeekerBehavior) isVisbile(w *World, p, v pixel.Vec, edges []graph
 	return true
 }
 
+// populateVisibilityGraph creates a visibility graph
+// the nodes are verticies of augmented rectangles
+// the edges are paths between nodes that have no other node in between
+// polygonal map from here:
+// http://theory.stanford.edu/~amitp/GameProgramming/MapRepresentations.html#polygonal-maps
 func (b *TargetSeekerBehavior) populateVisibilityGraph(w *World, o Object) {
 	log.Printf("Populating visibility graph for %v", o.Name())
 	g := graph.NewGraph()
@@ -421,6 +426,52 @@ func (b *TargetSeekerBehavior) populateVisibilityGraph(w *World, o Object) {
 
 	b.moveGraph = g
 	log.Printf("%v", b.moveGraph)
+}
+
+// populateVisibilityGraph2 creates a visibility graph by doing a
+// cell decomposition.  the nodes are cells between the fixtures, and the edges are
+// connections between them; from:
+// https://cs.stanford.edu/people/eroberts/courses/soco/projects/1998-99/robotics/basicmotion.html
+func (b *TargetSeekerBehavior) populateVisibilityGraph2(w *World, o Object) {
+	log.Printf("Populating visibility graph for %v", o.Name())
+	// g := graph.NewGraph()
+
+	// augmented fixtures, these are what we check collisions against
+	// they are grown by 1/2 size of object on each side to account for movement
+	fixtures := []pixel.Rect{}
+
+	for _, other := range w.CollisionObjects() {
+		scaleX := (o.Phys().Location().Max.X-o.Phys().Location().Min.X)/2 + 2
+		scaleY := (o.Phys().Location().Max.Y-o.Phys().Location().Min.Y)/2 + 2
+		v := utils.RectVerticiesScaled(other.Phys().Location(), scaleX, scaleY, w.X, w.Y)
+		r := pixel.R(v[0].X, v[0].Y, v[2].X, v[2].Y)
+		fixtures = append(fixtures, r)
+	}
+
+	// minimum area of rectangle at which we stop splitting
+	var minArea float64 = 4
+
+	// this is the first rectangle, which encompossases the entire grid
+	first := pixel.R(0, 0, w.X, w.Y)
+
+	tosplit := []pixel.Rect{}
+	tocheck := []pixel.Rect{}
+	tosplit = append(tosplit, first)
+	tocheck = append(tocheck, first)
+
+	for len(tocheck) != 0 {
+		for _, r := range tocheck {
+			// check if it intersects with any fixtures
+			if utils.IntersectAny(r, fixtures) {
+				if r.Area() > minArea {
+					tosplit = append(tosplit, r)
+				}
+			}
+		}
+	}
+	// as soon as it does not, add it as node to the graph
+
+	// if it's entirely contained within a fixture, also stop and add it to the graph
 }
 
 // SetTarget sets the target
