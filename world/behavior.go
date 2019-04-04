@@ -432,6 +432,7 @@ func (b *TargetSeekerBehavior) populateVisibilityGraph(w *World, o Object) {
 // cell decomposition.  the nodes are cells between the fixtures, and the edges are
 // connections between them; from:
 // https://cs.stanford.edu/people/eroberts/courses/soco/projects/1998-99/robotics/basicmotion.html
+// https://www.dis.uniroma1.it/~oriolo/amr/slides/MotionPlanning1_Slides.pdf
 func (b *TargetSeekerBehavior) populateVisibilityGraph2(w *World, o Object) {
 	log.Printf("Populating visibility graph for %v", o.Name())
 	// g := graph.NewGraph()
