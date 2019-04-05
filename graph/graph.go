@@ -149,7 +149,7 @@ func RectEdges(r pixel.Rect) []Edge {
 	}
 }
 
-// orientation returns point orientation vs a line
+// Orientation returns point orientation vs a line
 // 0 --> p, q and r are colinear
 // 1 --> Clockwise, below
 // 2 --> Counterclockwise, above

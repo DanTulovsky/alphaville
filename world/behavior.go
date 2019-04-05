@@ -318,45 +318,67 @@ type vertecy struct {
 	O uuid.UUID
 }
 
-// allCollisionVerticies returns a list of all verticies of all collision object
-func (b *TargetSeekerBehavior) allCollisionVerticies(w *World, o Object) []vertecy {
-	l := []vertecy{}
+// scaledCollisionVerticies returns a list of all verticies of all collision objects
+// scaled by half the size of o
+func (b *TargetSeekerBehavior) scaledCollisionVerticies(w *World, o Object) []vertecy {
+	v := []vertecy{}
 
 	for _, other := range w.CollisionObjects() {
 		if o.ID() == other.ID() {
 			continue // skip yourself
 		}
-		scaleX := (o.Phys().Location().Max.X-o.Phys().Location().Min.X)/2 + 2
-		scaleY := (o.Phys().Location().Max.Y-o.Phys().Location().Min.Y)/2 + 2
-		for _, v := range utils.RectVerticiesScaled(other.Phys().Location(), scaleX, scaleY, w.X, w.Y) {
-			l = append(l, vertecy{V: v, O: other.ID()})
+
+		// until movemement is fixed, add an additional buffer around object
+		var buffer float64 = 4
+		c := other.Phys().Location().Center()
+		size := pixel.V(other.Phys().Location().W()+o.Phys().Location().W()+buffer,
+			other.Phys().Location().H()+o.Phys().Location().H()+buffer)
+		vertecies := other.Phys().Location().Resized(c, size).Vertices()
+
+		for _, vr := range vertecies {
+			v = append(v, vertecy{V: vr, O: other.ID()})
 		}
+
+		// scaleX := (o.Phys().Location().Max.X-o.Phys().Location().Min.X)/2 + 2
+		// scaleY := (o.Phys().Location().Max.Y-o.Phys().Location().Min.Y)/2 + 2
+		// for _, v := range utils.RectVerticiesScaled(other.Phys().Location(), scaleX, scaleY, w.X, w.Y) {
+		// 	l = append(l, vertecy{V: v, O: other.ID()})
+		// }
 	}
-	return l
+	return v
 }
 
-// allCollisionEdges returns a list of all edges of all collision object
-func (b *TargetSeekerBehavior) allCollisionEdges(w *World, o Object) []graph.Edge {
-	l := []graph.Edge{}
+// scaledCollisionEdges returns a list of all edges of all collision objects
+// scaled by half the size of o
+func (b *TargetSeekerBehavior) scaledCollisionEdges(w *World, o Object) []pixel.Line {
+	l := []pixel.Line{}
 
 	for _, other := range w.CollisionObjects() {
 		if o.ID() == other.ID() {
 			continue // skip yourself
 		}
-		scaleX := (o.Phys().Location().Max.X-o.Phys().Location().Min.X)/2 + 2
-		scaleY := (o.Phys().Location().Max.Y-o.Phys().Location().Min.Y)/2 + 2
-		v := utils.RectVerticiesScaled(other.Phys().Location(), scaleX, scaleY, w.X, w.Y)
-		r := pixel.R(v[0].X, v[0].Y, v[2].X, v[2].Y)
 
-		for _, v := range graph.RectEdges(r) {
-			l = append(l, v)
-		}
+		// until movemement is fixed, add an additional buffer around object
+		var buffer float64 = 4
+		c := other.Phys().Location().Center()
+		size := pixel.V(other.Phys().Location().W()+o.Phys().Location().W()+buffer,
+			other.Phys().Location().H()+o.Phys().Location().H()+buffer)
+		scaled := other.Phys().Location().Resized(c, size)
+
+		// scaleX := (o.Phys().Location().Max.X-o.Phys().Location().Min.X)/2 + 2
+		// scaleY := (o.Phys().Location().Max.Y-o.Phys().Location().Min.Y)/2 + 2
+		// v := utils.RectVerticiesScaled(other.Phys().Location(), scaleX, scaleY, w.X, w.Y)
+		// r := pixel.R(v[0].X, v[0].Y, v[2].X, v[2].Y)
+
+		edges := scaled.Edges()
+		l = append(l, edges[0], edges[1], edges[2], edges[3])
+
 	}
 	return l
 }
 
 // isVisbile returns true if v is visibile from p (no intersecting edges)
-func (b *TargetSeekerBehavior) isVisbile(w *World, p, v pixel.Vec, edges []graph.Edge, n, other *graph.Node) bool {
+func (b *TargetSeekerBehavior) isVisbile(w *World, p, v pixel.Vec, edges []pixel.Line, n, other *graph.Node) bool {
 	for _, e := range edges {
 		if (e.A == p && e.B == v) || (e.A == v && e.B == p) {
 			// point are on the same segment, so visible
@@ -373,8 +395,16 @@ func (b *TargetSeekerBehavior) isVisbile(w *World, p, v pixel.Vec, edges []graph
 		if e.A == v || e.B == v || e.A == p || e.B == p {
 			continue
 		}
+
+		// Currently broken https://github.com/faiface/pixel/issues/175
+		// once resolved, replace the code below
+		// if _, isect := pixel.L(p, v).Intersect(e); isect {
+		// 	return false
+		// }
+
 		ge := graph.Edge{A: p, B: v}
-		if graph.EdgesIntersect(ge, e) {
+		etemp := graph.Edge{A: e.A, B: e.B}
+		if graph.EdgesIntersect(ge, etemp) {
 			return false
 		}
 	}
@@ -389,8 +419,8 @@ func (b *TargetSeekerBehavior) isVisbile(w *World, p, v pixel.Vec, edges []graph
 func (b *TargetSeekerBehavior) populateVisibilityGraph(w *World, o Object) {
 	log.Printf("Populating visibility graph for %v", o.Name())
 	g := graph.NewGraph()
-	verticies := b.allCollisionVerticies(w, o)
-	edges := b.allCollisionEdges(w, o)
+	verticies := b.scaledCollisionVerticies(w, o)
+	edges := b.scaledCollisionEdges(w, o)
 
 	// Add all verticies (except source) to the graph
 	for _, v := range verticies {

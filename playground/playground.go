@@ -3,8 +3,6 @@ package main
 import (
 	"log"
 
-	"gogs.wetsnow.com/dant/alphaville/graph"
-
 	"github.com/faiface/pixel"
 )
 
@@ -20,50 +18,24 @@ func minkowskiSum(r1, r2 pixel.Rect) pixel.Rect {
 func main() {
 
 	r1 := pixel.R(0, 0, 4, 4)
-	r2 := pixel.R(6, 3, 10, 7)
 
-	r1v := pixel.V(16, 6)
-	r2v := pixel.V(1, 1)
-
-	r1 = r1.Norm()
-	r2 = r2.Norm()
+	r2 := pixel.R(-2, -2, 2, 2)
 
 	log.Printf("r1: %v", r1)
-	log.Printf("r2: %v", r2)
+	v := pixel.V(r1.W()+r2.W(), r1.H()+r2.H())
+	log.Printf("resized by %v: %v", v, r1.Resized(r1.Center(), v))
 
-	// get A'⊕B
+	l1 := pixel.L(pixel.V(600, 600), pixel.V(925, 150))
+	l2 := pixel.L(pixel.V(740, 255), pixel.V(925, 255))
 
-	// rotated r1 around the origin
-	r1r := rotatedAroundOrigin(r1)
-	log.Printf("rotated r1: %v", r1r)
+	l3 := pixel.L(pixel.V(600, 600), pixel.V(925, 150))
+	// l4 := pixel.L(pixel.V(740, 255), pixel.V(925, 255.24336770882053))
+	l4 := pixel.L(pixel.V(740, 255), pixel.V(925, 255.5))
 
-	// move r2 relative to origin, same amount as r1
-	r2m := r2.Moved(pixel.V(-r1.Center().X, -r1.Center().Y))
+	x, isect := l1.Intersect(l2)
+	log.Printf("%v and %v intersect? %v (at: %v)", l1, l2, isect, x)
 
-	ms := minkowskiSum(r1r, r2m)
-	log.Printf("ms: %v", ms)
+	y, isect2 := l3.Intersect(l4)
+	log.Printf("%v and %v intersect? %v (at: %v)", l3, l4, isect2, y)
 
-	// relative velocity
-	v := r1v.Sub(r2v)
-	log.Printf("relative velocity: %v", v)
-
-	ls := graph.Edge{A: pixel.V(0, 0), B: pixel.V(v.X, v.Y)}
-	log.Printf("line segment: %v", ls)
-
-	// now count how many times ls intersects ms
-	// 0 means movement did not cause collision
-	// 1 means r1 ended up inside r2
-	// 2 means r1 ended up on the other side of r2
-
-	collisions := 0
-
-	for _, edge := range graph.RectEdges(ms) {
-		log.Printf("Checking edge: %v", edge)
-		if graph.EdgesIntersect(edge, ls) {
-			log.Printf("  found collision with %v", ls)
-			collisions++
-		}
-	}
-
-	log.Printf("collisions: %v", collisions)
 }

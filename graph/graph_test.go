@@ -31,6 +31,20 @@ func TestLinesIntersect(t *testing.T) {
 			want: false,
 		},
 		{
+			name: "no intersect, parallel, vertical",
+			args: args{
+				l1: Edge{
+					A: pixel.V(0, 0),
+					B: pixel.V(0, 10),
+				},
+				l2: Edge{
+					A: pixel.V(10, 0),
+					B: pixel.V(10, 10),
+				},
+			},
+			want: false,
+		},
+		{
 			name: "intersect, perpendicular",
 			args: args{
 				l1: Edge{
@@ -114,6 +128,34 @@ func TestLinesIntersect(t *testing.T) {
 			},
 			want: true,
 		},
+		{
+			name: "yes",
+			args: args{
+				l1: Edge{
+					A: pixel.V(600, 600),
+					B: pixel.V(925, 150),
+				},
+				l2: Edge{
+					A: pixel.V(740, 255),
+					B: pixel.V(925, 255),
+				},
+			},
+			want: true,
+		},
+		{
+			name: "yes",
+			args: args{
+				l1: Edge{
+					A: pixel.V(600, 600),
+					B: pixel.V(925, 150),
+				},
+				l2: Edge{
+					A: pixel.V(740, 255),
+					B: pixel.V(925, 255.24336770882053),
+				},
+			},
+			want: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -165,7 +207,7 @@ func Test_orientation(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := orientation(tt.args.p, tt.args.q, tt.args.r); got != tt.want {
+			if got := Orientation(tt.args.p, tt.args.q, tt.args.r); got != tt.want {
 				t.Errorf("orientation() = %v, want %v", got, tt.want)
 			}
 		})

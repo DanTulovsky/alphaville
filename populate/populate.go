@@ -245,6 +245,17 @@ func AddTarget(w *world.World, radius float64, maxTargets int) {
 	w.AddTarget(t)
 }
 
+// AddFixture adds one specific fixture to the world
+func AddFixture(w *world.World) {
+
+	var width float64 = 144
+	var height float64 = 64
+	f := world.NewFixture("one", colornames.Green, width, height)
+	f.Place(pixel.V(761, 171))
+	w.AddFixture(f)
+
+}
+
 // AddFixtures add fixtures to the world.
 func AddFixtures(w *world.World, numFixtures int) {
 
