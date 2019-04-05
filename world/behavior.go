@@ -407,7 +407,7 @@ func (b *TargetSeekerBehavior) isVisbile(w *World, p, v pixel.Vec, edges []pixel
 // http://theory.stanford.edu/~amitp/GameProgramming/MapRepresentations.html#polygonal-maps
 func (b *TargetSeekerBehavior) populateVisibilityGraph(w *World, o Object) {
 	log.Printf("Populating visibility graph for %v", o.Name())
-	g := graph.NewGraph()
+	g := graph.New()
 	verticies := b.scaledCollisionVerticies(w, o)
 	edges := b.scaledCollisionEdges(w, o)
 

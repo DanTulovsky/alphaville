@@ -2,6 +2,7 @@ package graph
 
 import (
 	"fmt"
+	"log"
 	"math"
 	"sync"
 
@@ -70,7 +71,7 @@ type Graph struct {
 }
 
 // NewGraph returns a new graph
-func NewGraph() *Graph {
+func New() *Graph {
 	nodes := make([]*Node, 0)
 	edges := make(map[Node][]*Node)
 
@@ -90,13 +91,15 @@ func (g *Graph) Edges() map[Node][]*Node {
 	return g.edges
 }
 
-// FindNode returns the node with the provide value
+// FindNode returns the node with the provided value
 func (g *Graph) FindNode(v pixel.Vec) *Node {
 	for _, n := range g.nodes {
 		if n.value.V == v {
 			return n
 		}
 	}
+	log.Printf("cannot find: %v", v)
+	log.Printf("%v", g)
 	return nil
 }
 
@@ -107,13 +110,36 @@ func (g *Graph) AddNode(n *Node) {
 	g.nodes = append(g.nodes, n)
 }
 
+// slow...
+func edgeInList(edge *Node, edges []*Node) bool {
+	for _, e := range edges {
+		if edge == e {
+			return true
+		}
+	}
+	return false
+}
+
 // AddEdge adds an edge between nodes
 func (g *Graph) AddEdge(n1, n2 *Node) {
 	g.lock.Lock()
 	defer g.lock.Unlock()
 
-	g.edges[*n1] = append(g.edges[*n1], n2)
-	g.edges[*n2] = append(g.edges[*n2], n1)
+	if _, ok := g.edges[*n1]; ok {
+		if !edgeInList(n2, g.edges[*n1]) {
+			g.edges[*n1] = append(g.edges[*n1], n2)
+		}
+	} else {
+		g.edges[*n1] = append(g.edges[*n1], n2)
+	}
+
+	if _, ok := g.edges[*n2]; ok {
+		if !edgeInList(n1, g.edges[*n2]) {
+			g.edges[*n2] = append(g.edges[*n2], n1)
+		}
+	} else {
+		g.edges[*n2] = append(g.edges[*n2], n1)
+	}
 }
 
 // String is the string representation of the graph

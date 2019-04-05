@@ -57,7 +57,7 @@ func TestNewTree(t *testing.T) {
 	}
 }
 
-func TestTree_split(t *testing.T) {
+func TestTree_Split(t *testing.T) {
 	type fields struct {
 		Bounds  pixel.Rect
 		Level   int
@@ -103,7 +103,7 @@ func TestTree_split(t *testing.T) {
 				Objects: tt.fields.Objects,
 				Nodes:   tt.fields.Nodes,
 			}
-			qt.split()
+			qt.Split()
 			assert.Equal(len(qt.Nodes), 4)
 
 			// check sizes
@@ -119,6 +119,209 @@ func TestTree_split(t *testing.T) {
 					}
 					assert.False(utils.Intersect(n.Bounds, other.Bounds))
 				}
+			}
+		})
+	}
+}
+
+func TestTree_Insert(t *testing.T) {
+	type fields struct {
+		Bounds  pixel.Rect
+		Level   int
+		Objects []pixel.Rect
+		Nodes   []*Tree
+	}
+	type args struct {
+		r pixel.Rect
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+	}{
+		{
+			name: "5 nodes total",
+			fields: fields{
+				Bounds:  pixel.R(0, 0, 100, 100),
+				Level:   0,
+				Objects: []pixel.Rect{}, // no objects anyway
+				Nodes: []*Tree{
+					NewTree(pixel.R(0, 50, 50, 100), 1),   // top left
+					NewTree(pixel.R(50, 50, 100, 100), 1), // top right
+					NewTree(pixel.R(0, 0, 50, 50), 1),     // bottom left
+					NewTree(pixel.R(50, 0, 100, 50), 1),   // bottom right
+				},
+			},
+			args: args{
+				pixel.R(20, 20, 40, 40),
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			qt := &Tree{
+				Bounds:  tt.fields.Bounds,
+				Level:   tt.fields.Level,
+				Objects: tt.fields.Objects,
+				Nodes:   tt.fields.Nodes,
+			}
+			qt.Insert(tt.args.r)
+		})
+	}
+}
+
+func TestTree_IsEmpty(t *testing.T) {
+	type fields struct {
+		Bounds  pixel.Rect
+		Level   int
+		Objects []pixel.Rect
+		Nodes   []*Tree
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		want   bool
+	}{
+		{
+			name: "tree is empty of objects",
+			fields: fields{
+				Bounds:  pixel.R(0, 0, 100, 100),
+				Level:   0,
+				Objects: []pixel.Rect{}, // no objects anyway
+				Nodes: []*Tree{
+					NewTree(pixel.R(0, 50, 50, 100), 1),   // top left
+					NewTree(pixel.R(50, 50, 100, 100), 1), // top right
+					NewTree(pixel.R(0, 0, 50, 50), 1),     // bottom left
+					NewTree(pixel.R(50, 0, 100, 50), 1),   // bottom right
+				},
+			},
+			want: true,
+		},
+		{
+			name: "one object",
+			fields: fields{
+				Bounds: pixel.R(0, 0, 100, 100),
+				Level:  0,
+				Objects: []pixel.Rect{
+					pixel.R(0, 0, 10, 10),
+				},
+				Nodes: []*Tree{
+					NewTree(pixel.R(0, 50, 50, 100), 1),   // top left
+					NewTree(pixel.R(50, 50, 100, 100), 1), // top right
+					NewTree(pixel.R(0, 0, 50, 50), 1),     // bottom left
+					NewTree(pixel.R(50, 0, 100, 50), 1),   // bottom right
+				},
+			},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			qt := &Tree{
+				Bounds:  tt.fields.Bounds,
+				Level:   tt.fields.Level,
+				Objects: tt.fields.Objects,
+				Nodes:   tt.fields.Nodes,
+			}
+			if got := qt.IsEmpty(); got != tt.want {
+				t.Errorf("Tree.IsEmpty() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestTree_IsPartiallyFull(t *testing.T) {
+	type fields struct {
+		Bounds  pixel.Rect
+		Level   int
+		Objects []pixel.Rect
+		Nodes   []*Tree
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		want   bool
+	}{
+		{
+			name: "tree is empty of objects",
+			fields: fields{
+				Bounds:  pixel.R(0, 0, 100, 100),
+				Level:   0,
+				Objects: []pixel.Rect{}, // no objects anyway
+				Nodes: []*Tree{
+					NewTree(pixel.R(0, 50, 50, 100), 1),   // top left
+					NewTree(pixel.R(50, 50, 100, 100), 1), // top right
+					NewTree(pixel.R(0, 0, 50, 50), 1),     // bottom left
+					NewTree(pixel.R(50, 0, 100, 50), 1),   // bottom right
+				},
+			},
+			want: false,
+		},
+		{
+			name: "partially full",
+			fields: fields{
+				Bounds: pixel.R(0, 0, 100, 100),
+				Level:  0,
+				Objects: []pixel.Rect{
+					pixel.R(0, 0, 10, 10),
+				},
+				Nodes: []*Tree{
+					NewTree(pixel.R(0, 50, 50, 100), 1),   // top left
+					NewTree(pixel.R(50, 50, 100, 100), 1), // top right
+					NewTree(pixel.R(0, 0, 50, 50), 1),     // bottom left
+					NewTree(pixel.R(50, 0, 100, 50), 1),   // bottom right
+				},
+			},
+			want: true,
+		},
+		{
+			name: "completely full (1)",
+			fields: fields{
+				Bounds: pixel.R(0, 0, 100, 100),
+				Level:  0,
+				Objects: []pixel.Rect{
+					pixel.R(0, 0, 100, 100),
+				},
+				Nodes: []*Tree{
+					NewTree(pixel.R(0, 50, 50, 100), 1),   // top left
+					NewTree(pixel.R(50, 50, 100, 100), 1), // top right
+					NewTree(pixel.R(0, 0, 50, 50), 1),     // bottom left
+					NewTree(pixel.R(50, 0, 100, 50), 1),   // bottom right
+				},
+			},
+			want: false,
+		},
+		{
+			name: "completely full (2)",
+			fields: fields{
+				Bounds: pixel.R(0, 0, 100, 100),
+				Level:  0,
+				Objects: []pixel.Rect{
+					pixel.R(0, 0, 50, 50),
+					pixel.R(50, 0, 100, 50),
+					pixel.R(0, 50, 50, 100),
+					pixel.R(50, 50, 100, 100),
+				},
+				Nodes: []*Tree{
+					NewTree(pixel.R(0, 50, 50, 100), 1),   // top left
+					NewTree(pixel.R(50, 50, 100, 100), 1), // top right
+					NewTree(pixel.R(0, 0, 50, 50), 1),     // bottom left
+					NewTree(pixel.R(50, 0, 100, 50), 1),   // bottom right
+				},
+			},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			qt := &Tree{
+				Bounds:  tt.fields.Bounds,
+				Level:   tt.fields.Level,
+				Objects: tt.fields.Objects,
+				Nodes:   tt.fields.Nodes,
+			}
+			if got := qt.IsPartiallyFull(); got != tt.want {
+				t.Errorf("Tree.IsPartiallyFull() = %v, want %v", got, tt.want)
 			}
 		})
 	}
