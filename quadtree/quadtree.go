@@ -2,6 +2,7 @@ package quadtree
 
 import (
 	"github.com/faiface/pixel"
+	"gogs.wetsnow.com/dant/alphaville/utils"
 )
 
 // Tree is a quadtree
@@ -50,4 +51,15 @@ func (qt *Tree) split() {
 	bounds = pixel.R(qt.Bounds.Min.X, qt.Bounds.Min.Y, qt.Bounds.Max.X/2, qt.Bounds.Max.Y/2)
 	qt.Nodes = append(qt.Nodes, NewTree(bounds, nextLevel))
 
+}
+
+// Insert inserts an object into the tree at all nodes
+func (qt *Tree) Insert(r pixel.Rect) {
+	if utils.Intersect(qt.Bounds, r) {
+		qt.Objects = append(qt.Objects, r)
+	}
+
+	for _, n := range qt.Nodes {
+		n.Insert(r)
+	}
 }

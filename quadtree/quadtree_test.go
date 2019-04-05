@@ -6,6 +6,7 @@ import (
 	"github.com/faiface/pixel"
 	"github.com/go-test/deep"
 	"github.com/stretchr/testify/assert"
+	"gogs.wetsnow.com/dant/alphaville/utils"
 )
 
 func TestNewTree(t *testing.T) {
@@ -108,11 +109,17 @@ func TestTree_split(t *testing.T) {
 			// check sizes
 			for _, n := range qt.Nodes {
 				assert.Equal(qt.Bounds.Area()/4, n.Bounds.Area())
-      }
-      
-      // make sure no overlap
-      for _, n := range
+			}
 
+			// make sure no overlap
+			for _, n := range qt.Nodes {
+				for _, other := range qt.Nodes {
+					if n == other {
+						continue // skip yourself
+					}
+					assert.False(utils.Intersect(n.Bounds, other.Bounds))
+				}
+			}
 		})
 	}
 }

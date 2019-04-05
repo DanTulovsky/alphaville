@@ -62,7 +62,7 @@ func RotateRect(r pixel.Rect, angle float64) pixel.Rect {
 
 	theta := D2R(angle)
 	center := r.Center()
-	points := RectVerticies(r)
+	points := r.Vertices()
 
 	var minX, minY float64 = math.MaxFloat64, math.MaxFloat64
 	var maxX, maxY float64
