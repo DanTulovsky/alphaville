@@ -159,29 +159,6 @@ func HaveCommonY(r1, r2 pixel.Rect) bool {
 	return false
 }
 
-// RectVerticies returns a list of verticies for the given Rect
-func RectVerticies(r pixel.Rect) []pixel.Vec {
-	return []pixel.Vec{
-		pixel.V(r.Min.X, r.Min.Y),
-		pixel.V(r.Min.X, r.Max.Y),
-		pixel.V(r.Max.X, r.Max.Y),
-		pixel.V(r.Max.X, r.Min.Y),
-	}
-}
-
-// RectVerticiesScaled returns a list of verticies for the given Rect scaled by int
-// This is used to make the obstacle seem larger so that the object can pass by it
-// x is the max X coordinate, Y is the max Y coordinate
-// do not allow boundaries to go outside the world
-func RectVerticiesScaled(r pixel.Rect, scaleX, scaleY, maxX, maxY float64) []pixel.Vec {
-	return []pixel.Vec{
-		pixel.V(math.Floor(math.Max(0, r.Min.X-scaleX)), math.Floor(math.Max(0, r.Min.Y-scaleY))),
-		pixel.V(math.Floor(math.Max(0, r.Min.X-scaleX)), math.Ceil(math.Min(maxY, r.Max.Y+scaleY))),
-		pixel.V(math.Ceil(math.Min(maxX, r.Max.X+scaleX)), math.Ceil(math.Min(maxY, r.Max.Y+scaleY))),
-		pixel.V(math.Ceil(math.Min(maxX, r.Max.X+scaleX)), math.Floor(math.Max(0, r.Min.Y-scaleY))),
-	}
-}
-
 // LineSlope returns the slope of the line passing through a and b
 func LineSlope(a, b pixel.Vec) float64 {
 	return (b.Y - a.Y) / (b.X - a.X)
