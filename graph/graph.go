@@ -193,7 +193,7 @@ func Orientation(p, q, r pixel.Vec) int {
 	return 0 // collinear
 }
 
-// OnSegment Given three colinear points p, q, r, the function checks if
+// OnSegment Given three collinear points p, q, r, the function checks if
 // point q lies on line segment 'pr'
 func OnSegment(p, q, r pixel.Vec) bool {
 	if q.X <= math.Max(p.X, r.X) && q.X >= math.Min(p.X, r.X) &&

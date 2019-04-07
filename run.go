@@ -28,8 +28,9 @@ const (
 	MsPerUpdate = 4
 	gravity     = -2
 
-	worldMaxX, worldMaxY           = 1024, 768
-	visibleWinMaxX, visibleWinMaxY = 1024, 768
+	// for now must be a square
+	worldMaxX, worldMaxY           = 1024, 1024
+	visibleWinMaxX, visibleWinMaxY = 1024, 1024
 	groundHeight                   = 40
 
 	maxTargets = 2

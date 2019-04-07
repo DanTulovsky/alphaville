@@ -1,211 +1,202 @@
 package quadtree
 
 import (
-	"log"
+	"fmt"
+	"math"
 
 	"github.com/faiface/pixel"
-	"github.com/google/uuid"
 	"gogs.wetsnow.com/dant/alphaville/graph"
 	"gogs.wetsnow.com/dant/alphaville/utils"
 )
 
-// 0 = top left, 1 = top right, 2 = bottom right, 3 = bottom left
-type location int
-
-const (
-	topLeft location = iota
-	topRight
-	bottomRight
-	bottomLeft
-)
-
 // Tree is a quadtree
 type Tree struct {
-	Bounds  pixel.Rect   // physical bounds of this node
-	Level   int          // level of the node
-	Objects []pixel.Rect // objects present in this node
+	root   *Node
+	leaves NodeList
 
-	// 0 or 4 subnodes
-	Nodes []*Tree // 0 or 4 subnodes
-
-	Location location
+	minSize float64 // minimum size of a side of a square
+	nLevels uint    // maximum number of levels of the quadtree
 }
 
 // NewTree returns a new quadtree
-func NewTree(bounds pixel.Rect, level int, loc location) *Tree {
-	return &Tree{
-		Bounds:   bounds.Norm(),
-		Level:    level,
-		Location: loc,
-		Objects:  make([]pixel.Rect, 0),
-		Nodes:    make([]*Tree, 0),
+func NewTree(bounds pixel.Rect) (*Tree, error) {
+
+	// for now only works on squares
+	if bounds.W() != bounds.H() {
+		return nil, fmt.Errorf("world must be square for now, given: [%v, %v]", bounds.W(), bounds.H())
 	}
+
+	root := &Node{
+		bounds:  bounds.Norm(),
+		color:   Gray,
+		objects: make([]pixel.Rect, 0),
+		c:       make([]*Node, 4),
+		size:    bounds.H(),
+	}
+
+	qt := &Tree{
+		root:    root,
+		minSize: 6,
+		nLevels: 10, // arbitrary, get this based on the size of the path we need
+	}
+
+	qt.subdivide(qt.root)
+	return qt, nil
 }
 
-// Split splits the node into 4 subnodes
-func (qt *Tree) Split() {
-	if len(qt.Nodes) == 4 {
-		return
+func (qt *Tree) newNode(bounds pixel.Rect, parent *Node, location Quadrant) *Node {
+	n := &Node{
+		color:    Gray,
+		bounds:   bounds,
+		parent:   parent,
+		location: location,
+		size:     bounds.W(),
 	}
 
-	nextLevel := qt.Level
-	var bounds pixel.Rect
-
-	// top left node
-	bounds = pixel.R(qt.Bounds.Min.X, qt.Bounds.Max.Y/2, qt.Bounds.Max.X/2, qt.Bounds.Max.Y)
-	qt.Nodes = append(qt.Nodes, NewTree(bounds, nextLevel, topLeft))
-
-	// top right node
-	bounds = pixel.R(qt.Bounds.Max.X/2, qt.Bounds.Max.Y/2, qt.Bounds.Max.X, qt.Bounds.Max.Y)
-	qt.Nodes = append(qt.Nodes, NewTree(bounds, nextLevel, topRight))
-
-	// bottom right node
-	bounds = pixel.R(qt.Bounds.Max.X/2, qt.Bounds.Min.Y, qt.Bounds.Max.X, qt.Bounds.Max.Y/2)
-	qt.Nodes = append(qt.Nodes, NewTree(bounds, nextLevel, bottomRight))
-
-	// bottom left node
-	bounds = pixel.R(qt.Bounds.Min.X, qt.Bounds.Min.Y, qt.Bounds.Max.X/2, qt.Bounds.Max.Y/2)
-	qt.Nodes = append(qt.Nodes, NewTree(bounds, nextLevel, bottomLeft))
-
-	// populate the objects into subnodes
-	for _, o := range qt.Objects {
-		for _, n := range qt.Nodes {
-			if utils.Intersect(o, n.Bounds) {
-				n.Insert(o)
-			}
-		}
-	}
-}
-
-// Insert inserts an object into the tree at all nodes
-func (qt *Tree) Insert(r pixel.Rect) {
-
-	if utils.Intersect(qt.Bounds, r) {
-		qt.Objects = append(qt.Objects, r)
-	}
-
-	for _, n := range qt.Nodes {
-		n.Insert(r.Norm())
-	}
-}
-
-// IsEmpty returns true if the node has no objects in it
-func (qt *Tree) IsEmpty() bool {
-	return len(qt.Objects) == 0
-}
-
-// IsPartiallyFull returns true if the node has some space not covered by objects
-// Assumes objects *cannot* overlap, an empty tree returns false
-func (qt *Tree) IsPartiallyFull() bool {
-
-	if len(qt.Objects) == 0 {
-		return false
-	}
-
-	var areaSum float64
-	for _, o := range qt.Objects {
-		areaSum += o.Area()
-	}
-
-	return areaSum < qt.Bounds.Area()
-}
-
-// isLeaf returns true if this is a leaf node
-func (qt *Tree) isLeaf() bool {
-	return len(qt.Nodes) == 0
-}
-
-// processNode adds the tree node to the graph if it's empty or partially covered by objects
-func (qt *Tree) processNode(g *graph.Graph) {
-
-	if qt.isLeaf() && (qt.IsEmpty() || qt.IsPartiallyFull()) {
-		// the graph node is the center point of the bounds rectangle of the tree node
-		node := graph.NewItemNode(uuid.New(), qt.Bounds.Center(), 1)
-		g.AddNode(node)
-	}
-
-	for _, n := range qt.Nodes {
-		n.processNode(g)
-	}
-}
-
-// addEdges adds the edges to the graph of nodes
-func (qt *Tree) addEdges(g *graph.Graph, pathFrom *Tree) {
-
-	// process children at the same level
-	var self *Tree
-
-	if pathFrom != nil {
-		switch pathFrom.Location {
-		case topLeft:
-			switch qt.Location {
-			case topRight:
-				if qt.Nodes[0].isLeaf() {
-					g.AddEdge(g.FindNode(qt.Nodes[0].Bounds.Center()), g.FindNode(pathFrom.Bounds.Center()))
-				} else {
-					qt.Nodes[0].addEdges(g, pathFrom)
-				}
-				if qt.Nodes[3].isLeaf() {
-					g.AddEdge(g.FindNode(qt.Nodes[3].Bounds.Center()), g.FindNode(pathFrom.Bounds.Center()))
-				} else {
-					qt.Nodes[3].addEdges(g, pathFrom)
-				}
-			case bottomLeft:
-				if qt.Nodes[0].isLeaf() {
-					g.AddEdge(g.FindNode(qt.Nodes[0].Bounds.Center()), g.FindNode(pathFrom.Bounds.Center()))
-				} else {
-					qt.Nodes[0].addEdges(g, pathFrom)
-				}
-				if qt.Nodes[1].isLeaf() {
-					g.AddEdge(g.FindNode(qt.Nodes[1].Bounds.Center()), g.FindNode(pathFrom.Bounds.Center()))
-				} else {
-					qt.Nodes[1].addEdges(g, pathFrom)
-				}
-			}
+	// populate the objects of this node from the parent
+	for _, o := range parent.Objects() {
+		if utils.Intersect(n.bounds, o) {
+			n.objects = append(n.objects, o)
 		}
 	}
 
-	if qt.isLeaf() {
-		return
+	n.color = n.CalculateColor(qt.minSize)
+
+	// fills leaves slices
+	if n.color != Gray {
+		qt.leaves = append(qt.leaves, n)
+	}
+	return n
+}
+
+func (qt *Tree) subdivide(p *Node) {
+	// Step 1: Decomposing the gray quadrant and updating the
+	//         parent node following the Z-order traversal.
+
+	//     x0   x1     x2
+	//  y0 .----.-------.
+	//     |    |       |
+	//     | NW |  NE   |
+	//     |    |       |
+	//  y1 '----'-------'
+	//     | SW |  SE   |
+	//  y2 '----'-------'
+	//
+
+	x0 := p.bounds.Min.X
+	x1 := p.bounds.Min.X + p.size/2
+	x2 := p.bounds.Max.X
+
+	y0 := p.bounds.Min.Y
+	y1 := p.bounds.Min.Y + p.size/2
+	y2 := p.bounds.Max.Y
+
+	// decompose current node in 4 sub-quadrants
+	nw := qt.newNode(pixel.R(x0, y0, x1, y1), p, Northwest)
+	ne := qt.newNode(pixel.R(x1, y0, x2, y1), p, Northeast)
+	sw := qt.newNode(pixel.R(x0, y1, x1, y2), p, Southwest)
+	se := qt.newNode(pixel.R(x1, y1, x2, y2), p, Southeast)
+
+	// at creation, each sub-quadrant first inherits its parent external neighbours
+	nw.cn[West] = p.cn[West]   // inherited
+	nw.cn[North] = p.cn[North] // inherited
+	nw.cn[East] = ne           // set for decomposition, will be updated after
+	nw.cn[South] = sw          // set for decomposition, will be updated after
+	ne.cn[West] = nw           // set for decomposition, will be updated after
+	ne.cn[North] = p.cn[North] // inherited
+	ne.cn[East] = p.cn[East]   // inherited
+	ne.cn[South] = se          // set for decomposition, will be updated after
+	sw.cn[West] = p.cn[West]   // inherited
+	sw.cn[North] = nw          // set for decomposition, will be updated after
+	sw.cn[East] = se           // set for decomposition, will be updated after
+	sw.cn[South] = p.cn[South] // inherited
+	se.cn[West] = sw           // set for decomposition, will be updated after
+	se.cn[North] = ne          // set for decomposition, will be updated after
+	se.cn[East] = p.cn[East]   // inherited
+	se.cn[South] = p.cn[South] // inherited
+
+	p.c[Northwest] = nw
+	p.c[Northeast] = ne
+	p.c[Southwest] = sw
+	p.c[Southeast] = se
+
+	p.updateNorthEast()
+	p.updateSouthWest()
+
+	// update all neighbours accordingly. After the decomposition
+	// of a quadrant, all its neighbors in the four directions
+	// must be informed of the change so that they can update
+	// their own cardinal neighbors accordingly.
+	p.updateNeighbours()
+
+	// subdivide non-leaf nodes
+	if nw.color == Gray {
+		qt.subdivide(nw)
+	}
+	if ne.color == Gray {
+		qt.subdivide(ne)
+	}
+	if sw.color == Gray {
+		qt.subdivide(sw)
+	}
+	if se.color == Gray {
+		qt.subdivide(se)
+	}
+}
+
+// locate returns the Node that contains the given rect, or nil.
+func (qt *Tree) locate(r pixel.Rect) *Node {
+	// binary branching method assumes the point lies in the bounds
+	cnroot := qt.root
+	b := cnroot.bounds
+	if !utils.Intersect(b, r) {
+		return nil
 	}
 
-	// 0 is top left
-	self = qt.Nodes[0]
-	log.Printf("> %v", self.Bounds.Center())
-	if qt.Nodes[1].isLeaf() {
-		g.AddEdge(g.FindNode(self.Bounds.Center()), g.FindNode(qt.Nodes[1].Bounds.Center()))
-	} else {
-		qt.Nodes[1].addEdges(g, self)
-	}
-	if qt.Nodes[3].isLeaf() {
-		g.AddEdge(g.FindNode(self.Bounds.Center()), g.FindNode(qt.Nodes[3].Bounds.Center()))
-	}
+	// apply affine transformations of the coordinate space, actually letting
+	// the image square being defined over [0,1)²
+	var (
+		x, y float64
+		bit  uint
+		node *Node
+		k    uint
+	)
 
-	// 1 is top right
-	self = qt.Nodes[1]
-	if qt.Nodes[0].isLeaf() {
-		g.AddEdge(g.FindNode(self.Bounds.Center()), g.FindNode(qt.Nodes[0].Bounds.Center()))
-	}
-	if qt.Nodes[2].isLeaf() {
-		g.AddEdge(g.FindNode(self.Bounds.Center()), g.FindNode(qt.Nodes[2].Bounds.Center()))
-	}
+	// first, we multiply the position of the cell’s left corner by 2^ROOT_LEVEL
+	// and then represent use product in binary form
+	x = float64(r.Min.X-b.Min.X) / float64(b.W())
+	y = float64(r.Min.Y-b.Min.Y) / float64(b.H())
+	k = qt.nLevels - 1
+	ix := uint(x * math.Pow(2.0, float64(k)))
+	iy := uint(y * math.Pow(2.0, float64(k)))
 
-	// 2 is bottom right
-	self = qt.Nodes[2]
-	if qt.Nodes[1].isLeaf() {
-		g.AddEdge(g.FindNode(self.Bounds.Center()), g.FindNode(qt.Nodes[1].Bounds.Center()))
+	// Now, following the branching pattern is just a matter of following, for
+	// each level k in the tree, the branching indicated by the (k-1)st bit from
+	// each of the x, y locational codes, it directly determines the index to
+	// the appropriate child cell.  When the indexed child cell has no children,
+	// the desired leaf cell has been reached and the operation is complete.
+	node = cnroot
+	for node.color == Gray {
+		k--
+		bit = 1 << k
+		childIdx := (ix&bit)>>k + ((iy&bit)>>k)<<1
+		node = node.c[childIdx]
 	}
-	if qt.Nodes[3].isLeaf() {
-		g.AddEdge(g.FindNode(self.Bounds.Center()), g.FindNode(qt.Nodes[3].Bounds.Center()))
-	}
+	return node
+}
 
-	// 3 is bottom left
-	self = qt.Nodes[3]
-	if qt.Nodes[0].isLeaf() {
-		g.AddEdge(g.FindNode(self.Bounds.Center()), g.FindNode(qt.Nodes[0].Bounds.Center()))
-	}
-	if qt.Nodes[2].isLeaf() {
-		g.AddEdge(g.FindNode(self.Bounds.Center()), g.FindNode(qt.Nodes[2].Bounds.Center()))
+// ForEachLeaf calls the given function for each leaf node of the quadtree.
+//
+// Successive calls to the provided function are performed in no particular
+// order. The color parameter allows to loop on the leaves of a particular
+// color, Black or White.
+// NOTE: As by definition, Gray leaves do not exist, passing Gray to
+// ForEachLeaf should return all leaves, independently of their color.
+func (qt *Tree) ForEachLeaf(color Color, fn func(*Node)) {
+	for _, n := range qt.leaves {
+		if color == Gray || n.Color() == color {
+			fn(n)
+		}
 	}
 }
 
@@ -215,10 +206,10 @@ func (qt *Tree) ToGraph() *graph.Graph {
 
 	// Nodes of the graph are nodes of the tree with no Objects
 	// or with some space not completely covered by objects
-	qt.processNode(g)
+	// qt.processNode(g)
 
-	if !qt.isLeaf() { // tree is empty
-		qt.addEdges(g, nil)
-	}
+	// if !qt.isLeaf() { // tree is empty
+	// 	qt.addEdges(g, nil)
+	// }
 	return g
 }
