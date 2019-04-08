@@ -79,7 +79,6 @@ func (n *Node) IsEmpty() bool {
 
 // IsPartiallyFull returns true if the node has some space not covered by objects
 // Assumes objects *cannot* overlap, an empty node returns false
-// TODO: Using area doesn't work, as it counts the area of the object outside the current node
 func (n *Node) IsPartiallyFull() bool {
 
 	if n.IsEmpty() {
@@ -88,7 +87,7 @@ func (n *Node) IsPartiallyFull() bool {
 
 	var areaSum float64
 	for _, o := range n.objects {
-		areaSum += o.Area()
+		areaSum += n.bounds.Intersect(o).Area()
 	}
 
 	return areaSum < n.bounds.Area()
