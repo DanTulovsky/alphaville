@@ -12,12 +12,12 @@ func main() {
 	g := graph.NewGraph()
 	log.Printf("%v", g)
 
-	n1 := graph.NewItemNode(pixel.V(0, 0))
-	n2 := graph.NewItemNode(pixel.V(10, 5))
-	n3 := graph.NewItemNode(pixel.V(45, 2))
-	n4 := graph.NewItemNode(pixel.V(23, 7))
-	n5 := graph.NewItemNode(pixel.V(3, 19))
-	n6 := graph.NewItemNode(pixel.V(100, 20))
+	n1 := graph.NewItemNode(pixel.V(0, 0), 1)
+	n2 := graph.NewItemNode(pixel.V(10, 5), 1)
+	n3 := graph.NewItemNode(pixel.V(45, 2), 1)
+	n4 := graph.NewItemNode(pixel.V(23, 7), 1)
+	n5 := graph.NewItemNode(pixel.V(3, 19), 1)
+	n6 := graph.NewItemNode(pixel.V(100, 20), 1)
 
 	g.AddNode(n1)
 	g.AddNode(n2)
