@@ -20,8 +20,8 @@ func run() {
 
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
-	// start := pixel.R(11, 11, 12, 12)
-	start := pixel.R(200, 200, 201, 201)
+	start := pixel.R(11, 11, 12, 12)
+	// start := pixel.R(200, 200, 201, 201)
 	target := pixel.R(790, 790, 791, 791)
 
 	objects := []pixel.Rect{
@@ -33,6 +33,8 @@ func run() {
 		pixel.R(100, 40, 150, 50),
 		pixel.R(0, 400, 500, 405),
 		pixel.R(511, 400, 800, 405),
+		pixel.R(0, 200, 100, 205),
+		pixel.R(111, 200, 800, 205),
 		// pixel.R(1, 101, 200, 200),
 		// pixel.R(460, 500, 800, 555),
 		// pixel.R(100, 100, 150, 280),
@@ -179,8 +181,6 @@ func draw(win *pixelgl.Window, qt *quadtree.Tree, g *graph.Graph, atlas *text.At
 		imd.Push(r.Max)
 		imd.Rectangle(2)
 	}
-
-	// log.Printf(">>> [path] %v", path)
 
 	imd.Color = colornames.Darkblue
 	for _, p := range path {
