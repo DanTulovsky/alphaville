@@ -24,9 +24,9 @@ type Tree struct {
 func NewTree(bounds pixel.Rect, objects []pixel.Rect, minSize float64) (*Tree, error) {
 
 	// for now only works on squares
-	if bounds.W() != bounds.H() {
-		return nil, fmt.Errorf("world must be square for now, given: [%v, %v]", bounds.W(), bounds.H())
-	}
+	// if bounds.W() != bounds.H() {
+	// 	return nil, fmt.Errorf("world must be square for now, given: [%v, %v]", bounds.W(), bounds.H())
+	// }
 
 	root := &Node{
 		bounds:  bounds.Norm(),
@@ -39,7 +39,7 @@ func NewTree(bounds pixel.Rect, objects []pixel.Rect, minSize float64) (*Tree, e
 	qt := &Tree{
 		root:    root,
 		minSize: minSize,
-		nLevels: 20, // arbitrary, get this based on the size of the path we need
+		nLevels: 10, // arbitrary, get this based on the size of the path we need
 	}
 
 	qt.subdivide(qt.root)
@@ -105,11 +105,11 @@ func (qt *Tree) subdivide(p *Node) {
 	//
 
 	x0 := p.bounds.Min.X
-	x1 := p.bounds.Min.X + p.size/2
+	x1 := p.bounds.Min.X + p.bounds.W()/2
 	x2 := p.bounds.Max.X
 
 	y0 := p.bounds.Min.Y
-	y1 := p.bounds.Min.Y + p.size/2
+	y1 := p.bounds.Min.Y + p.bounds.H()/2
 	y2 := p.bounds.Max.Y
 
 	// decompose current node in 4 sub-quadrants

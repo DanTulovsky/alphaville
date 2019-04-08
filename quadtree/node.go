@@ -108,7 +108,7 @@ func (n *Node) CalculateColor(minSize float64) Color {
 	}
 
 	if n.IsPartiallyFull() {
-		if n.size < minSize {
+		if n.bounds.H() < minSize || n.bounds.W() < minSize {
 			return Black
 		}
 		return Gray
@@ -155,17 +155,32 @@ func (n *Node) updateNorthEast() {
 		return
 	}
 	// step 2.2: Updating Cardinal Neighbors of NE sub-Quadrant.
+	// if n.cn[North] != nil {
+	// 	if n.cn[North].size < n.size {
+	// 		c0 := n.c[Northwest]
+	// 		c0.cn[North] = n.cn[North]
+	// 		// to update C1, we perform a west-east traversal
+	// 		// recording the cumulative size of traversed nodes
+	// 		cur := c0.cn[North]
+	// 		cumsize := cur.size
+	// 		for cumsize < c0.size {
+	// 			cur = cur.cn[East]
+	// 			cumsize += cur.size
+	// 		}
+	// 		n.c[Northeast].cn[North] = cur
+	// 	}
+	// }
 	if n.cn[North] != nil {
-		if n.cn[North].size < n.size {
+		if n.cn[North].bounds.W() < n.bounds.W() {
 			c0 := n.c[Northwest]
 			c0.cn[North] = n.cn[North]
 			// to update C1, we perform a west-east traversal
 			// recording the cumulative size of traversed nodes
 			cur := c0.cn[North]
-			cumsize := cur.size
-			for cumsize < c0.size {
+			cumsize := cur.bounds.W()
+			for cumsize < c0.bounds.W() {
 				cur = cur.cn[East]
-				cumsize += cur.size
+				cumsize += cur.bounds.W()
 			}
 			n.c[Northeast].cn[North] = cur
 		}
@@ -178,17 +193,32 @@ func (n *Node) updateSouthWest() {
 		return
 	}
 	// step 2.1: Updating Cardinal Neighbors of SW sub-Quadrant.
+	// if n.cn[North] != nil {
+	// 	if n.cn[North].size < n.size {
+	// 		c0 := n.c[Northwest]
+	// 		c0.cn[North] = n.cn[North]
+	// 		// to update C2, we perform a north-south traversal
+	// 		// recording the cumulative size of traversed nodes
+	// 		cur := c0.cn[West]
+	// 		cumsize := cur.size
+	// 		for cumsize < c0.size {
+	// 			cur = cur.cn[South]
+	// 			cumsize += cur.size
+	// 		}
+	// 		n.c[Southwest].cn[West] = cur
+	// 	}
+	// }
 	if n.cn[North] != nil {
-		if n.cn[North].size < n.size {
+		if n.cn[North].bounds.H() < n.bounds.H() {
 			c0 := n.c[Northwest]
 			c0.cn[North] = n.cn[North]
 			// to update C2, we perform a north-south traversal
 			// recording the cumulative size of traversed nodes
 			cur := c0.cn[West]
-			cumsize := cur.size
-			for cumsize < c0.size {
+			cumsize := cur.bounds.H()
+			for cumsize < c0.bounds.H() {
 				cur = cur.cn[South]
-				cumsize += cur.size
+				cumsize += cur.bounds.H()
 			}
 			n.c[Southwest].cn[West] = cur
 		}
@@ -261,6 +291,30 @@ func (n *Node) updateNeighbours() {
 
 // forEachNeighbourInDirection calls fn on every neighbour of the current node in the given
 // direction.
+// func (n *Node) forEachNeighbourInDirection(dir Side, fn func(*Node)) {
+// 	// start from the cardinal neighbour on the given direction
+// 	N := n.cn[dir]
+// 	if N == nil {
+// 		return
+// 	}
+// 	fn(N)
+// 	if N.size >= n.size {
+// 		return
+// 	}
+
+// 	traversal := traversal(dir)
+// 	opposite := opposite(dir)
+// 	// perform cardinal neighbour traversal
+// 	for {
+// 		N = N.cn[traversal]
+// 		if N != nil && N.cn[opposite] == n {
+// 			fn(N)
+// 		} else {
+// 			return
+// 		}
+// 	}
+// }
+
 func (n *Node) forEachNeighbourInDirection(dir Side, fn func(*Node)) {
 	// start from the cardinal neighbour on the given direction
 	N := n.cn[dir]
@@ -268,7 +322,20 @@ func (n *Node) forEachNeighbourInDirection(dir Side, fn func(*Node)) {
 		return
 	}
 	fn(N)
-	if N.size >= n.size {
+
+	var nsize, Nsize float64
+
+	switch dir {
+	case North, South:
+		nsize = n.bounds.W()
+		Nsize = N.bounds.W()
+	case East, West:
+		nsize = n.bounds.H()
+		Nsize = N.bounds.H()
+
+	}
+
+	if Nsize >= nsize {
 		return
 	}
 

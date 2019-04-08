@@ -21,7 +21,6 @@ func run() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
 	start := pixel.R(11, 11, 12, 12)
-	// start := pixel.R(200, 200, 201, 201)
 	target := pixel.R(790, 790, 791, 791)
 
 	objects := []pixel.Rect{
@@ -35,13 +34,16 @@ func run() {
 		pixel.R(511, 400, 800, 405),
 		pixel.R(0, 200, 100, 205),
 		pixel.R(111, 200, 800, 205),
-		// pixel.R(1, 101, 200, 200),
-		// pixel.R(460, 500, 800, 555),
+		pixel.R(650, 405, 670, 1130),
+		// pixel.R(650, 525, 670, 525),
 		// pixel.R(100, 100, 150, 280),
 		// pixel.R(500, 500, 650, 780),
 	}
 
-	bounds := pixel.R(0, 0, 800, 800)
+	var width float64 = 800
+	var height float64 = 1200
+
+	bounds := pixel.R(0, 0, width, height)
 
 	// minimum size of the bounding square in the quadtree
 	var minSize float64 = 10
@@ -57,6 +59,7 @@ func run() {
 
 	startNode := qt.Locate(start)
 	targetNode := qt.Locate(target)
+
 	// must set this before calculating neighbors
 	startNode.SetColor(quadtree.White)
 	targetNode.SetColor(quadtree.White)
@@ -85,7 +88,7 @@ func run() {
 
 	for node := range nodeNeighbors {
 		gnode := graph.NewItemNode(uuid.New(), node.Bounds().Center(), 1)
-		log.Printf(" Adding node %v (%v) (%v) to graph", node.Bounds(), node.Bounds().Center(), node.Color())
+		// log.Printf(" Adding node %v (%v) (%v) to graph", node.Bounds(), node.Bounds().Center(), node.Color())
 		g.AddNode(gnode)
 	}
 
@@ -93,17 +96,17 @@ func run() {
 		gnode := g.FindNode(node.Bounds().Center())
 		for _, n := range neighbors {
 			gneighbor := g.FindNode(n.Bounds().Center())
-			log.Printf("  Adding neighbor %v to node %v", n.Bounds().Center(), node.Bounds().Center())
+			// log.Printf("  Adding neighbor %v to node %v", n.Bounds().Center(), node.Bounds().Center())
 			g.AddEdge(gnode, gneighbor)
 		}
 		g.AddNode(gnode)
 	}
 
-	log.Printf("%v", g)
+	// log.Printf("%v", g)
 
 	cfg := pixelgl.WindowConfig{
 		Title:  "Pixel Rocks!",
-		Bounds: pixel.R(0, 0, 800, 800),
+		Bounds: pixel.R(0, 0, width, height),
 	}
 	win, err := pixelgl.NewWindow(cfg)
 	if err != nil {
@@ -164,12 +167,12 @@ func draw(win *pixelgl.Window, qt *quadtree.Tree, g *graph.Graph, atlas *text.At
 		imd.Rectangle(1)
 		imd.Draw(win)
 
-		// txt := text.New(r.Bounds().Center(), atlas)
-		// txt.Color = colornames.Darkgray
-		// label := fmt.Sprintf("%v,\n%v", r.Bounds().Center().X, r.Bounds().Center().Y)
-		// txt.Dot.X -= txt.BoundsOf(label).W() / 2
-		// fmt.Fprintf(txt, "%v", label)
-		// txt.Draw(win, pixel.IM)
+		txt := text.New(r.Bounds().Center(), atlas)
+		txt.Color = colornames.Darkgray
+		label := fmt.Sprintf("%v,\n%v", r.Bounds().Center().X, r.Bounds().Center().Y)
+		txt.Dot.X -= txt.BoundsOf(label).W() / 2
+		fmt.Fprintf(txt, "%v", label)
+		txt.Draw(win, pixel.IM)
 	}
 
 	imd = imdraw.New(nil)
