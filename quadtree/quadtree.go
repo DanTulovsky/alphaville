@@ -39,7 +39,7 @@ func NewTree(bounds pixel.Rect, objects []pixel.Rect, minSize float64) (*Tree, e
 	qt := &Tree{
 		root:    root,
 		minSize: minSize,
-		nLevels: 10, // arbitrary, get this based on the size of the path we need
+		nLevels: 20, // arbitrary, get this based on the size of the path we need
 	}
 
 	qt.subdivide(qt.root)

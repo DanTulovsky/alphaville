@@ -21,14 +21,16 @@ func run() {
 	target := pixel.R(790, 790, 791, 791)
 
 	objects := []pixel.Rect{
-		start,
-		target,
-		pixel.R(0, 0, 10, 10),
-		pixel.R(20, 20, 30, 30),
-		pixel.R(10, 40, 50, 50),
-		pixel.R(100, 40, 150, 50),
-		pixel.R(400, 400, 405, 405),
+		// start,
+		// target,
+		// pixel.R(0, 0, 10, 10),
+		// pixel.R(20, 20, 30, 30),
+		// pixel.R(10, 40, 50, 50),
+		// pixel.R(100, 40, 150, 50),
+		// pixel.R(400, 400, 405, 405),
+		// pixel.R(100, 100, 150, 280),
 		pixel.R(500, 500, 650, 780),
+		// pixel.R(500, 500, 650, 650),
 	}
 
 	bounds := pixel.R(0, 0, 800, 800)
@@ -76,7 +78,7 @@ func run() {
 		g.AddNode(gnode)
 	}
 
-	log.Printf("%v", g)
+	// log.Printf("%v", g)
 
 	cfg := pixelgl.WindowConfig{
 		Title:  "Pixel Rocks!",
@@ -100,12 +102,12 @@ func run() {
 	for !win.Closed() {
 		// render below here
 		win.Clear(colornames.Black)
-		draw(win, qt, g, startNode, targetNode)
+		draw(win, qt, g, startNode, targetNode, start, target)
 		win.Update()
 	}
 }
 
-func draw(win *pixelgl.Window, qt *quadtree.Tree, g *graph.Graph, start, target *quadtree.Node) {
+func draw(win *pixelgl.Window, qt *quadtree.Tree, g *graph.Graph, start, target *quadtree.Node, s, t pixel.Rect) {
 	imd := imdraw.New(nil)
 	imd.Color = colornames.Red
 
@@ -133,18 +135,19 @@ func draw(win *pixelgl.Window, qt *quadtree.Tree, g *graph.Graph, start, target 
 	}
 
 	// draw the path
-	path, _, err := graph.DijkstraPath(g, start.Bounds().Center(), target.Bounds().Center())
-	if err != nil {
-		log.Fatalf("%v", err)
-	}
+	// path, _, err := graph.DijkstraPath(g, start.Bounds().Center(), target.Bounds().Center())
+	// if err != nil {
+	// 	log.Fatalf("%v", err)
+	// }
 
 	// log.Printf(">>> [path] %v", path)
 
-	imd.Color = colornames.Lightblue
-	for _, p := range path {
-		imd.Push(p.Value().V)
-	}
-	imd.Line(1)
+	// imd.Color = colornames.Lightblue
+	// for _, p := range path {
+	// 	imd.Push(p.Value().V)
+	// }
+	// // imd.Push(t.Center())
+	// imd.Line(1)
 
 	imd.Draw(win)
 }

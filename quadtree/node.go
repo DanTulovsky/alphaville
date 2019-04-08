@@ -79,6 +79,7 @@ func (n *Node) IsEmpty() bool {
 
 // IsPartiallyFull returns true if the node has some space not covered by objects
 // Assumes objects *cannot* overlap, an empty node returns false
+// TODO: Using area doesn't work, as it counts the area of the object outside the current node
 func (n *Node) IsPartiallyFull() bool {
 
 	if n.IsEmpty() {
@@ -94,7 +95,7 @@ func (n *Node) IsPartiallyFull() bool {
 }
 
 // CalculateColor returns the color the node should be
-// black = complete covered by Objects or max resolution reached
+// black = completely covered by Objects or max resolution reached
 // white = not covered by objects at all
 // gray = partially covered by objects
 func (n *Node) CalculateColor(minSize float64) Color {
