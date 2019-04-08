@@ -77,6 +77,11 @@ func (n *Node) IsEmpty() bool {
 	return len(n.objects) == 0
 }
 
+// SetColor sets the node color
+func (n *Node) SetColor(c Color) {
+	n.color = c
+}
+
 // IsPartiallyFull returns true if the node has some space not covered by objects
 // Assumes objects *cannot* overlap, an empty node returns false
 func (n *Node) IsPartiallyFull() bool {
@@ -289,13 +294,15 @@ func (n *Node) forEachNeighbour(fn func(*Node)) {
 	n.forEachNeighbourInDirection(South, fn)
 }
 
-// Neighbors returns the neighbors of the node
+// Neighbors returns the neighbors of the node. Neighbors are only white cells!
 func (n *Node) Neighbors() NodeList {
 
 	neighbors := []*Node{}
 
 	forNeighbor := func(n *Node) {
-		neighbors = append(neighbors, n)
+		if n.Color() == White {
+			neighbors = append(neighbors, n)
+		}
 	}
 
 	ForEachNeighbour(n, forNeighbor)

@@ -2,7 +2,6 @@ package graph
 
 import (
 	"fmt"
-	"log"
 	"math"
 	"sync"
 
@@ -98,8 +97,8 @@ func (g *Graph) FindNode(v pixel.Vec) *Node {
 			return n
 		}
 	}
-	log.Printf("cannot find: %v", v)
-	log.Printf("%v", g)
+	// log.Printf("cannot find: %v", v)
+	// log.Printf("%v", g)
 	return nil
 }
 
@@ -133,13 +132,13 @@ func (g *Graph) AddEdge(n1, n2 *Node) {
 		g.edges[*n1] = append(g.edges[*n1], n2)
 	}
 
-	if _, ok := g.edges[*n2]; ok {
-		if !edgeInList(n1, g.edges[*n2]) {
-			g.edges[*n2] = append(g.edges[*n2], n1)
-		}
-	} else {
-		g.edges[*n2] = append(g.edges[*n2], n1)
-	}
+	// if _, ok := g.edges[*n2]; ok {
+	// 	if !edgeInList(n1, g.edges[*n2]) {
+	// 		g.edges[*n2] = append(g.edges[*n2], n1)
+	// 	}
+	// } else {
+	// 	g.edges[*n2] = append(g.edges[*n2], n1)
+	// }
 }
 
 // String is the string representation of the graph

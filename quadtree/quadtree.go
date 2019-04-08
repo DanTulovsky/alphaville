@@ -163,6 +163,7 @@ func (qt *Tree) subdivide(p *Node) {
 	if se.color == Gray {
 		qt.subdivide(se)
 	}
+	// p.color = Black
 }
 
 // Locate returns the Node that contains the given rect, or nil.

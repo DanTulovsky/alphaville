@@ -62,6 +62,7 @@ func DijkstraPath(g *Graph, start, target pixel.Vec) (path []*Node, cost int, er
 		// get the node in the frontier with the lowest cost (or priority)
 		aKey, aPriority := frontier.Next()
 		n := node{aKey, aPriority}
+		// fmt.Printf("%#+v\n", n.key)
 
 		// when the node with the lowest cost in the frontier is target, we can
 		// compute the cost and path and exit the loop
@@ -106,6 +107,11 @@ func DijkstraPath(g *Graph, start, target pixel.Vec) (path []*Node, cost int, er
 				frontier.Set(nKey, nodeCost)
 			}
 		}
+	}
+
+	if len(path) == 0 {
+		err = fmt.Errorf("Unable to find path from %v to %v", start, target)
+		return
 	}
 
 	// add the origin at the end of the path
