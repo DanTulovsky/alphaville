@@ -3,6 +3,7 @@ package populate
 import (
 	"fmt"
 	"log"
+	"math"
 	"time"
 
 	"github.com/faiface/pixel"
@@ -20,7 +21,7 @@ func RandomEllipses(w *world.World, n int) {
 	minRadius = 10
 	maxRadius = 60
 	minMass, maxMass = 1, 10
-	minSpeed, maxSpeed = 1, 10
+	minSpeed, maxSpeed = 0.1, w.MaxObjectSpeed
 
 	for i := 0; i < n; i++ {
 		randomColor := colornames.Map[colornames.Names[utils.RandomInt(0, len(colornames.Names))]]
@@ -31,8 +32,8 @@ func RandomEllipses(w *world.World, n int) {
 		o := world.NewEllipseObject(
 			fmt.Sprintf("%v", i),
 			randomColor,
-			utils.RandomFloat64(minSpeed, maxSpeed)/10, // speed
-			utils.RandomFloat64(minMass, maxMass)/10,   // mass
+			utils.RandomFloat64(minSpeed, maxSpeed),  // speed
+			utils.RandomFloat64(minMass, maxMass)/10, // mass
 			a,   // x radius
 			b,   // y radius
 			nil, // default behavior
@@ -50,7 +51,7 @@ func RandomCircles(w *world.World, n int) {
 	minRadius = 10
 	maxRadius = 60
 	minMass, maxMass = 1, 10
-	minSpeed, maxSpeed = 1, 10
+	minSpeed, maxSpeed = 0.1, w.MaxObjectSpeed
 
 	for i := 0; i < n; i++ {
 		randomColor := colornames.Map[colornames.Names[utils.RandomInt(0, len(colornames.Names))]]
@@ -60,8 +61,8 @@ func RandomCircles(w *world.World, n int) {
 		o := world.NewCircleObject(
 			fmt.Sprintf("%v", i),
 			randomColor,
-			utils.RandomFloat64(minSpeed, maxSpeed)/10, // speed
-			utils.RandomFloat64(minMass, maxMass)/10,   // mass
+			utils.RandomFloat64(minSpeed, maxSpeed),  // speed
+			utils.RandomFloat64(minMass, maxMass)/10, // mass
 			radius, // radius
 			nil,    // default behavior
 		)
@@ -78,7 +79,7 @@ func RandomRectangles(w *world.World, n int) {
 	minWidth, maxWidth = 10, 81
 	minHeight, maxHeight = 10, 81
 	minMass, maxMass = 6, 10
-	minSpeed, maxSpeed = 6, 10
+	minSpeed, maxSpeed = 0.1, w.MaxObjectSpeed
 
 	for i := 0; i < n; i++ {
 		randomColor := colornames.Map[colornames.Names[utils.RandomInt(0, len(colornames.Names))]]
@@ -89,8 +90,8 @@ func RandomRectangles(w *world.World, n int) {
 		o := world.NewRectObject(
 			fmt.Sprintf("%v", i),
 			randomColor,
-			utils.RandomFloat64(minSpeed, maxSpeed)/10, // speed
-			utils.RandomFloat64(minMass, maxMass)/10,   // mass
+			utils.RandomFloat64(minSpeed, maxSpeed),  // speed
+			utils.RandomFloat64(minMass, maxMass)/10, // mass
 			width,  // width
 			height, // height
 			nil,    // default behavior
@@ -108,7 +109,7 @@ func AddTargetSeeker(w *world.World) {
 	minWidth, maxWidth = 40, 41
 	minHeight, maxHeight = 40, 41
 	minMass, maxMass = 6, 10
-	minSpeed, maxSpeed = 10, 11
+	minSpeed, maxSpeed = 0.9, w.MaxObjectSpeed
 
 	width := utils.RandomFloat64(minWidth, maxWidth)
 	height := utils.RandomFloat64(minHeight, maxHeight)
@@ -117,10 +118,10 @@ func AddTargetSeeker(w *world.World) {
 	finder := graph.DijkstraPath
 
 	o := world.NewRectObject(
-		fmt.Sprintf("ts1"),
+		fmt.Sprintf("ts-%v", utils.RandomInt(0, 9)),
 		colornames.Yellow,
-		utils.RandomFloat64(minSpeed, maxSpeed)/10, // speed
-		utils.RandomFloat64(minMass, maxMass)/10,   // mass
+		utils.RandomFloat64(minSpeed, maxSpeed),  // speed
+		utils.RandomFloat64(minMass, maxMass)/10, // mass
 		width,  // width
 		height, // height
 		world.NewTargetSeekerBehavior(graph.PathFinder(finder)), // default behavior
@@ -159,6 +160,14 @@ func AddGates(w *world.World, coolDown time.Duration) {
 		return false
 	}
 
+	var filterTargetSeekerOnly world.GateFilter = func(o world.Object) bool {
+		switch o.Behavior().(type) {
+		case *world.TargetSeekerBehavior:
+			return true
+		}
+		return false
+	}
+
 	type gate struct {
 		name     string
 		location pixel.Vec
@@ -176,11 +185,12 @@ func AddGates(w *world.World, coolDown time.Duration) {
 			status:   world.GateOpen,
 			coolDown: 1 * time.Second,
 			radius:   20,
+			filters:  []world.GateFilter{filterTargetSeekerOnly},
 		},
 		{
 			name:     "Two",
 			location: pixel.V(200, 600),
-			status:   world.GateClosed,
+			status:   world.GateOpen,
 			coolDown: 1 * time.Second,
 			radius:   25,
 		},
@@ -216,48 +226,102 @@ func AddTarget(w *world.World, radius float64, maxTargets int) {
 	// don't let targets appear inside fixtures
 	for !valid {
 		l := pixel.V(
-			utils.RandomFloat64(0, w.X),
-			utils.RandomFloat64(w.Ground.Phys().Location().Max.Y, w.Y))
+			// TODO fix these!
+			utils.RandomFloat64(21, w.X-21),
+			utils.RandomFloat64(w.Ground.Phys().Location().Max.Y+21, w.Y-21))
 
 		t = world.NewSimpleTarget("one", l, radius)
+		valid = true
 		for _, f := range w.Fixtures() {
-			log.Printf("checking fixture: %v (target: %v)", f.Phys().Location(), t.Location())
+			log.Printf("checking fixture: %v (target: %v)", f.Phys().Location(), t.Circle().Resized(20))
 			// for now assume seekers are always 40, 40 rectangles, don't let targets end up inside
 			// augmented area of fixtures, do this by resizing the circle by half the width of the rect
 			if f.Phys().Location().IntersectCircle(t.Circle().Resized(20)) != pixel.ZV {
 				valid = false
 			}
 		}
-		valid = true
 	}
+	log.Printf("%v", t)
 	w.AddTarget(t)
 }
 
-// AddFixtures add fixtures to the world
-func AddFixtures(w *world.World) {
+// AddFixture adds one specific fixture to the world
+func AddFixture(w *world.World) {
 
-	var width float64 = 100
-	var height float64 = 100
-
-	f := world.NewFixture("block1", colornames.Green, width, height)
-	f.Place(pixel.V(580, w.Ground.Phys().Location().Max.Y+100))
+	var width float64 = 144
+	var height float64 = 64
+	f := world.NewFixture("one", colornames.Green, width, height)
+	f.Place(pixel.V(761, 171))
 	w.AddFixture(f)
 
-	f = world.NewFixture("block2", colornames.Green, width, height)
-	f.Place(pixel.V(10, w.Ground.Phys().Location().Max.Y+100))
-	w.AddFixture(f)
+}
 
-	f = world.NewFixture("block3", colornames.Green, width, height)
-	f.Place(pixel.V(600, 400))
-	w.AddFixture(f)
+// AddFixtures add fixtures to the world.
+func AddFixtures(w *world.World, numFixtures int) {
 
-	f = world.NewFixture("block4", colornames.Green, width, height)
-	f.Place(pixel.V(60, 400))
-	w.AddFixture(f)
+	var minWidth float64 = 60
+	var maxWidth float64 = 300
+	var minHeight float64 = 40
+	var maxHeight float64 = 400
 
-	width = 20
-	height = 400
-	f = world.NewFixture("block5", colornames.Green, width, height)
-	f.Place(pixel.V(300, 100))
-	w.AddFixture(f)
+	for x := 0; x < numFixtures; x++ {
+
+		intersect := true
+		var f *world.Fixture
+
+		// These can appear closer than target seeker size, and confuse the graphgenerating algorithm
+		// should be fixed  by switching to trapezoid map instead
+		for intersect {
+			intersect = false
+			width := math.Floor(utils.RandomFloat64(minWidth, maxWidth))
+			height := math.Floor(utils.RandomFloat64(minHeight, maxHeight))
+			lX := utils.RandomFloat64(width, w.X-width)
+			lY := utils.RandomFloat64(height, w.Y-height)
+
+			f = world.NewFixture(fmt.Sprintf("block-%v", x), colornames.Green, width, height)
+			f.Place(pixel.V(lX, lY))
+
+			for _, other := range w.Fixtures() {
+				if f.Phys().Location().Intersect(other.Phys().Location()) != pixel.R(0, 0, 0, 0) {
+					intersect = true
+				}
+			}
+
+			for _, g := range w.Gates {
+				if f.Phys().Location().Intersect(g.BoundingBox(g.Location)) != pixel.R(0, 0, 0, 0) {
+					intersect = true
+				}
+			}
+
+		}
+		w.AddFixture(f)
+	}
+
+	// f := world.NewFixture("block1", colornames.Green, width, height)
+	// f.Place(pixel.V(400, w.Ground.Phys().Location().Max.Y+160))
+	// w.AddFixture(f)
+
+	// f = world.NewFixture("block2", colornames.Green, width, height)
+	// f.Place(pixel.V(50, w.Ground.Phys().Location().Max.Y+100))
+	// w.AddFixture(f)
+
+	// f = world.NewFixture("block3", colornames.Green, width, height)
+	// f.Place(pixel.V(600, 400))
+	// w.AddFixture(f)
+
+	// f = world.NewFixture("block4", colornames.Green, width, height)
+	// f.Place(pixel.V(60, 400))
+	// w.AddFixture(f)
+
+	// width = 20
+	// height = 400
+	// f = world.NewFixture("block5", colornames.Green, width, height)
+	// f.Place(pixel.V(300, 100))
+	// w.AddFixture(f)
+
+	// width = 200
+	// height = 10
+	// f = world.NewFixture("block6", colornames.Green, width, height)
+	// f.Place(pixel.V(300, 650))
+	// w.AddFixture(f)
 }

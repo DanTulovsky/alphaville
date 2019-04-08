@@ -20,6 +20,7 @@ var (
 	frames  = 0
 	updates = 0
 	second  = time.Tick(time.Second)
+	paused  = false
 )
 
 const (
@@ -27,11 +28,12 @@ const (
 	MsPerUpdate = 4
 	gravity     = -2
 
-	worldMaxX, worldMaxY           = 1024, 768
-	visibleWinMaxX, visibleWinMaxY = 1024, 768
+	// for now must be a square
+	worldMaxX, worldMaxY           = 1024, 1024
+	visibleWinMaxX, visibleWinMaxY = 1024, 1024
 	groundHeight                   = 40
 
-	maxTargets = 1
+	maxTargets = 2
 )
 
 // processMouseLeftInput handles left click
@@ -43,6 +45,11 @@ func processMouseLeftInput(w *world.World, v pixel.Vec) {
 }
 
 func processInput(win *pixelgl.Window, w *world.World, ctrl pixel.Vec) {
+
+	switch {
+	case win.JustPressed(pixelgl.KeySpace):
+		togglePause()
+	}
 
 	mo := w.ManualControl
 	if !mo.IsSpawned() {
@@ -64,6 +71,10 @@ func processInput(win *pixelgl.Window, w *world.World, ctrl pixel.Vec) {
 
 	mo.SetManualVelocity(ctrl)
 
+}
+
+func togglePause() {
+	paused = !paused
 }
 
 // update calls each object's update
@@ -93,12 +104,14 @@ func run() {
 
 	// populate the world
 	populate.AddTargetSeeker(w)
+	// populate.AddTargetSeeker(w)
 	// populate.RandomCircles(w, 2)
-	// populate.RandomRectangles(w, 2)
+	// populate.RandomRectangles(w, 20)
 	// populate.RandomEllipses(w, 2)
 	// populate.AddManualObject(w, 60, 60)
 	populate.AddGates(w, time.Second*1)
-	populate.AddFixtures(w)
+	// populate.AddFixture(w)
+	populate.AddFixtures(w, 2)
 	// add targets AFTER fixtures
 	populate.AddTarget(w, 10, maxTargets)
 
@@ -140,10 +153,11 @@ func run() {
 		// user input
 		processInput(win, w, ctrl)
 
-		populate.AddTarget(w, 10, maxTargets)
-
-		update(w)
-		updates++
+		if !paused {
+			populate.AddTarget(w, 10, maxTargets)
+			update(w)
+			updates++
+		}
 
 		// // update the game state
 		// for lag >= MsPerUpdate {

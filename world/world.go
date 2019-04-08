@@ -13,15 +13,16 @@ import (
 
 // World defines the world
 type World struct {
-	X, Y          float64  // size of the world
-	Gates         []*Gate  // entrances into the world
-	Objects       []Object // objects in the world
-	targets       []Target // targets in the world that TargetSeekers hunt
-	ManualControl Object   // this object is human controlled
-	Ground        Object   // special, for now
-	fixtures      []Object // walls, floors, rocks, etc...
-	gravity       float64
-	Stats         *Stats // world stats, an observer of events happening in the world
+	X, Y           float64  // size of the world
+	Gates          []*Gate  // entrances into the world
+	Objects        []Object // objects in the world
+	targets        []Target // targets in the world that TargetSeekers hunt
+	ManualControl  Object   // this object is human controlled
+	Ground         Object   // special, for now
+	fixtures       []Object // walls, floors, rocks, etc...
+	gravity        float64
+	Stats          *Stats // world stats, an observer of events happening in the world
+	MaxObjectSpeed float64
 
 	observers []observer.EventObserver
 }
@@ -39,7 +40,8 @@ func NewWorld(x, y float64, ground Object, gravity float64) *World {
 		gravity: gravity,
 		Stats:   NewStats(),
 		// EventNotifier: observer.NewEventNotifier(),
-		ManualControl: NewNullObject(),
+		ManualControl:  NewNullObject(),
+		MaxObjectSpeed: 1,
 	}
 
 	w.Register(w.Stats)
@@ -59,7 +61,7 @@ func (w *World) SpawnAllNew() {
 	}
 }
 
-// Draw draws the world by callign each object's Draw()
+// Draw draws the world by calling each object's Draw()
 func (w *World) Draw(win *pixelgl.Window) {
 	w.Ground.Draw(win)
 

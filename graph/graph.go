@@ -2,10 +2,12 @@ package graph
 
 import (
 	"fmt"
+	"log"
 	"math"
 	"sync"
 
 	"github.com/faiface/pixel"
+	"github.com/google/uuid"
 )
 
 // Item is the data contained in the node
@@ -22,8 +24,9 @@ func NewItem(v pixel.Vec) Item {
 
 // Node is a single node in the graph
 type Node struct {
-	value Item
-	cost  int
+	value  Item
+	cost   int
+	partof uuid.UUID // what node this object is part of
 }
 
 // NewNode returns a new graph node
@@ -38,13 +41,19 @@ func (n Node) Value() Item {
 	return n.value
 }
 
+// Object returns the uuid of the object this node is part of
+func (n Node) Object() uuid.UUID {
+	return n.partof
+}
+
 // NewItemNode creates and return a new node with v as the item
-func NewItemNode(v pixel.Vec, cost int) *Node {
+func NewItemNode(u uuid.UUID, v pixel.Vec, cost int) *Node {
 	return &Node{
 		value: Item{
 			V: v,
 		},
-		cost: cost,
+		cost:   cost,
+		partof: u,
 	}
 
 }
@@ -62,7 +71,7 @@ type Graph struct {
 }
 
 // NewGraph returns a new graph
-func NewGraph() *Graph {
+func New() *Graph {
 	nodes := make([]*Node, 0)
 	edges := make(map[Node][]*Node)
 
@@ -77,13 +86,20 @@ func (g *Graph) Nodes() []*Node {
 	return g.nodes
 }
 
-// FindNode returns the node with the provide value
+// Edges returns all the edges in the graph
+func (g *Graph) Edges() map[Node][]*Node {
+	return g.edges
+}
+
+// FindNode returns the node with the provided value
 func (g *Graph) FindNode(v pixel.Vec) *Node {
 	for _, n := range g.nodes {
 		if n.value.V == v {
 			return n
 		}
 	}
+	log.Printf("cannot find: %v", v)
+	log.Printf("%v", g)
 	return nil
 }
 
@@ -94,13 +110,36 @@ func (g *Graph) AddNode(n *Node) {
 	g.nodes = append(g.nodes, n)
 }
 
+// slow...
+func edgeInList(edge *Node, edges []*Node) bool {
+	for _, e := range edges {
+		if edge == e {
+			return true
+		}
+	}
+	return false
+}
+
 // AddEdge adds an edge between nodes
 func (g *Graph) AddEdge(n1, n2 *Node) {
 	g.lock.Lock()
 	defer g.lock.Unlock()
 
-	g.edges[*n1] = append(g.edges[*n1], n2)
-	g.edges[*n2] = append(g.edges[*n2], n1)
+	if _, ok := g.edges[*n1]; ok {
+		if !edgeInList(n2, g.edges[*n1]) {
+			g.edges[*n1] = append(g.edges[*n1], n2)
+		}
+	} else {
+		g.edges[*n1] = append(g.edges[*n1], n2)
+	}
+
+	if _, ok := g.edges[*n2]; ok {
+		if !edgeInList(n1, g.edges[*n2]) {
+			g.edges[*n2] = append(g.edges[*n2], n1)
+		}
+	} else {
+		g.edges[*n2] = append(g.edges[*n2], n1)
+	}
 }
 
 // String is the string representation of the graph
@@ -136,12 +175,12 @@ func RectEdges(r pixel.Rect) []Edge {
 	}
 }
 
-// orientation returns 1 if the point is on the right side,
+// Orientation returns point orientation vs a line
 // 0 --> p, q and r are colinear
-// 1 --> Clockwise
-// 2 --> Counterclockwise
+// 1 --> Clockwise, below
+// 2 --> Counterclockwise, above
 // From: https://www.geeksforgeeks.org/check-if-two-given-line-segments-intersect/
-func orientation(p, q, r pixel.Vec) int {
+func Orientation(p, q, r pixel.Vec) int {
 	val := (q.Y-p.Y)*(r.X-q.X) - (q.X-p.X)*(r.Y-q.Y)
 
 	switch {
@@ -154,7 +193,7 @@ func orientation(p, q, r pixel.Vec) int {
 	return 0 // collinear
 }
 
-// OnSegment Given three colinear points p, q, r, the function checks if
+// OnSegment Given three collinear points p, q, r, the function checks if
 // point q lies on line segment 'pr'
 func OnSegment(p, q, r pixel.Vec) bool {
 	if q.X <= math.Max(p.X, r.X) && q.X >= math.Min(p.X, r.X) &&
@@ -167,10 +206,10 @@ func OnSegment(p, q, r pixel.Vec) bool {
 // EdgesIntersect returns true if l1 and l2 intersect at any point
 func EdgesIntersect(l1, l2 Edge) bool {
 
-	s1 := orientation(l1.A, l1.B, l2.A)
-	s2 := orientation(l1.A, l1.B, l2.B)
-	s3 := orientation(l2.A, l2.B, l1.A)
-	s4 := orientation(l2.A, l2.B, l1.B)
+	s1 := Orientation(l1.A, l1.B, l2.A)
+	s2 := Orientation(l1.A, l1.B, l2.B)
+	s3 := Orientation(l2.A, l2.B, l1.A)
+	s4 := Orientation(l2.A, l2.B, l1.B)
 
 	if s1 != s2 && s3 != s4 {
 		return true

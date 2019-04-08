@@ -7,8 +7,11 @@ import (
 	"log"
 	"time"
 
+	"golang.org/x/image/colornames"
+
 	"github.com/faiface/pixel/imdraw"
 	"github.com/faiface/pixel/pixelgl"
+	"github.com/google/uuid"
 
 	"github.com/faiface/pixel"
 	"gogs.wetsnow.com/dant/alphaville/graph"
@@ -144,27 +147,21 @@ func (b *DefaultBehavior) changeVerticalDirection(w *World, o Object) bool {
 func (b *DefaultBehavior) HandleCollisions(w *World, o Object) bool {
 	phys := o.NextPhys()
 
+	clocation := phys.HaveCollisionAt(w)
+
 	switch {
-	case phys.MovingDown():
-		if phys.CollisionBelow(w) {
-			b.avoidCollisionBelow(phys)
-			return true
-		}
-	case phys.MovingUp():
-		if phys.CollisionAbove(w) {
-			b.avoidCollisionAbove(phys, w)
-			return true
-		}
-	case phys.MovingRight():
-		if phys.CollisionRight(w) {
-			b.avoidCollisionRight(phys)
-			return true
-		}
-	case phys.MovingLeft():
-		if phys.CollisionLeft(w) {
-			b.avoidCollisionLeft(phys)
-			return true
-		}
+	case phys.MovingDown() && clocation == "below":
+		b.avoidCollisionBelow(phys)
+		return true
+	case phys.MovingUp() && clocation == "above":
+		b.avoidCollisionAbove(phys, w)
+		return true
+	case phys.MovingRight() && clocation == "right":
+		b.avoidCollisionRight(phys)
+		return true
+	case phys.MovingLeft() && clocation == "left":
+		b.avoidCollisionLeft(phys)
+		return true
 	}
 	return false
 }
@@ -205,7 +202,6 @@ func (b *DefaultBehavior) avoidHorizontalCollision(phys ObjectPhys) {
 	// Going to bump, 50/50 chance of rising up or changing direction
 	if utils.RandomInt(0, 100) > 50 {
 		phys.SetCurrentMass(0)
-		// b.ChangeHorizontalDirection(phys)
 	} else {
 		b.ChangeHorizontalDirection(phys)
 	}
@@ -225,26 +221,21 @@ func (b *DefaultBehavior) avoidCollisionRight(phys ObjectPhys) {
 func (b *DefaultBehavior) Move(w *World, o Object, v pixel.Vec) {
 	phys := o.NextPhys()
 
-	if phys.Vel().X != 0 && phys.Vel().Y != 0 {
-		// cannot currently move in both X and Y direction
-		log.Fatalf("o:%+#v\nx: %v; y: %v\n", o, phys.Vel().X, phys.Vel().Y)
-	}
+	// move vector that takes into account border collisions
+	mv := phys.CollisionBordersVector(w, v)
 
-	// TODO: refactor to use CollisionBorders() function
+	// TODO: Clean this so code is not duplicated with above function
 	switch {
 	case phys.MovingLeft() && phys.Location().Min.X+phys.Vel().X <= 0:
 		// left border
-		phys.SetLocation(phys.Location().Moved(pixel.V(0-phys.Location().Min.X, 0)))
 		b.ChangeHorizontalDirection(phys)
 
 	case phys.MovingRight() && phys.Location().Max.X+phys.Vel().X >= w.X:
 		// right border
-		phys.SetLocation(phys.Location().Moved(pixel.V(w.X-phys.Location().Max.X, 0)))
 		b.ChangeHorizontalDirection(phys)
 
 	case phys.MovingDown() && phys.Location().Min.Y+phys.Vel().Y < w.Ground.Phys().Location().Max.Y:
 		// stop at ground level
-		phys.SetLocation(phys.Location().Moved(pixel.V(0, w.Ground.Phys().Location().Max.Y-phys.Location().Min.Y)))
 		v := phys.Vel()
 		v.Y = 0
 		v.X = phys.PreviousVel().X
@@ -252,16 +243,13 @@ func (b *DefaultBehavior) Move(w *World, o Object, v pixel.Vec) {
 
 	case phys.MovingUp() && phys.Location().Max.Y+phys.Vel().Y >= w.Y && phys.Vel().Y > 0:
 		// stop at ceiling if going up
-		phys.SetLocation(phys.Location().Moved(pixel.V(0, w.Y-phys.Location().Max.Y)))
 		v := phys.Vel()
 		v.Y = 0
 		phys.SetVel(v)
 		phys.SetCurrentMass(o.Mass())
 
-	default:
-		newLocation := phys.Location().Moved(pixel.V(v.X, v.Y))
-		phys.SetLocation(newLocation)
 	}
+	phys.SetLocation(phys.Location().Moved(mv))
 }
 
 // Draw draws any artifacts of the behavior
@@ -286,8 +274,8 @@ func NewManualBehavior() *ManualBehavior {
 func (b *ManualBehavior) Update(w *World, o Object) {
 	phys := o.NextPhys()
 
-	if !phys.HaveCollision(w) {
-		b.Move(w, o, phys.CollisionBorders(w, phys.Vel()))
+	if phys.HaveCollisionAt(w) == "" {
+		b.Move(w, o, phys.CollisionBordersVector(w, phys.Vel()))
 	}
 }
 
@@ -310,6 +298,7 @@ type TargetSeekerBehavior struct {
 	path      []*graph.Node
 	fullpath  []graph.Node
 	cost      int
+	source    pixel.Vec
 	finder    graph.PathFinder // path finder function
 }
 
@@ -324,90 +313,127 @@ func NewTargetSeekerBehavior(f graph.PathFinder) *TargetSeekerBehavior {
 	return b
 }
 
-// allCollisionVerticies returns a list of all verticies of all collision object
-func (b *TargetSeekerBehavior) allCollisionVerticies(w *World, o Object) []pixel.Vec {
-	l := []pixel.Vec{}
-
-	for _, other := range w.CollisionObjects() {
-		if o.ID() == other.ID() {
-			continue // skip yourself
-		}
-		scaleX := (other.Phys().Location().Max.X - other.Phys().Location().Min.X) / 2
-		scaleY := (other.Phys().Location().Max.Y - other.Phys().Location().Min.Y) / 2
-		for _, v := range utils.RectVerticiesScaled(other.Phys().Location(), scaleX, scaleY, w.X, w.Y) {
-			l = append(l, v)
-		}
-	}
-	return l
+type vertecy struct {
+	V pixel.Vec
+	O uuid.UUID
 }
 
-// allCollisionEdges returns a list of all edges of all collision object
-func (b *TargetSeekerBehavior) allCollisionEdges(w *World, o Object) []graph.Edge {
-	l := []graph.Edge{}
+// scaledCollisionVerticies returns a list of all verticies of all collision objects
+// scaled by half the size of o
+func (b *TargetSeekerBehavior) scaledCollisionVerticies(w *World, o Object) []vertecy {
+	v := []vertecy{}
 
 	for _, other := range w.CollisionObjects() {
 		if o.ID() == other.ID() {
 			continue // skip yourself
 		}
-		scaleX := (other.Phys().Location().Max.X - other.Phys().Location().Min.X) / 2
-		scaleY := (other.Phys().Location().Max.Y - other.Phys().Location().Min.Y) / 2
-		v := utils.RectVerticiesScaled(other.Phys().Location(), scaleX, scaleY, w.X, w.Y)
-		r := pixel.R(v[0].X, v[0].Y, v[2].X, v[2].Y)
 
-		for _, v := range graph.RectEdges(r) {
-			l = append(l, v)
+		// until movemement is fixed, add an additional buffer around object
+		var buffer float64 = 4
+		c := other.Phys().Location().Center()
+		size := pixel.V(other.Phys().Location().W()+o.Phys().Location().W()+buffer,
+			other.Phys().Location().H()+o.Phys().Location().H()+buffer)
+		vertecies := other.Phys().Location().Resized(c, size).Vertices()
+
+		for _, vr := range vertecies {
+			v = append(v, vertecy{V: vr, O: other.ID()})
 		}
+	}
+	return v
+}
+
+// scaledCollisionEdges returns a list of all edges of all collision objects
+// scaled by half the size of o
+func (b *TargetSeekerBehavior) scaledCollisionEdges(w *World, o Object) []pixel.Line {
+	l := []pixel.Line{}
+
+	for _, other := range w.CollisionObjects() {
+		if o.ID() == other.ID() {
+			continue // skip yourself
+		}
+
+		// until movemement is fixed, add an additional buffer around object
+		var buffer float64 = 4
+		c := other.Phys().Location().Center()
+		size := pixel.V(other.Phys().Location().W()+o.Phys().Location().W()+buffer,
+			other.Phys().Location().H()+o.Phys().Location().H()+buffer)
+		scaled := other.Phys().Location().Resized(c, size)
+
+		edges := scaled.Edges()
+		l = append(l, edges[0], edges[1], edges[2], edges[3])
+
 	}
 	return l
 }
 
 // isVisbile returns true if v is visibile from p (no intersecting edges)
-func (b *TargetSeekerBehavior) isVisbile(w *World, p, v pixel.Vec, edges []graph.Edge) bool {
+func (b *TargetSeekerBehavior) isVisbile(w *World, p, v pixel.Vec, edges []pixel.Line, n, other *graph.Node) bool {
 	for _, e := range edges {
-		if (e.A == p || e.B == p) && (e.A == v || e.B == v) {
+		if (e.A == p && e.B == v) || (e.A == v && e.B == p) {
 			// point are on the same segment, so visible
 			return true
 		}
 
-		// exclude edges that include v
-		if e.A == v || e.B == v {
+		// exclude points on the same object if they are not on the same edge (we only deal with Rectangles here)
+		if n.Object() == other.Object() {
+			if p.X != v.X && p.Y != v.Y {
+				return false
+			}
+		}
+		// exclude edges that include v or p
+		if e.A == v || e.B == v || e.A == p || e.B == p {
 			continue
 		}
-		if graph.EdgesIntersect(graph.Edge{A: p, B: v}, e) {
+
+		// Currently broken https://github.com/faiface/pixel/issues/175
+		// once resolved, replace the code below
+		// if _, isect := pixel.L(p, v).Intersect(e); isect {
+		// 	return false
+		// }
+
+		ge := graph.Edge{A: p, B: v}
+		etemp := graph.Edge{A: e.A, B: e.B}
+		if graph.EdgesIntersect(ge, etemp) {
 			return false
 		}
 	}
 	return true
 }
 
+// populateVisibilityGraph creates a visibility graph
+// the nodes are verticies of augmented rectangles
+// the edges are paths between nodes that have no other node in between
+// polygonal map from here:
+// http://theory.stanford.edu/~amitp/GameProgramming/MapRepresentations.html#polygonal-maps
 func (b *TargetSeekerBehavior) populateVisibilityGraph(w *World, o Object) {
 	log.Printf("Populating visibility graph for %v", o.Name())
-	g := graph.NewGraph()
-	verticies := b.allCollisionVerticies(w, o)
-	edges := b.allCollisionEdges(w, o)
+	g := graph.New()
+	verticies := b.scaledCollisionVerticies(w, o)
+	edges := b.scaledCollisionEdges(w, o)
 
 	// Add all verticies (except source) to the graph
 	for _, v := range verticies {
-		g.AddNode(graph.NewItemNode(v, 1))
+		g.AddNode(graph.NewItemNode(v.O, v.V, 1))
 	}
 
 	// source node
-	p := graph.NewItemNode(o.Phys().Location().Center(), 0)
+	p := graph.NewItemNode(o.ID(), o.Phys().Location().Center(), 0)
 	g.AddNode(p)
 
-	// target node
-	t := graph.NewItemNode(b.target.Location(), 1)
+	// target, not part of any object
+	t := graph.NewItemNode(b.target.ID(), b.target.Location(), 1)
 	g.AddNode(t)
-	log.Printf("target: %v", t.Value().V)
+	// log.Printf("target: %v", t.Value().V)
 
 	// populate visibility information for all nodes
 	for _, n := range g.Nodes() {
+		// log.Printf(">> checking visibility from %v", n)
 		for _, other := range g.Nodes() {
 			if n.Value().V == other.Value().V {
 				continue
 			}
 			// check if  v is visible from p
-			if b.isVisbile(w, n.Value().V, other.Value().V, edges) {
+			if b.isVisbile(w, n.Value().V, other.Value().V, edges, n, other) {
 				g.AddEdge(n, other)
 			}
 		}
@@ -415,6 +441,59 @@ func (b *TargetSeekerBehavior) populateVisibilityGraph(w *World, o Object) {
 
 	b.moveGraph = g
 	log.Printf("%v", b.moveGraph)
+}
+
+// populateVisibilityGraph2 creates a visibility graph by doing a
+// cell decomposition.  the nodes are cells between the fixtures, and the edges are
+// connections between them; from:
+// https://cs.stanford.edu/people/eroberts/courses/soco/projects/1998-99/robotics/basicmotion.html
+// https://www.dis.uniroma1.it/~oriolo/amr/slides/MotionPlanning1_Slides.pdf
+func (b *TargetSeekerBehavior) populateVisibilityGraph2(w *World, o Object) {
+	log.Printf("Populating visibility graph for %v", o.Name())
+
+	// first build a quadtree to the desired level
+	//    do this incrementally as per pdf above
+	// then convert to graph
+	// then find path
+
+	// g := graph.NewGraph()
+
+	// augmented fixtures, these are what we check collisions against
+	// they are grown by 1/2 size of object on each side to account for movement
+	// fixtures := []pixel.Rect{}
+
+	// for _, other := range w.CollisionObjects() {
+	// 	scaleX := (o.Phys().Location().Max.X-o.Phys().Location().Min.X)/2 + 2
+	// 	scaleY := (o.Phys().Location().Max.Y-o.Phys().Location().Min.Y)/2 + 2
+	// 	v := utils.RectVerticiesScaled(other.Phys().Location(), scaleX, scaleY, w.X, w.Y)
+	// 	r := pixel.R(v[0].X, v[0].Y, v[2].X, v[2].Y)
+	// 	fixtures = append(fixtures, r)
+	// }
+
+	// // minimum area of rectangle at which we stop splitting
+	// var minArea float64 = 4
+
+	// // this is the first rectangle, which encompossases the entire grid
+	// first := pixel.R(0, 0, w.X, w.Y)
+
+	// tosplit := []pixel.Rect{}
+	// tocheck := []pixel.Rect{}
+	// tosplit = append(tosplit, first)
+	// tocheck = append(tocheck, first)
+
+	// for len(tocheck) != 0 {
+	// 	for _, r := range tocheck {
+	// 		// check if it intersects with any fixtures
+	// 		if utils.IntersectAny(r, fixtures) {
+	// 			if r.Area() > minArea {
+	// 				tosplit = append(tosplit, r)
+	// 			}
+	// 		}
+	// 	}
+	// }
+	// as soon as it does not, add it as node to the graph
+
+	// if it's entirely contained within a fixture, also stop and add it to the graph
 }
 
 // SetTarget sets the target
@@ -429,7 +508,9 @@ func (b *TargetSeekerBehavior) Target() Target {
 
 // isAtTarget returns true if any part of the object covers the target
 func (b *TargetSeekerBehavior) isAtTarget(o Object) bool {
-	if o.Phys().Location().IntersectCircle(b.target.Circle()) != pixel.ZV {
+	circle := pixel.C(o.Phys().Location().Center(), 2)
+
+	if circle.Contains(b.target.Circle().Center) {
 
 		o.Notify(NewObjectEvent(
 			fmt.Sprintf("[%v] found target [%v]", o.Name(), b.target.Name()), time.Now(),
@@ -444,7 +525,10 @@ func (b *TargetSeekerBehavior) isAtTarget(o Object) bool {
 
 // Direction returns the next direction to travel to the target
 func (b *TargetSeekerBehavior) Direction(w *World, o Object) pixel.Vec {
-	if len(b.path) > 0 && o.Phys().Location().Contains(b.path[0].Value().V) {
+	// remove the current location from path
+	circle := pixel.C(o.Phys().Location().Center(), 2)
+	if len(b.path) > 0 && circle.Contains(b.path[0].Value().V) {
+		b.source = b.path[0].Value().V
 		b.path = append(b.path[:0], b.path[1:]...)
 	}
 
@@ -452,34 +536,116 @@ func (b *TargetSeekerBehavior) Direction(w *World, o Object) pixel.Vec {
 		// log.Printf("path ran out...")
 		return pixel.ZV
 	}
-
+	source := b.source
 	// target is the next node in the path
-	t := b.path[0].Value().V
-	// center of our target seeker
+	target := b.path[0].Value().V
+	// current location of target seeker
 	c := o.Phys().Location().Center()
 
-	to := t.To(c)
+	// log.Printf("source: %v; dest: %v; c: %v", source, target, c)
+
+	// vector from current location to target
+	// to := c.To(target)
 
 	var moves []pixel.Vec
 
-	if to.X < 0 {
-		moves = append(moves, pixel.V(1, 0))
+	orient := graph.Orientation(source, target, c)
+
+	if target.X > source.X {
+		if utils.LineSlope(source, target) > 0 {
+			switch orient {
+			case 2:
+				// if above, move x right
+				moves = append(moves, pixel.V(1, 0))
+			case 1:
+				// if below, move y up
+				moves = append(moves, pixel.V(0, 1))
+			case 0:
+				// if on the line, move in either direction
+				moves = append(moves, pixel.V(0, 1))
+
+			}
+		}
+
+		if utils.LineSlope(source, target) < 0 {
+			switch orient {
+			case 2:
+				// if above, move y down
+				moves = append(moves, pixel.V(0, -1))
+			case 1:
+				// if below, move x right
+				moves = append(moves, pixel.V(1, 0))
+			case 0:
+				// if on the line, move in either direction
+				moves = append(moves, pixel.V(0, -1))
+			}
+
+		}
 	}
-	if to.X > 0 {
-		moves = append(moves, pixel.V(-1, 0))
+
+	if target.X < source.X {
+		if utils.LineSlope(source, target) > 0 {
+			switch orient {
+			case 2:
+				// if below, move x left
+				moves = append(moves, pixel.V(-1, 0))
+			case 1:
+				// if above, move y down
+				moves = append(moves, pixel.V(0, -1))
+			case 0:
+				// if on the line, move in either direction
+				moves = append(moves, pixel.V(0, -1))
+			}
+
+		}
+
+		if utils.LineSlope(source, target) < 0 {
+			switch orient {
+			case 2:
+				// if below, move y up
+				moves = append(moves, pixel.V(0, 1))
+			case 1:
+				// if above, move x left
+				moves = append(moves, pixel.V(-1, 0))
+			case 0:
+				// if on the line, move in either direction
+				moves = append(moves, pixel.V(0, 1))
+			}
+		}
 	}
-	if to.Y < 0 {
-		moves = append(moves, pixel.V(0, 1))
+
+	if target.X == source.X {
+		switch {
+		// move y towards target
+		case target.Y > source.Y:
+			// move up
+			moves = append(moves, pixel.V(0, 1))
+		case target.Y < source.Y:
+			// move down
+			moves = append(moves, pixel.V(0, -1))
+		}
 	}
-	if to.Y > 0 {
-		moves = append(moves, pixel.V(0, -1))
+
+	if target.Y == source.Y {
+		switch {
+		// move x towards target
+		case target.X > source.X:
+			// move right
+			moves = append(moves, pixel.V(1, 0))
+		case target.X < source.X:
+			// move left
+			moves = append(moves, pixel.V(-1, 0))
+		}
 	}
 
 	if len(moves) > 0 {
+		// log.Println(moves)
 		return moves[utils.RandomInt(0, len(moves))]
 	}
 
-	return pixel.V(0, 0)
+	o.SetManualVelocity(pixel.ZV)
+	return pixel.ZV
+
 }
 
 // pickNewTarget sets a new random target if available
@@ -542,9 +708,9 @@ func (b *TargetSeekerBehavior) Update(w *World, o Object) {
 	phys.SetManualVelocity(d)
 	// o.Phys().SetManualVelocity(d)
 
-	// check collisions with objects
-	if !phys.HaveCollision(w) {
-		b.Move(w, o, phys.CollisionBorders(w, phys.Vel()))
+	if phys.HaveCollisionAt(w) == "" {
+		// move, checking collisions with world borders
+		b.Move(w, o, phys.CollisionBordersVector(w, phys.Vel()))
 	}
 }
 
@@ -559,13 +725,25 @@ func (b *TargetSeekerBehavior) Draw(win *pixelgl.Window) {
 	if b.target == nil {
 		return
 	}
-	// Draw the path
 	imd := imdraw.New(nil)
 
+	// Draw the path
+	imd.Color = colornames.Lightblue
+	// Draw the graph lines
+	for n, other := range b.moveGraph.Edges() {
+		for _, o := range other {
+			imd.Push(n.Value().V)
+			imd.Push(o.Value().V)
+			imd.Line(1)
+		}
+	}
+
+	// draw the graph
 	imd.Color = b.target.Color()
 	for _, p := range b.fullpath {
 		imd.Push(p.Value().V)
 	}
 	imd.Line(1)
 	imd.Draw(win)
+
 }

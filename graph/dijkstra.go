@@ -73,7 +73,6 @@ func DijkstraPath(g *Graph, start, target pixel.Vec) (path []*Node, cost int, er
 				path = append(path, nKey)
 				nKey = previous[nKey]
 			}
-
 			break
 		}
 
@@ -86,7 +85,9 @@ func DijkstraPath(g *Graph, start, target pixel.Vec) (path []*Node, cost int, er
 			if explored[nKey] {
 				continue
 			}
-			nCost := nKey.cost
+			// cost to get to this node is the length of the line
+			nCost := int(nKey.Value().V.Sub(n.key.Value().V).Len())
+			// nCost := nKey.cost
 
 			// if the node is not yet in the frontier add it with the cost
 			if _, ok := frontier.Get(nKey); !ok {

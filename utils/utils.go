@@ -32,7 +32,24 @@ func RandomInt(min, max int) int {
 
 // RandomFloat64 returns a random number in [min, max)
 func RandomFloat64(min, max float64) float64 {
-	return float64(rand.Int63n(int64(max-min)) + int64(min))
+	// return float64(rand.Int63n(int64(max-min)) + int64(min))
+	return AffineTransform(rand.Float64(), 0, 1, min, max)
+}
+
+// AffineTransform x (in the range [a, b] to a number in [c, d]
+func AffineTransform(x, a, b, c, d float64) float64 {
+	// log.Printf("in: %v [%v, %v] -> [%v, %v]", x, a, b, c, d)
+	if x < a {
+		log.Print("invalid input into AffineTransform, returning min.")
+		log.Printf("AffineTransform -> in: %v [%v, %v] -> [%v, %v]", x, a, b, c, d)
+		return c
+	}
+	if x > b {
+		log.Print("invalid input into AffineTransform, returning max.")
+		log.Printf("AffineTransform -> in: %v [%v, %v] -> [%v, %v]", x, a, b, c, d)
+		return d
+	}
+	return (x-a)*((d-c)/(b-a)) + c
 }
 
 // D2R converts degrees to radians
@@ -45,7 +62,7 @@ func RotateRect(r pixel.Rect, angle float64) pixel.Rect {
 
 	theta := D2R(angle)
 	center := r.Center()
-	points := RectVerticies(r)
+	points := r.Vertices()
 
 	var minX, minY float64 = math.MaxFloat64, math.MaxFloat64
 	var maxX, maxY float64
@@ -142,37 +159,37 @@ func HaveCommonY(r1, r2 pixel.Rect) bool {
 	return false
 }
 
-// RectVerticies returns a list of verticies for the given Rect
-func RectVerticies(r pixel.Rect) []pixel.Vec {
-	return []pixel.Vec{
-		pixel.V(r.Min.X, r.Min.Y),
-		pixel.V(r.Min.X, r.Max.Y),
-		pixel.V(r.Max.X, r.Max.Y),
-		pixel.V(r.Max.X, r.Min.Y),
-	}
+// LineSlope returns the slope of the line passing through a and b
+func LineSlope(a, b pixel.Vec) float64 {
+	return (b.Y - a.Y) / (b.X - a.X)
 }
 
-// RectVerticiesScaled returns a list of verticies for the given Rect scaled by int
-// This is used to make the obstacle seem larger so that the object can pass by it
-// x is the max X coordinate, Y is the max Y coordinate
-// func RectVerticiesScaled(r pixel.Rect, scaleX, scaleY, x, y float64) []pixel.Vec {
-// 	return []pixel.Vec{
-// 		pixel.V(r.Min.X-scaleX, r.Min.Y-scaleY),
-// 		pixel.V(r.Min.X-scaleX, r.Max.Y+scaleY),
-// 		pixel.V(r.Max.X+scaleX, r.Max.Y+scaleY),
-// 		pixel.V(r.Max.X+scaleX, r.Min.Y-scaleY),
-// 	}
-// }
+// RotatedAroundOrigin returns r moved to origin and rotated 180 degrees
+func RotatedAroundOrigin(r pixel.Rect) pixel.Rect {
+	ro := r.Moved(pixel.V(-r.Center().X, -r.Center().Y))
+	return pixel.R(-ro.Min.X, -ro.Min.Y, -ro.Max.X, -ro.Max.Y).Norm()
+}
 
-// RectVerticiesScaled returns a list of verticies for the given Rect scaled by int
-// This is used to make the obstacle seem larger so that the object can pass by it
-// x is the max X coordinate, Y is the max Y coordinate
-// do not allow boundaries to go outside the world
-func RectVerticiesScaled(r pixel.Rect, scaleX, scaleY, maxX, maxY float64) []pixel.Vec {
-	return []pixel.Vec{
-		pixel.V(math.Max(0, r.Min.X-scaleX), math.Max(0, r.Min.Y-scaleY)),
-		pixel.V(math.Max(0, r.Min.X-scaleX), math.Min(maxY, r.Max.Y+scaleY)),
-		pixel.V(math.Min(maxX, r.Max.X+scaleX), math.Min(maxY, r.Max.Y+scaleY)),
-		pixel.V(math.Min(maxX, r.Max.X+scaleX), math.Max(0, r.Min.Y-scaleY)),
+// MinkowskiSum returns the minkowski sum of r1 and r2
+func MinkowskiSum(r1, r2 pixel.Rect) pixel.Rect {
+	return pixel.R(r1.Min.X+r2.Min.X, r1.Min.Y+r2.Min.Y, r1.Max.X+r2.Max.X, r1.Max.Y+r2.Max.Y)
+}
+
+// Intersect returns true if the two rectangles intersect
+func Intersect(r1, r2 pixel.Rect) bool {
+	return r1.Intersect(r2) != pixel.R(0, 0, 0, 0)
+}
+
+// IntersectAny returns true if r1 intersects any rect in r2
+func IntersectAny(r1 pixel.Rect, r2 []pixel.Rect) bool {
+
+	for _, f := range r2 {
+		if r1 == f {
+			continue // skip yourself
+		}
+		if Intersect(r1, f) {
+			return true
+		}
 	}
+	return false
 }
