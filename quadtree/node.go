@@ -288,3 +288,17 @@ func (n *Node) forEachNeighbour(fn func(*Node)) {
 	n.forEachNeighbourInDirection(East, fn)
 	n.forEachNeighbourInDirection(South, fn)
 }
+
+// Neighbors returns the neighbors of the node
+func (n *Node) Neighbors() NodeList {
+
+	neighbors := []*Node{}
+
+	forNeighbor := func(n *Node) {
+		neighbors = append(neighbors, n)
+	}
+
+	ForEachNeighbour(n, forNeighbor)
+
+	return neighbors
+}

@@ -1,6 +1,7 @@
 package quadtree
 
 import (
+	"bytes"
 	"fmt"
 	"math"
 
@@ -18,8 +19,9 @@ type Tree struct {
 	nLevels uint    // maximum number of levels of the quadtree
 }
 
-// NewTree returns a new quadtree
-func NewTree(bounds pixel.Rect) (*Tree, error) {
+// NewTree returns a new quadtree populated with the objects
+// Inserting new objects into the tree is not currently supported
+func NewTree(bounds pixel.Rect, objects []pixel.Rect, minSize float64) (*Tree, error) {
 
 	// for now only works on squares
 	if bounds.W() != bounds.H() {
@@ -29,14 +31,14 @@ func NewTree(bounds pixel.Rect) (*Tree, error) {
 	root := &Node{
 		bounds:  bounds.Norm(),
 		color:   Gray,
-		objects: make([]pixel.Rect, 0),
+		objects: objects,
 		c:       make([]*Node, 4),
 		size:    bounds.H(),
 	}
 
 	qt := &Tree{
 		root:    root,
-		minSize: 6,
+		minSize: minSize,
 		nLevels: 10, // arbitrary, get this based on the size of the path we need
 	}
 
@@ -50,6 +52,7 @@ func (qt *Tree) newNode(bounds pixel.Rect, parent *Node, location Quadrant) *Nod
 		bounds:   bounds,
 		parent:   parent,
 		location: location,
+		c:        make([]*Node, 4),
 		size:     bounds.W(),
 	}
 
@@ -67,6 +70,24 @@ func (qt *Tree) newNode(bounds pixel.Rect, parent *Node, location Quadrant) *Nod
 		qt.leaves = append(qt.leaves, n)
 	}
 	return n
+}
+
+// String returns the tree as a string
+func (qt *Tree) String() string {
+	output := bytes.NewBufferString("")
+
+	fmt.Fprintln(output, "")
+	fmt.Fprintf(output, "Quadtree: %v\n", qt.root.bounds)
+	fmt.Fprintf(output, "  Bounds: %v\n", qt.root.bounds)
+	fmt.Fprintf(output, "  Objects: %v\n", len(qt.root.objects))
+	fmt.Fprintf(output, "  Leaf Nodes: %v\n", len(qt.leaves))
+
+	return output.String()
+}
+
+// Root returns the root node of the tree
+func (qt *Tree) Root() *Node {
+	return qt.root
 }
 
 func (qt *Tree) subdivide(p *Node) {
@@ -144,8 +165,8 @@ func (qt *Tree) subdivide(p *Node) {
 	}
 }
 
-// locate returns the Node that contains the given rect, or nil.
-func (qt *Tree) locate(r pixel.Rect) *Node {
+// Locate returns the Node that contains the given rect, or nil.
+func (qt *Tree) Locate(r pixel.Rect) *Node {
 	// binary branching method assumes the point lies in the bounds
 	cnroot := qt.root
 	b := cnroot.bounds

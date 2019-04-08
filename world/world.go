@@ -61,7 +61,7 @@ func (w *World) SpawnAllNew() {
 	}
 }
 
-// Draw draws the world by callign each object's Draw()
+// Draw draws the world by calling each object's Draw()
 func (w *World) Draw(win *pixelgl.Window) {
 	w.Ground.Draw(win)
 
