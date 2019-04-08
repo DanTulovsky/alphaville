@@ -18,7 +18,7 @@ func run() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
 	start := pixel.R(11, 11, 12, 12)
-	target := pixel.R(950, 950, 951, 951)
+	target := pixel.R(790, 790, 791, 791)
 
 	objects := []pixel.Rect{
 		start,
@@ -29,10 +29,9 @@ func run() {
 		pixel.R(100, 40, 150, 50),
 		pixel.R(400, 400, 405, 405),
 		pixel.R(500, 500, 650, 780),
-		pixel.R(700, 850, 850, 880),
 	}
 
-	bounds := pixel.R(0, 0, 1000, 1000)
+	bounds := pixel.R(0, 0, 800, 800)
 
 	// minimum size of the bounding square in the quadtree
 	var minSize float64 = 6
@@ -81,7 +80,7 @@ func run() {
 
 	cfg := pixelgl.WindowConfig{
 		Title:  "Pixel Rocks!",
-		Bounds: pixel.R(0, 0, 1000, 1000),
+		Bounds: pixel.R(0, 0, 800, 800),
 	}
 	win, err := pixelgl.NewWindow(cfg)
 	if err != nil {
