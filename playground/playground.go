@@ -26,20 +26,20 @@ func run() {
 	objects := []pixel.Rect{
 		start,
 		target,
-		pixel.R(0, 0, 10, 10),
-		pixel.R(20, 20, 30, 30),
-		pixel.R(20, 400, 40, 600),
-		pixel.R(10, 40, 50, 50),
-		pixel.R(100, 40, 150, 50),
-		pixel.R(0, 400, 500, 405),
-		pixel.R(511, 400, 800, 405),
+		// pixel.R(0, 0, 10, 10),
+		// pixel.R(20, 20, 30, 30),
+		// pixel.R(20, 400, 40, 600),
+		// pixel.R(10, 40, 50, 50),
+		// pixel.R(100, 40, 150, 50),
+		// pixel.R(0, 400, 500, 405),
+		// pixel.R(511, 400, 800, 405),
 		pixel.R(111, 200, 800, 205),
-		pixel.R(650, 405, 670, 760),
-		pixel.R(650, 525, 670, 525),
-		pixel.R(100, 100, 150, 280),
-		pixel.R(500, 500, 650, 780),
-		pixel.R(100, 100, 200, 200),
-		pixel.R(150, 150, 250, 250),
+		// pixel.R(650, 405, 670, 760),
+		// pixel.R(650, 525, 670, 525),
+		// pixel.R(100, 100, 150, 280),
+		// pixel.R(500, 500, 650, 780),
+		// pixel.R(100, 100, 200, 200),
+		// pixel.R(150, 150, 250, 250),
 	}
 
 	var width float64 = 800
@@ -65,22 +65,22 @@ func run() {
 	// must set this before calculating neighbors
 	startNode.SetColor(quadtree.White)
 	targetNode.SetColor(quadtree.White)
-	log.Printf("start: %v\n", start.Center())
-	log.Printf("  node: %v (%v)\n", startNode.Bounds(), startNode.Bounds().Center())
-	log.Printf("target: %v\n", target.Center())
-	log.Printf("  node: %v (%v)\n", targetNode.Bounds(), targetNode.Bounds().Center())
+	// log.Printf("start: %v\n", start.Center())
+	// log.Printf("  node: %v (%v)\n", startNode.Bounds(), startNode.Bounds().Center())
+	// log.Printf("target: %v\n", target.Center())
+	// log.Printf("  node: %v (%v)\n", targetNode.Bounds(), targetNode.Bounds().Center())
 
 	perNode := func(n *quadtree.Node) {
 		neighbors := n.Neighbors()
 		nodeNeighbors[n] = neighbors
 
-		fmt.Printf("Node: %v (%v)", n.Bounds(), n.Bounds().Center())
-		fmt.Println("  neighbors: ")
-		for _, neighbor := range neighbors {
-			fmt.Printf("    %v (%v) (%v)", neighbor.Bounds(), neighbor.Bounds().Center(), neighbor.Color())
-			fmt.Println("")
+		// fmt.Printf("Node: %v (%v)", n.Bounds(), n.Bounds().Center())
+		// fmt.Println("  neighbors: ")
+		// for _, neighbor := range neighbors {
+		// 	fmt.Printf("    %v (%v) (%v)", neighbor.Bounds(), neighbor.Bounds().Center(), neighbor.Color())
+		// 	fmt.Println("")
 
-		}
+		// }
 	}
 
 	// print out the tree
@@ -122,6 +122,9 @@ func run() {
 	if err != nil {
 		log.Printf("%v", err)
 	}
+
+	v := pixel.R(111, 200, 800, 205)
+	log.Printf("location of %v: %v\n", v, qt.Locate(v).Bounds())
 
 	// Main loop to keep window running
 	for !win.Closed() {
@@ -169,12 +172,12 @@ func draw(win *pixelgl.Window, qt *quadtree.Tree, g *graph.Graph, atlas *text.At
 		imd.Rectangle(1)
 		imd.Draw(win)
 
-		// txt := text.New(r.Bounds().Center(), atlas)
-		// txt.Color = colornames.Darkgray
-		// label := fmt.Sprintf("%v,\n%v", r.Bounds().Center().X, r.Bounds().Center().Y)
-		// txt.Dot.X -= txt.BoundsOf(label).W() / 2
-		// fmt.Fprintf(txt, "%v", label)
-		// txt.Draw(win, pixel.IM)
+		txt := text.New(r.Bounds().Center(), atlas)
+		txt.Color = colornames.Darkgray
+		label := fmt.Sprintf("%v,\n%v", r.Bounds().Center().X, r.Bounds().Center().Y)
+		txt.Dot.X -= txt.BoundsOf(label).W() / 2
+		fmt.Fprintf(txt, "%v", label)
+		txt.Draw(win, pixel.IM)
 	}
 
 	imd = imdraw.New(nil)

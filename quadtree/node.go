@@ -62,6 +62,7 @@ type Node struct {
 	parent   *Node    // parent
 	color    Color    // node color
 	location Quadrant // node location inside its parent
+	level    uint     // the level of this node
 
 	size float64  // size of a quadrant side
 	cn   [4]*Node // cardinal neighbours
@@ -154,22 +155,6 @@ func (n *Node) updateNorthEast() {
 		// nothing to update as this quadrant lies on the north border
 		return
 	}
-	// step 2.2: Updating Cardinal Neighbors of NE sub-Quadrant.
-	// if n.cn[North] != nil {
-	// 	if n.cn[North].size < n.size {
-	// 		c0 := n.c[Northwest]
-	// 		c0.cn[North] = n.cn[North]
-	// 		// to update C1, we perform a west-east traversal
-	// 		// recording the cumulative size of traversed nodes
-	// 		cur := c0.cn[North]
-	// 		cumsize := cur.size
-	// 		for cumsize < c0.size {
-	// 			cur = cur.cn[East]
-	// 			cumsize += cur.size
-	// 		}
-	// 		n.c[Northeast].cn[North] = cur
-	// 	}
-	// }
 	if n.cn[North] != nil {
 		if n.cn[North].bounds.W() < n.bounds.W() {
 			c0 := n.c[Northwest]
@@ -192,22 +177,6 @@ func (n *Node) updateSouthWest() {
 		// nothing to update as this quadrant lies on the west border
 		return
 	}
-	// step 2.1: Updating Cardinal Neighbors of SW sub-Quadrant.
-	// if n.cn[North] != nil {
-	// 	if n.cn[North].size < n.size {
-	// 		c0 := n.c[Northwest]
-	// 		c0.cn[North] = n.cn[North]
-	// 		// to update C2, we perform a north-south traversal
-	// 		// recording the cumulative size of traversed nodes
-	// 		cur := c0.cn[West]
-	// 		cumsize := cur.size
-	// 		for cumsize < c0.size {
-	// 			cur = cur.cn[South]
-	// 			cumsize += cur.size
-	// 		}
-	// 		n.c[Southwest].cn[West] = cur
-	// 	}
-	// }
 	if n.cn[North] != nil {
 		if n.cn[North].bounds.H() < n.bounds.H() {
 			c0 := n.c[Northwest]

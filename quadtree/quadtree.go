@@ -23,23 +23,18 @@ type Tree struct {
 // Inserting new objects into the tree is not currently supported
 func NewTree(bounds pixel.Rect, objects []pixel.Rect, minSize float64) (*Tree, error) {
 
-	// for now only works on squares
-	// if bounds.W() != bounds.H() {
-	// 	return nil, fmt.Errorf("world must be square for now, given: [%v, %v]", bounds.W(), bounds.H())
-	// }
-
 	root := &Node{
 		bounds:  bounds.Norm(),
 		color:   Gray,
 		objects: objects,
 		c:       make([]*Node, 4),
 		size:    bounds.H(),
+		level:   0,
 	}
 
 	qt := &Tree{
 		root:    root,
 		minSize: minSize,
-		nLevels: 10, // arbitrary, get this based on the size of the path we need
 	}
 
 	qt.subdivide(qt.root)
@@ -47,6 +42,8 @@ func NewTree(bounds pixel.Rect, objects []pixel.Rect, minSize float64) (*Tree, e
 }
 
 func (qt *Tree) newNode(bounds pixel.Rect, parent *Node, location Quadrant) *Node {
+	level := parent.level + 1
+
 	n := &Node{
 		color:    Gray,
 		bounds:   bounds,
@@ -54,6 +51,11 @@ func (qt *Tree) newNode(bounds pixel.Rect, parent *Node, location Quadrant) *Nod
 		location: location,
 		c:        make([]*Node, 4),
 		size:     bounds.W(),
+		level:    level,
+	}
+
+	if qt.nLevels < level {
+		qt.nLevels = level
 	}
 
 	// populate the objects of this node from the parent
@@ -77,7 +79,7 @@ func (qt *Tree) String() string {
 	output := bytes.NewBufferString("")
 
 	fmt.Fprintln(output, "")
-	fmt.Fprintf(output, "Quadtree: %v\n", qt.root.bounds)
+	fmt.Fprintf(output, "Quadtree: %v (levels: %v)\n", qt.root.bounds, qt.nLevels)
 	fmt.Fprintf(output, "  Bounds: %v\n", qt.root.bounds)
 	fmt.Fprintf(output, "  Objects: %v\n", len(qt.root.objects))
 	fmt.Fprintf(output, "  Leaf Nodes: %v\n", len(qt.leaves))
