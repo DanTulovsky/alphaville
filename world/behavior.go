@@ -352,7 +352,7 @@ func (b *TargetSeekerBehavior) scaledCollisionEdges(w *World, o Object) []pixel.
 			continue // skip yourself
 		}
 
-		// until movemement is fixed, add an additional buffer around object
+		// until movement is fixed, add an additional buffer around object
 		var buffer float64 = 10
 		c := other.Phys().Location().Center()
 		size := pixel.V(other.Phys().Location().W()+o.Phys().Location().W()+buffer,
@@ -366,8 +366,8 @@ func (b *TargetSeekerBehavior) scaledCollisionEdges(w *World, o Object) []pixel.
 	return l
 }
 
-// isVisbile returns true if v is visibile from p (no intersecting edges)
-func (b *TargetSeekerBehavior) isVisbile(w *World, p, v pixel.Vec, edges []pixel.Line, n, other *graph.Node) bool {
+// isVisible returns true if v is visible from p (no intersecting edges)
+func (b *TargetSeekerBehavior) isVisible(w *World, p, v pixel.Vec, edges []pixel.Line, n, other *graph.Node) bool {
 	for _, e := range edges {
 		if (e.A == p && e.B == v) || (e.A == v && e.B == p) {
 			// point are on the same segment, so visible
@@ -433,7 +433,7 @@ func (b *TargetSeekerBehavior) populateVisibilityGraph(w *World, o Object) {
 				continue
 			}
 			// check if  v is visible from p
-			if b.isVisbile(w, n.Value().V, other.Value().V, edges, n, other) {
+			if b.isVisible(w, n.Value().V, other.Value().V, edges, n, other) {
 				g.AddEdge(n, other)
 			}
 		}
@@ -474,6 +474,13 @@ func (b *TargetSeekerBehavior) populateMoveGraph(w *World, o Object) {
 	start := pixel.R(s.X, s.Y, s.X+1, s.Y+1)
 	target := pixel.R(t.X, t.Y, t.X+1, t.Y+1)
 	fixtures = append(fixtures, target)
+
+	// add buffer around ground and walls
+	left := pixel.R(0, 0, o.Phys().Location().W(), w.Y)
+	right := pixel.R(w.X-o.Phys().Location().W(), 0, w.X, w.Y)
+	top := pixel.R(0, w.Y, w.X, w.Y-o.Phys().Location().H())
+	bottom := pixel.R(0, 0, w.X, w.Ground.Phys().Location().Max.Y+o.Phys().Location().H())
+	fixtures = append(fixtures, left, right, top, bottom)
 
 	// minimum size of rectangle side at which we stop splitting
 	minSize := float64(6)
