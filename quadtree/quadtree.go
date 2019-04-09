@@ -176,11 +176,11 @@ func (qt *Tree) subdivide(p *Node) {
 }
 
 // Locate returns the Node that contains the given rect, or nil.
-func (qt *Tree) Locate(r pixel.Rect) *Node {
+func (qt *Tree) Locate(pt pixel.Vec) *Node {
 	// binary branching method assumes the point lies in the bounds
 	cnroot := qt.root
 	b := cnroot.bounds
-	if !utils.Intersect(b, r) {
+	if !b.Contains(pt) {
 		return nil
 	}
 
@@ -195,8 +195,8 @@ func (qt *Tree) Locate(r pixel.Rect) *Node {
 
 	// first, we multiply the position of the cell’s left corner by 2^ROOT_LEVEL
 	// and then represent use product in binary form
-	x = float64(r.Min.X-b.Min.X) / float64(b.W())
-	y = float64(r.Min.Y-b.Min.Y) / float64(b.H())
+	x = float64(pt.X-b.Min.X) / float64(b.W())
+	y = float64(pt.Y-b.Min.Y) / float64(b.H())
 	k = qt.nLevels - 1
 	ix := uint(x * math.Pow(2.0, float64(k)))
 	iy := uint(y * math.Pow(2.0, float64(k)))
@@ -233,12 +233,17 @@ func (qt *Tree) ForEachLeaf(color color.Color, fn func(*Node)) {
 
 // ToGraph converts this tree into a graph
 func (qt *Tree) ToGraph(start, target pixel.Rect) *graph.Graph {
+
+	// convert start and target to small rect
+	// start := pixel.R(s.X, s.Y, s.X+1, s.Y+1)
+	// target := pixel.R(t.X, t.Y, t.X+1, t.Y+1)
+
 	g := graph.New()
 
 	nodeNeighbors := make(map[*Node]NodeList)
 
-	startNode := qt.Locate(start)
-	targetNode := qt.Locate(target)
+	startNode := qt.Locate(start.Center())
+	targetNode := qt.Locate(target.Center())
 
 	// must set this before calculating neighbors
 	startNode.SetColor(colornames.White)
@@ -286,12 +291,12 @@ func (qt *Tree) Draw(win *pixelgl.Window, drawTree bool, drawText bool, drawObje
 
 	if drawTree {
 		// rectangle itself
-		for _, r := range rectangles {
-			imd.Color = r.Color()
-			imd.Push(r.Bounds().Min)
-			imd.Push(r.Bounds().Max)
-			imd.Rectangle(0)
-		}
+		// for _, r := range rectangles {
+		// 	imd.Color = r.Color()
+		// 	imd.Push(r.Bounds().Min)
+		// 	imd.Push(r.Bounds().Max)
+		// 	imd.Rectangle(0)
+		// }
 
 		// lines around it
 		for _, r := range rectangles {

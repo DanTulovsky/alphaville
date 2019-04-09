@@ -12,8 +12,11 @@ import (
 
 func qt() {
 
-	start := pixel.R(11, 11, 12, 12)
-	target := pixel.R(790, 790, 791, 791)
+	s := pixel.V(11, 11)
+	t := pixel.V(790, 790)
+
+	start := pixel.R(s.X, s.Y, s.X+1, s.Y+1)
+	target := pixel.R(t.X, t.Y, t.X+1, t.Y+1)
 
 	objects := []pixel.Rect{
 		start,
@@ -47,7 +50,7 @@ func qt() {
 		log.Fatalf("%v", err)
 	}
 
-	g := qt.ToGraph(start, target)
+	g := qt.ToGraph(s, t)
 
 	cfg := pixelgl.WindowConfig{
 		Title:  "Quadtree",

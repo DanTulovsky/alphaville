@@ -7,9 +7,8 @@ import (
 	"log"
 	"time"
 
-	"golang.org/x/image/colornames"
+	"gogs.wetsnow.com/dant/alphaville/quadtree"
 
-	"github.com/faiface/pixel/imdraw"
 	"github.com/faiface/pixel/pixelgl"
 	"github.com/google/uuid"
 
@@ -295,8 +294,9 @@ type TargetSeekerBehavior struct {
 	DefaultBehavior
 	target    Target
 	moveGraph *graph.Graph
+	qt        *quadtree.Tree
 	path      []*graph.Node
-	fullpath  []graph.Node
+	fullpath  []*graph.Node
 	cost      int
 	source    pixel.Vec
 	finder    graph.PathFinder // path finder function
@@ -443,57 +443,49 @@ func (b *TargetSeekerBehavior) populateVisibilityGraph(w *World, o Object) {
 	log.Printf("%v", b.moveGraph)
 }
 
-// populateVisibilityGraph2 creates a visibility graph by doing a
+// populateMoveGraph creates a move graph by doing a
 // cell decomposition.  the nodes are cells between the fixtures, and the edges are
 // connections between them; from:
 // https://cs.stanford.edu/people/eroberts/courses/soco/projects/1998-99/robotics/basicmotion.html
 // https://www.dis.uniroma1.it/~oriolo/amr/slides/MotionPlanning1_Slides.pdf
-func (b *TargetSeekerBehavior) populateVisibilityGraph2(w *World, o Object) {
-	log.Printf("Populating visibility graph for %v", o.Name())
-
-	// first build a quadtree to the desired level
-	//    do this incrementally as per pdf above
-	// then convert to graph
-	// then find path
-
-	// g := graph.NewGraph()
+// o is the target seeker
+func (b *TargetSeekerBehavior) populateMoveGraph(w *World, o Object) {
+	log.Printf("Populating move graph for %v", o.Name())
 
 	// augmented fixtures, these are what we check collisions against
 	// they are grown by 1/2 size of object on each side to account for movement
-	// fixtures := []pixel.Rect{}
+	fixtures := []pixel.Rect{}
 
-	// for _, other := range w.CollisionObjects() {
-	// 	scaleX := (o.Phys().Location().Max.X-o.Phys().Location().Min.X)/2 + 2
-	// 	scaleY := (o.Phys().Location().Max.Y-o.Phys().Location().Min.Y)/2 + 2
-	// 	v := utils.RectVerticiesScaled(other.Phys().Location(), scaleX, scaleY, w.X, w.Y)
-	// 	r := pixel.R(v[0].X, v[0].Y, v[2].X, v[2].Y)
-	// 	fixtures = append(fixtures, r)
-	// }
+	for _, other := range w.CollisionObjects() {
+		if o.ID() == other.ID() {
+			continue
+		}
+		var buffer float64 = 2
+		c := other.Phys().Location().Center()
+		size := pixel.V(other.Phys().Location().W()+o.Phys().Location().W()+buffer,
+			other.Phys().Location().H()+o.Phys().Location().H()+buffer)
+		scaled := other.Phys().Location().Resized(c, size)
+		fixtures = append(fixtures, scaled)
+	}
 
-	// // minimum area of rectangle at which we stop splitting
-	// var minArea float64 = 4
+	// add start and target to the quadtree
+	s := o.Phys().Location().Center()
+	t := b.target.Location()
+	start := pixel.R(s.X, s.Y, s.X+1, s.Y+1)
+	target := pixel.R(t.X, t.Y, t.X+1, t.Y+1)
+	fixtures = append(fixtures, target)
 
-	// // this is the first rectangle, which encompossases the entire grid
-	// first := pixel.R(0, 0, w.X, w.Y)
+	// minimum size of rectangle side at which we stop splitting
+	minSize := float64(6)
 
-	// tosplit := []pixel.Rect{}
-	// tocheck := []pixel.Rect{}
-	// tosplit = append(tosplit, first)
-	// tocheck = append(tocheck, first)
+	// quadtree
+	qt, err := quadtree.NewTree(pixel.R(w.Ground.Phys().Location().Min.X, w.Ground.Phys().Location().Max.Y, w.X, w.Y), fixtures, minSize)
+	if err != nil {
+		log.Fatalf("error creating quadtree: %v", err)
+	}
 
-	// for len(tocheck) != 0 {
-	// 	for _, r := range tocheck {
-	// 		// check if it intersects with any fixtures
-	// 		if utils.IntersectAny(r, fixtures) {
-	// 			if r.Area() > minArea {
-	// 				tosplit = append(tosplit, r)
-	// 			}
-	// 		}
-	// 	}
-	// }
-	// as soon as it does not, add it as node to the graph
-
-	// if it's entirely contained within a fixture, also stop and add it to the graph
+	b.qt = qt
+	b.moveGraph = qt.ToGraph(start, target)
 }
 
 // SetTarget sets the target
@@ -541,11 +533,6 @@ func (b *TargetSeekerBehavior) Direction(w *World, o Object) pixel.Vec {
 	target := b.path[0].Value().V
 	// current location of target seeker
 	c := o.Phys().Location().Center()
-
-	// log.Printf("source: %v; dest: %v; c: %v", source, target, c)
-
-	// vector from current location to target
-	// to := c.To(target)
 
 	var moves []pixel.Vec
 
@@ -671,6 +658,10 @@ func (b *TargetSeekerBehavior) FindPath(start, target pixel.Vec) ([]*graph.Node,
 		return nil, 0, err
 	}
 	log.Printf("Path found (cost = %v): %v", cost, path)
+
+	// add the path from the center of the quadrant to the target inside of it
+	path = append(path, graph.NewItemNode(uuid.New(), b.target.Location(), 0))
+
 	return path, cost, err
 }
 
@@ -679,16 +670,25 @@ func (b *TargetSeekerBehavior) Update(w *World, o Object) {
 	if b.target == nil {
 		if t, err := b.pickNewTarget(w); err == nil {
 			b.SetTarget(t)
-			b.populateVisibilityGraph(w, o)
+			// b.populateVisibilityGraph(w, o)
+			b.populateMoveGraph(w, o)
 
-			b.path, b.cost, err = b.FindPath(o.Phys().Location().Center(), b.target.Location())
+			log.Printf("qt: %v", b.qt)
+			log.Printf("g: %v", b.moveGraph)
+			startNode := b.qt.Locate(o.Phys().Location().Center())
+			targetNode := b.qt.Locate(b.target.Bounds().Center())
+
+			log.Printf("startNode: %v (o at: %v)", startNode.Bounds(), o.Phys().Location().Center())
+			log.Printf("targetNode: %v", targetNode.Bounds())
+
+			b.path, b.cost, err = b.FindPath(startNode.Bounds().Center(), targetNode.Bounds().Center())
 			if err != nil {
 				log.Printf("error finding path: %v", err)
 			}
 
-			b.fullpath = []graph.Node{}
+			b.fullpath = []*graph.Node{}
 			for _, n := range b.path {
-				b.fullpath = append(b.fullpath, *n)
+				b.fullpath = append(b.fullpath, n)
 			}
 
 		} else {
@@ -725,25 +725,31 @@ func (b *TargetSeekerBehavior) Draw(win *pixelgl.Window) {
 	if b.target == nil {
 		return
 	}
-	imd := imdraw.New(nil)
 
-	// Draw the path
-	imd.Color = colornames.Lightblue
-	// Draw the graph lines
-	for n, other := range b.moveGraph.Edges() {
-		for _, o := range other {
-			imd.Push(n.Value().V)
-			imd.Push(o.Value().V)
-			imd.Line(1)
-		}
-	}
+	// draw the quadtree
+	drawTree, drawText, drawObjects := true, false, true
+	b.qt.Draw(win, drawTree, drawText, drawObjects)
 
-	// draw the graph
-	imd.Color = b.target.Color()
-	for _, p := range b.fullpath {
-		imd.Push(p.Value().V)
-	}
-	imd.Line(1)
-	imd.Draw(win)
+	// draw the path
+	graph.DrawPath(win, b.fullpath)
+
+	// // Draw the path
+	// imd.Color = colornames.Lightblue
+	// // Draw the graph lines
+	// for n, other := range b.moveGraph.Edges() {
+	// 	for _, o := range other {
+	// 		imd.Push(n.Value().V)
+	// 		imd.Push(o.Value().V)
+	// 		imd.Line(1)
+	// 	}
+	// }
+
+	// // draw the graph
+	// imd.Color = b.target.Color()
+	// for _, p := range b.fullpath {
+	// 	imd.Push(p.Value().V)
+	// }
+	// imd.Line(1)
+	// imd.Draw(win)
 
 }

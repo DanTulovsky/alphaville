@@ -73,14 +73,15 @@ func (w *World) Draw(win *pixelgl.Window) {
 		f.Draw(win)
 	}
 
+	for _, o := range w.Objects {
+		o.Behavior().Draw(win)
+		o.Draw(win)
+	}
+
 	for _, t := range w.Targets() {
 		t.Draw(win)
 	}
 
-	for _, o := range w.Objects {
-		o.Draw(win)
-		o.Behavior().Draw(win)
-	}
 }
 
 // Update updates all the objects in the world to their next state

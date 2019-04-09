@@ -32,6 +32,7 @@ type Target interface {
 	observer.EventNotifier
 
 	Color() color.Color
+	Bounds() pixel.Rect
 	Circle() pixel.Circle
 	ID() uuid.UUID
 	Destroy()
@@ -43,9 +44,9 @@ type Target interface {
 type simpleTarget struct {
 	id        uuid.UUID
 	name      string
-	circle    pixel.Circle // targets are circles
 	color     color.Color
 	observers []observer.EventObserver
+	bounds    pixel.Rect // bounding box of target
 }
 
 // NewSimpleTarget returns a new simple target
@@ -53,7 +54,7 @@ func NewSimpleTarget(name string, l pixel.Vec, r float64) Target {
 	return &simpleTarget{
 		id:     uuid.New(),
 		name:   name,
-		circle: pixel.C(l, r),
+		bounds: pixel.R(l.X-r, l.Y-r, l.X+r, l.Y+r),
 		color:  colornames.Red,
 	}
 }
@@ -63,9 +64,14 @@ func (t *simpleTarget) Color() color.Color {
 	return t.color
 }
 
+// Bounds returns the bounds of the target
+func (t *simpleTarget) Bounds() pixel.Rect {
+	return t.bounds
+}
+
 // Circle returns the underlying circle of the target
 func (t *simpleTarget) Circle() pixel.Circle {
-	return t.circle
+	return pixel.C(t.bounds.Center(), t.bounds.W()/2)
 }
 
 // ID returns the id of the target
@@ -98,7 +104,7 @@ func (t *simpleTarget) Notify(event observer.Event) {
 
 // Location returns the target's location
 func (t *simpleTarget) Location() pixel.Vec {
-	return t.circle.Center
+	return t.bounds.Center()
 }
 
 func (t *simpleTarget) Name() string {
@@ -118,6 +124,6 @@ func (t *simpleTarget) Draw(win *pixelgl.Window) {
 	imd := imdraw.New(nil)
 	imd.Color = t.color
 	imd.Push(t.Location())
-	imd.Circle(t.circle.Radius, 0)
+	imd.Circle(t.bounds.W()/2, 0)
 	imd.Draw(win)
 }
