@@ -5,6 +5,10 @@ import (
 	"math"
 	"sync"
 
+	"github.com/faiface/pixel/imdraw"
+	"github.com/faiface/pixel/pixelgl"
+	"golang.org/x/image/colornames"
+
 	"github.com/faiface/pixel"
 	"github.com/google/uuid"
 )
@@ -233,3 +237,16 @@ func EdgesIntersect(l1, l2 Edge) bool {
 
 // PathFinder is a function that returns the path between start and dest
 type PathFinder func(*Graph, pixel.Vec, pixel.Vec) ([]*Node, int, error)
+
+// DrawPath draws the path
+func DrawPath(win *pixelgl.Window, path []*Node) {
+
+	imd := imdraw.New(nil)
+	imd.Color = colornames.Darkblue
+	for _, p := range path {
+		imd.Push(p.Value().V)
+	}
+	imd.Line(2)
+
+	imd.Draw(win)
+}
