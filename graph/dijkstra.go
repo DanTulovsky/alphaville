@@ -21,7 +21,6 @@ import (
 	"fmt"
 
 	"github.com/faiface/pixel"
-	"github.com/google/uuid"
 )
 
 type node struct {
@@ -117,7 +116,7 @@ func DijkstraPath(g *Graph, start, target pixel.Vec) (path []*Node, cost int, er
 
 	// add the origin at the end of the path
 	path = append(path, g.FindNode(start))
-	path = append(path, NewItemNode(uuid.New(), start, 0))
+	// path = append(path, NewItemNode(uuid.New(), start, 0))
 
 	// reverse the path because it was popilated
 	// in reverse, form target to start
@@ -125,6 +124,6 @@ func DijkstraPath(g *Graph, start, target pixel.Vec) (path []*Node, cost int, er
 		path[i], path[j] = path[j], path[i]
 	}
 
-	path = append(path, NewItemNode(uuid.New(), target, 0))
+	// path = append(path, NewItemNode(uuid.New(), target, 0))
 	return
 }

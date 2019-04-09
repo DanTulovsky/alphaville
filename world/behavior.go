@@ -329,7 +329,7 @@ func (b *TargetSeekerBehavior) scaledCollisionVerticies(w *World, o Object) []ve
 		}
 
 		// until movemement is fixed, add an additional buffer around object
-		var buffer float64 = 4
+		var buffer float64 = 6
 		c := other.Phys().Location().Center()
 		size := pixel.V(other.Phys().Location().W()+o.Phys().Location().W()+buffer,
 			other.Phys().Location().H()+o.Phys().Location().H()+buffer)
@@ -500,9 +500,8 @@ func (b *TargetSeekerBehavior) Target() Target {
 
 // isAtTarget returns true if any part of the object covers the target
 func (b *TargetSeekerBehavior) isAtTarget(o Object) bool {
-	circle := pixel.C(o.Phys().Location().Center(), 2)
 
-	if circle.Contains(b.target.Circle().Center) {
+	if o.Phys().Location().Intersect(b.target.Bounds()) != pixel.R(0, 0, 0, 0) {
 
 		o.Notify(NewObjectEvent(
 			fmt.Sprintf("[%v] found target [%v]", o.Name(), b.target.Name()), time.Now(),
@@ -520,6 +519,8 @@ func (b *TargetSeekerBehavior) Direction(w *World, o Object) pixel.Vec {
 	// remove the current location from path
 	circle := pixel.C(o.Phys().Location().Center(), 2)
 	if len(b.path) > 0 && circle.Contains(b.path[0].Value().V) {
+		// if len(b.path) > 0 && o.Phys().Location().Contains(b.path[0].Value().V) {
+
 		b.source = b.path[0].Value().V
 		b.path = append(b.path[:0], b.path[1:]...)
 	}
@@ -534,9 +535,12 @@ func (b *TargetSeekerBehavior) Direction(w *World, o Object) pixel.Vec {
 	// current location of target seeker
 	c := o.Phys().Location().Center()
 
+	log.Printf("From: %v; To: %v\n", source, target)
+	log.Printf("  Current location: %v", o.Phys().Location().Center())
 	var moves []pixel.Vec
 
 	orient := graph.Orientation(source, target, c)
+	log.Printf("  orientation: %v", orient)
 
 	if target.X > source.X {
 		if utils.LineSlope(source, target) > 0 {
@@ -626,7 +630,7 @@ func (b *TargetSeekerBehavior) Direction(w *World, o Object) pixel.Vec {
 	}
 
 	if len(moves) > 0 {
-		// log.Println(moves)
+		log.Println(moves)
 		return moves[utils.RandomInt(0, len(moves))]
 	}
 
@@ -657,7 +661,6 @@ func (b *TargetSeekerBehavior) FindPath(start, target pixel.Vec) ([]*graph.Node,
 		log.Printf("error finding path: %v", err)
 		return nil, 0, err
 	}
-	log.Printf("Path found (cost = %v): %v", cost, path)
 
 	// add the path from the center of the quadrant to the target inside of it
 	path = append(path, graph.NewItemNode(uuid.New(), b.target.Location(), 0))
@@ -690,6 +693,10 @@ func (b *TargetSeekerBehavior) Update(w *World, o Object) {
 			for _, n := range b.path {
 				b.fullpath = append(b.fullpath, n)
 			}
+			sn := graph.NewItemNode(uuid.New(), o.Phys().Location().Center(), 0)
+			b.fullpath = append([]*graph.Node{sn}, b.fullpath...)
+			b.source = o.Phys().Location().Center()
+			log.Printf("Path found: %v", b.fullpath)
 
 		} else {
 			log.Printf("error picking target: %v", err)

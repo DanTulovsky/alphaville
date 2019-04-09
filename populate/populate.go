@@ -109,7 +109,7 @@ func AddTargetSeeker(w *world.World) {
 	minWidth, maxWidth = 40, 41
 	minHeight, maxHeight = 40, 41
 	minMass, maxMass = 6, 10
-	minSpeed, maxSpeed = 3, w.MaxObjectSpeed
+	minSpeed, maxSpeed = 6, w.MaxObjectSpeed
 
 	width := utils.RandomFloat64(minWidth, maxWidth)
 	height := utils.RandomFloat64(minHeight, maxHeight)
