@@ -3,12 +3,14 @@ package quadtree
 import (
 	"bytes"
 	"fmt"
+	"image/color"
 	"math"
 
 	"github.com/faiface/pixel"
 	"github.com/google/uuid"
 	"gogs.wetsnow.com/dant/alphaville/graph"
 	"gogs.wetsnow.com/dant/alphaville/utils"
+	"golang.org/x/image/colornames"
 )
 
 // Tree is a quadtree
@@ -26,7 +28,7 @@ func NewTree(bounds pixel.Rect, objects []pixel.Rect, minSize float64) (*Tree, e
 
 	root := &Node{
 		bounds:  bounds.Norm(),
-		color:   Gray,
+		color:   colornames.Gray,
 		objects: objects,
 		c:       make([]*Node, 4),
 		size:    bounds.H(),
@@ -46,7 +48,7 @@ func (qt *Tree) newNode(bounds pixel.Rect, parent *Node, location Quadrant) *Nod
 	level := parent.level + 1
 
 	n := &Node{
-		color:    Gray,
+		color:    colornames.Gray,
 		bounds:   bounds,
 		parent:   parent,
 		location: location,
@@ -69,7 +71,7 @@ func (qt *Tree) newNode(bounds pixel.Rect, parent *Node, location Quadrant) *Nod
 	n.color = n.CalculateColor(qt.minSize)
 
 	// fills leaves slices
-	if n.color != Gray {
+	if n.color != colornames.Gray {
 		qt.leaves = append(qt.leaves, n)
 	}
 	return n
@@ -94,7 +96,7 @@ func (qt *Tree) Root() *Node {
 }
 
 func (qt *Tree) subdivide(p *Node) {
-	// Step 1: Decomposing the gray quadrant and updating the
+	// Step 1: Decomposing the colornames.Gray quadrant and updating the
 	//         parent node following the Z-order traversal.
 
 	//     x0   x1     x2
@@ -154,19 +156,19 @@ func (qt *Tree) subdivide(p *Node) {
 	p.updateNeighbours()
 
 	// subdivide non-leaf nodes
-	if nw.color == Gray {
+	if nw.color == colornames.Gray {
 		qt.subdivide(nw)
 	}
-	if ne.color == Gray {
+	if ne.color == colornames.Gray {
 		qt.subdivide(ne)
 	}
-	if sw.color == Gray {
+	if sw.color == colornames.Gray {
 		qt.subdivide(sw)
 	}
-	if se.color == Gray {
+	if se.color == colornames.Gray {
 		qt.subdivide(se)
 	}
-	// p.color = Black
+	// p.color = colornames.Black
 }
 
 // Locate returns the Node that contains the given rect, or nil.
@@ -201,7 +203,7 @@ func (qt *Tree) Locate(r pixel.Rect) *Node {
 	// the appropriate child cell.  When the indexed child cell has no children,
 	// the desired leaf cell has been reached and the operation is complete.
 	node = cnroot
-	for node.color == Gray {
+	for node.color == colornames.Gray {
 		k--
 		bit = 1 << k
 		childIdx := (ix&bit)>>k + ((iy&bit)>>k)<<1
@@ -214,12 +216,12 @@ func (qt *Tree) Locate(r pixel.Rect) *Node {
 //
 // Successive calls to the provided function are performed in no particular
 // order. The color parameter allows to loop on the leaves of a particular
-// color, Black or White.
-// NOTE: As by definition, Gray leaves do not exist, passing Gray to
+// color, colornames.Black or colornames.White.
+// NOTE: As by definition, colornames.Gray leaves do not exist, passing colornames.Gray to
 // ForEachLeaf should return all leaves, independently of their color.
-func (qt *Tree) ForEachLeaf(color Color, fn func(*Node)) {
+func (qt *Tree) ForEachLeaf(color color.Color, fn func(*Node)) {
 	for _, n := range qt.leaves {
-		if color == Gray || n.Color() == color {
+		if color == colornames.Gray || n.Color() == color {
 			fn(n)
 		}
 	}
@@ -235,15 +237,15 @@ func (qt *Tree) ToGraph(start, target pixel.Rect) *graph.Graph {
 	targetNode := qt.Locate(target)
 
 	// must set this before calculating neighbors
-	startNode.SetColor(White)
-	targetNode.SetColor(White)
+	startNode.SetColor(colornames.White)
+	targetNode.SetColor(colornames.White)
 
 	perNode := func(n *Node) {
 		neighbors := n.Neighbors()
 		nodeNeighbors[n] = neighbors
 	}
 	// get all the nodes + neighbors
-	qt.ForEachLeaf(Gray, perNode)
+	qt.ForEachLeaf(colornames.Gray, perNode)
 
 	// TODO: Should be able to do this in one pass
 	for node := range nodeNeighbors {

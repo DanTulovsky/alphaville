@@ -1,5 +1,7 @@
 package quadtree
 
+import "golang.org/x/image/colornames"
+
 // from https://github.com/arl/go-rquad/blob/master/neighbours.go
 
 // ForEachNeighbour calls the given function for each neighbour of the node n.
@@ -26,7 +28,7 @@ func equalSizeNeighbour(n *Node, dir Side) *Node {
 	}
 
 	// Backtrack mirroring the ascending moves.
-	if neighbour != nil && neighbour.Color() == Gray {
+	if neighbour != nil && neighbour.Color() == colornames.Gray {
 		return neighbour.Child(reflect(dir, n.Location()))
 	}
 	return neighbour
@@ -39,7 +41,7 @@ func neighbours(n *Node, dir Side, fn func(*Node)) {
 	// direction, node will be null.
 	node := equalSizeNeighbour(n, dir)
 	if node != nil {
-		if node.Color() != Gray {
+		if node.Color() != colornames.Gray {
 			// Neighbour is already a leaf node, we're done after that.
 			fn(node)
 		} else {
@@ -76,13 +78,13 @@ func children(n *Node, dir Side, fn func(*Node)) {
 		s2 = n.Child(Southwest)
 	}
 
-	if s1.Color() != Gray {
+	if s1.Color() != colornames.Gray {
 		fn(s1)
 	} else {
 		children(s1, dir, fn)
 	}
 
-	if s2.Color() != Gray {
+	if s2.Color() != colornames.Gray {
 		fn(s2)
 	} else {
 		children(s2, dir, fn)

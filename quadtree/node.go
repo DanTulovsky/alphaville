@@ -15,38 +15,11 @@ package quadtree
 // southern neighbors, noted cn3.
 
 import (
-	"fmt"
+	"image/color"
 
 	"github.com/faiface/pixel"
+	"golang.org/x/image/colornames"
 )
-
-// Color is the set of colors that can take a Node.
-type Color byte
-
-const (
-	// Black is the color of leaf nodes
-	// that are considered as obstructed.
-	Black Color = 0 + iota
-
-	// White is the color of leaf nodes
-	// that are considered as free.
-	White
-
-	// Gray is the color of non-leaf nodes
-	// that contain both black and white children.
-	Gray
-)
-
-const colorName = "BlackWhiteGray"
-
-var colorIndex = [...]uint8{0, 5, 10, 14}
-
-func (i Color) String() string {
-	if i >= Color(len(colorIndex)-1) {
-		return fmt.Sprintf("Color(%d)", i)
-	}
-	return colorName[colorIndex[i]:colorIndex[i+1]]
-}
 
 // NodeList is a slice of Node pointers
 type NodeList []*Node
@@ -59,10 +32,10 @@ type Node struct {
 	// 0 or 4 subnodes
 	c []*Node // 0 or 4 subnodes
 
-	parent   *Node    // parent
-	color    Color    // node color
-	location Quadrant // node location inside its parent
-	level    uint     // the level of this node
+	parent   *Node       // parent
+	color    color.Color // node color
+	location Quadrant    // node location inside its parent
+	level    uint        // the level of this node
 
 	size float64  // size of a quadrant side
 	cn   [4]*Node // cardinal neighbours
@@ -79,7 +52,7 @@ func (n *Node) IsEmpty() bool {
 }
 
 // SetColor sets the node color
-func (n *Node) SetColor(c Color) {
+func (n *Node) SetColor(c color.Color) {
 	n.color = c
 }
 
@@ -100,22 +73,22 @@ func (n *Node) IsPartiallyFull() bool {
 }
 
 // CalculateColor returns the color the node should be
-// black = completely covered by Objects or max resolution reached
-// white = not covered by objects at all
-// gray = partially covered by objects
-func (n *Node) CalculateColor(minSize float64) Color {
+// colornames.Black = completely covered by Objects or max resolution reached
+// colornames.White = not covered by objects at all
+// colornames.Gray = partially covered by objects
+func (n *Node) CalculateColor(minSize float64) color.Color {
 	if n.IsEmpty() {
-		return White
+		return colornames.White
 	}
 
 	if n.IsPartiallyFull() {
 		if n.bounds.H() < minSize || n.bounds.W() < minSize {
-			return Black
+			return colornames.Black
 		}
-		return Gray
+		return colornames.Gray
 	}
 
-	return Black
+	return colornames.Black
 }
 
 // Parent returns the quadtree node that is the parent of current one.
@@ -141,7 +114,7 @@ func (n *Node) Bounds() pixel.Rect {
 }
 
 // Color returns the node Color.
-func (n *Node) Color() Color {
+func (n *Node) Color() color.Color {
 	return n.color
 }
 
@@ -330,13 +303,13 @@ func (n *Node) forEachNeighbour(fn func(*Node)) {
 	n.forEachNeighbourInDirection(South, fn)
 }
 
-// Neighbors returns the neighbors of the node. Neighbors are only white cells!
+// Neighbors returns the neighbors of the node. Neighbors are only colornames.White cells!
 func (n *Node) Neighbors() NodeList {
 
 	neighbors := []*Node{}
 
 	forNeighbor := func(n *Node) {
-		if n.Color() == White {
+		if n.Color() == colornames.White {
 			neighbors = append(neighbors, n)
 		}
 	}

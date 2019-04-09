@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"image/color"
 	"log"
 
 	"github.com/faiface/pixel"
@@ -75,9 +74,6 @@ func run() {
 		log.Printf("%v", err)
 	}
 
-	v := pixel.R(111, 200, 800, 205)
-	log.Printf("location of %v: %v\n", v, qt.Locate(v).Bounds())
-
 	// Main loop to keep window running
 	for !win.Closed() {
 		// render below here
@@ -85,19 +81,6 @@ func run() {
 		draw(win, qt, g, atlas, path)
 		win.Update()
 	}
-}
-
-func colorConvert(c quadtree.Color) color.Color {
-	switch c {
-	case quadtree.Black:
-		return colornames.Black
-	case quadtree.White:
-		return colornames.White
-	case quadtree.Gray:
-		return colornames.Gray
-	}
-
-	return colornames.Red // should never happen
 }
 
 func draw(win *pixelgl.Window, qt *quadtree.Tree, g *graph.Graph, atlas *text.Atlas, path []*graph.Node) {
@@ -109,11 +92,11 @@ func draw(win *pixelgl.Window, qt *quadtree.Tree, g *graph.Graph, atlas *text.At
 	perNode := func(n *quadtree.Node) {
 		rectangles = append(rectangles, n)
 	}
-	qt.ForEachLeaf(quadtree.Gray, perNode)
+	qt.ForEachLeaf(colornames.Gray, perNode)
 
 	for _, r := range rectangles {
 		imd = imdraw.New(nil)
-		imd.Color = colorConvert(r.Color())
+		imd.Color = r.Color()
 		imd.Push(r.Bounds().Min)
 		imd.Push(r.Bounds().Max)
 		imd.Rectangle(0)
