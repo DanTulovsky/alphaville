@@ -329,7 +329,7 @@ func (b *TargetSeekerBehavior) scaledCollisionVerticies(w *World, o Object) []ve
 		}
 
 		// until movemement is fixed, add an additional buffer around object
-		var buffer float64 = 6
+		var buffer float64 = 10
 		c := other.Phys().Location().Center()
 		size := pixel.V(other.Phys().Location().W()+o.Phys().Location().W()+buffer,
 			other.Phys().Location().H()+o.Phys().Location().H()+buffer)
@@ -353,7 +353,7 @@ func (b *TargetSeekerBehavior) scaledCollisionEdges(w *World, o Object) []pixel.
 		}
 
 		// until movemement is fixed, add an additional buffer around object
-		var buffer float64 = 4
+		var buffer float64 = 10
 		c := other.Phys().Location().Center()
 		size := pixel.V(other.Phys().Location().W()+o.Phys().Location().W()+buffer,
 			other.Phys().Location().H()+o.Phys().Location().H()+buffer)
@@ -517,7 +517,7 @@ func (b *TargetSeekerBehavior) isAtTarget(o Object) bool {
 // Direction returns the next direction to travel to the target
 func (b *TargetSeekerBehavior) Direction(w *World, o Object) pixel.Vec {
 	// remove the current location from path
-	circle := pixel.C(o.Phys().Location().Center(), 2)
+	circle := pixel.C(o.Phys().Location().Center(), 6)
 	if len(b.path) > 0 && circle.Contains(b.path[0].Value().V) {
 		// if len(b.path) > 0 && o.Phys().Location().Contains(b.path[0].Value().V) {
 
@@ -536,7 +536,9 @@ func (b *TargetSeekerBehavior) Direction(w *World, o Object) pixel.Vec {
 	c := o.Phys().Location().Center()
 
 	log.Printf("From: %v; To: %v\n", source, target)
-	log.Printf("  Current location: %v", o.Phys().Location().Center())
+	log.Printf("  Current location: %v (%v)", o.Phys().Location(), o.Phys().Location().Center())
+	log.Printf("  Target location: %v", target)
+	log.Printf("  at target?: %v", b.isAtTarget(o))
 	var moves []pixel.Vec
 
 	orient := graph.Orientation(source, target, c)

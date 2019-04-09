@@ -111,7 +111,7 @@ func run() {
 	// populate.AddManualObject(w, 60, 60)
 	populate.AddGates(w, time.Second*1)
 	// populate.AddFixture(w)
-	populate.AddFixtures(w, 2)
+	populate.AddFixtures(w, 6)
 	// add targets AFTER fixtures
 	populate.AddTarget(w, 10, maxTargets)
 
