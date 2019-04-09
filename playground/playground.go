@@ -9,7 +9,6 @@ import (
 	"github.com/faiface/pixel/imdraw"
 	"github.com/faiface/pixel/pixelgl"
 	"github.com/faiface/pixel/text"
-	"github.com/google/uuid"
 	"gogs.wetsnow.com/dant/alphaville/graph"
 	"gogs.wetsnow.com/dant/alphaville/quadtree"
 	"golang.org/x/image/colornames"
@@ -55,56 +54,7 @@ func run() {
 		log.Fatalf("%v", err)
 	}
 
-	nodeNeighbors := make(map[*quadtree.Node]quadtree.NodeList)
-
-	log.Printf("%v", qt)
-
-	startNode := qt.Locate(start)
-	targetNode := qt.Locate(target)
-
-	// must set this before calculating neighbors
-	startNode.SetColor(quadtree.White)
-	targetNode.SetColor(quadtree.White)
-	// log.Printf("start: %v\n", start.Center())
-	// log.Printf("  node: %v (%v)\n", startNode.Bounds(), startNode.Bounds().Center())
-	// log.Printf("target: %v\n", target.Center())
-	// log.Printf("  node: %v (%v)\n", targetNode.Bounds(), targetNode.Bounds().Center())
-
-	perNode := func(n *quadtree.Node) {
-		neighbors := n.Neighbors()
-		nodeNeighbors[n] = neighbors
-
-		// fmt.Printf("Node: %v (%v)", n.Bounds(), n.Bounds().Center())
-		// fmt.Println("  neighbors: ")
-		// for _, neighbor := range neighbors {
-		// 	fmt.Printf("    %v (%v) (%v)", neighbor.Bounds(), neighbor.Bounds().Center(), neighbor.Color())
-		// 	fmt.Println("")
-
-		// }
-	}
-
-	// print out the tree
-	qt.ForEachLeaf(quadtree.Gray, perNode)
-
-	g := graph.New()
-
-	for node := range nodeNeighbors {
-		gnode := graph.NewItemNode(uuid.New(), node.Bounds().Center(), 1)
-		// log.Printf(" Adding node %v (%v) (%v) to graph", node.Bounds(), node.Bounds().Center(), node.Color())
-		g.AddNode(gnode)
-	}
-
-	for node, neighbors := range nodeNeighbors {
-		gnode := g.FindNode(node.Bounds().Center())
-		for _, n := range neighbors {
-			gneighbor := g.FindNode(n.Bounds().Center())
-			// log.Printf("  Adding neighbor %v to node %v", n.Bounds().Center(), node.Bounds().Center())
-			g.AddEdge(gnode, gneighbor)
-		}
-		g.AddNode(gnode)
-	}
-
-	// log.Printf("%v", g)
+	g := qt.ToGraph(start, target)
 
 	cfg := pixelgl.WindowConfig{
 		Title:  "Pixel Rocks!",
@@ -118,6 +68,8 @@ func run() {
 	// add edges based on visibility from start and target to other nodes
 	atlas := text.NewAtlas(basicfont.Face7x13, text.ASCII)
 
+	startNode := qt.Locate(start)
+	targetNode := qt.Locate(target)
 	path, _, err := graph.DijkstraPath(g, startNode.Bounds().Center(), targetNode.Bounds().Center())
 	if err != nil {
 		log.Printf("%v", err)

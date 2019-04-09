@@ -6,6 +6,7 @@ import (
 	"math"
 
 	"github.com/faiface/pixel"
+	"github.com/google/uuid"
 	"gogs.wetsnow.com/dant/alphaville/graph"
 	"gogs.wetsnow.com/dant/alphaville/utils"
 )
@@ -225,15 +226,39 @@ func (qt *Tree) ForEachLeaf(color Color, fn func(*Node)) {
 }
 
 // ToGraph converts this tree into a graph
-func (qt *Tree) ToGraph() *graph.Graph {
+func (qt *Tree) ToGraph(start, target pixel.Rect) *graph.Graph {
 	g := graph.New()
 
-	// Nodes of the graph are nodes of the tree with no Objects
-	// or with some space not completely covered by objects
-	// qt.processNode(g)
+	nodeNeighbors := make(map[*Node]NodeList)
 
-	// if !qt.isLeaf() { // tree is empty
-	// 	qt.addEdges(g, nil)
-	// }
+	startNode := qt.Locate(start)
+	targetNode := qt.Locate(target)
+
+	// must set this before calculating neighbors
+	startNode.SetColor(White)
+	targetNode.SetColor(White)
+
+	perNode := func(n *Node) {
+		neighbors := n.Neighbors()
+		nodeNeighbors[n] = neighbors
+	}
+	// get all the nodes + neighbors
+	qt.ForEachLeaf(Gray, perNode)
+
+	// TODO: Should be able to do this in one pass
+	for node := range nodeNeighbors {
+		gnode := graph.NewItemNode(uuid.New(), node.Bounds().Center(), 1)
+		g.AddNode(gnode)
+	}
+
+	for node, neighbors := range nodeNeighbors {
+		gnode := g.FindNode(node.Bounds().Center())
+		for _, n := range neighbors {
+			gneighbor := g.FindNode(n.Bounds().Center())
+			g.AddEdge(gnode, gneighbor)
+		}
+		g.AddNode(gnode)
+	}
+
 	return g
 }
