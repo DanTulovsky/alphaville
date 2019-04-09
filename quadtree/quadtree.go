@@ -6,6 +6,10 @@ import (
 	"image/color"
 	"math"
 
+	"github.com/faiface/pixel/imdraw"
+	"github.com/faiface/pixel/pixelgl"
+	"github.com/faiface/pixel/text"
+
 	"github.com/faiface/pixel"
 	"github.com/google/uuid"
 	"gogs.wetsnow.com/dant/alphaville/graph"
@@ -263,4 +267,64 @@ func (qt *Tree) ToGraph(start, target pixel.Rect) *graph.Graph {
 	}
 
 	return g
+}
+
+// Draw draws the quadtree
+// drawTree will draw the quadrants
+// drawText will label the centers of quadrants
+// drawObjects will draw the objects over the quadrants
+func (qt *Tree) Draw(win *pixelgl.Window, drawTree bool, drawText bool, drawObjects bool) {
+
+	// Grab all the nodes
+	rectangles := NodeList{}
+	perNode := func(n *Node) {
+		rectangles = append(rectangles, n)
+	}
+	qt.ForEachLeaf(colornames.Gray, perNode)
+
+	imd := imdraw.New(nil)
+
+	if drawTree {
+		// rectangle itself
+		for _, r := range rectangles {
+			imd.Color = r.Color()
+			imd.Push(r.Bounds().Min)
+			imd.Push(r.Bounds().Max)
+			imd.Rectangle(0)
+		}
+
+		// lines around it
+		for _, r := range rectangles {
+			imd.Color = colornames.Red
+			for _, l := range r.Bounds().Edges() {
+				imd.Push(l.A)
+				imd.Push(l.B)
+				imd.Line(1)
+			}
+		}
+	}
+
+	if drawText {
+		for _, r := range rectangles {
+			txt := text.New(r.Bounds().Center(), utils.Atlas())
+			txt.Color = colornames.Darkgray
+			label := fmt.Sprintf("%v,\n%v", r.Bounds().Center().X, r.Bounds().Center().Y)
+			txt.Dot.X -= txt.BoundsOf(label).W() / 2
+			fmt.Fprintf(txt, "%v", label)
+			txt.Draw(win, pixel.IM)
+		}
+	}
+
+	if drawObjects {
+		// draw the objects
+		imd.Color = colornames.Yellow
+
+		for _, r := range qt.Root().Objects() {
+			imd.Push(r.Min)
+			imd.Push(r.Max)
+			imd.Rectangle(2)
+		}
+	}
+
+	imd.Draw(win)
 }
