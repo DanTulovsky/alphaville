@@ -460,7 +460,7 @@ func (b *TargetSeekerBehavior) populateMoveGraph(w *World, o Object) {
 		if o.ID() == other.ID() {
 			continue
 		}
-		var buffer float64 = 4
+		var buffer float64 = 8 // must tbe larger than quadtree.NewTree( ... minSize)
 		c := other.Phys().Location().Center()
 		size := pixel.V(other.Phys().Location().W()+o.Phys().Location().W()+buffer,
 			other.Phys().Location().H()+o.Phys().Location().H()+buffer)
@@ -799,7 +799,7 @@ func (b *TargetSeekerBehavior) Draw(win *pixelgl.Window) {
 	}
 
 	// draw the quadtree
-	drawTree, colorTree, drawText, drawObjects := true, false, false, false
+	drawTree, colorTree, drawText, drawObjects := false, false, false, false
 	b.qt.Draw(win, drawTree, colorTree, drawText, drawObjects)
 
 	// draw the path

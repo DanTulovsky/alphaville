@@ -235,9 +235,6 @@ func (qt *Tree) ForEachLeaf(color color.Color, fn func(*Node)) {
 // ToGraph converts this tree into a graph
 func (qt *Tree) ToGraph(start, target pixel.Rect) *graph.Graph {
 	defer utils.Elapsed("qt converted to graph")
-	// convert start and target to small rect
-	// start := pixel.R(s.X, s.Y, s.X+1, s.Y+1)
-	// target := pixel.R(t.X, t.Y, t.X+1, t.Y+1)
 
 	g := graph.New()
 
