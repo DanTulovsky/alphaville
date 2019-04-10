@@ -301,6 +301,7 @@ type TargetSeekerBehavior struct {
 	source          pixel.Vec
 	finder          graph.PathFinder // path finder function
 	turnsAtLocation int              // number of turns at current location
+	targetsCaught   int64
 }
 
 // NewTargetSeekerBehavior return a TargetSeekerBehavior
@@ -450,7 +451,7 @@ func (b *TargetSeekerBehavior) populateVisibilityGraph(w *World, o Object) {
 // https://www.dis.uniroma1.it/~oriolo/amr/slides/MotionPlanning1_Slides.pdf
 // o is the target seeker
 func (b *TargetSeekerBehavior) populateMoveGraph(w *World, o Object) {
-	log.Printf("Populating move graph for %v", o.Name())
+	// log.Printf("Populating move graph for %v", o.Name())
 
 	// augmented fixtures, these are what we check collisions against
 	// they are grown by 1/2 size of object on each side to account for movement
@@ -506,6 +507,11 @@ func (b *TargetSeekerBehavior) SetTarget(t Target) {
 // Target returns the current target
 func (b *TargetSeekerBehavior) Target() Target {
 	return b.target
+}
+
+// TargetsCaught returns the current target
+func (b *TargetSeekerBehavior) TargetsCaught() int64 {
+	return b.targetsCaught
 }
 
 // isAtTarget returns true if any part of the object covers the target
@@ -654,26 +660,12 @@ func (b *TargetSeekerBehavior) Direction(w *World, o Object) (pixel.Vec, pixel.V
 
 }
 
-// pickNewTarget sets a new random target if available
-func (b *TargetSeekerBehavior) pickNewTarget(w *World) (Target, error) {
-	log.Println("Picking new target...")
-	targets := w.AvailableTargets()
-	if len(targets) == 0 {
-		return nil, fmt.Errorf("no available targets")
-	}
-
-	t := targets[utils.RandomInt(0, len(targets))]
-	// log.Printf("Picked new target %v", t.Location())
-	return t, nil
-}
-
 // FindPath returns the path and cost between start and target
 func (b *TargetSeekerBehavior) FindPath(start, target pixel.Vec) ([]*graph.Node, int, error) {
 
 	// log.Printf("looking for path from %v to %v", start, target)
 	path, cost, err := b.finder(b.moveGraph, start, target)
 	if err != nil {
-		log.Printf("error finding path: %v", err)
 		return nil, 0, err
 	}
 
@@ -686,9 +678,8 @@ func (b *TargetSeekerBehavior) FindPath(start, target pixel.Vec) ([]*graph.Node,
 // Update implements the Behavior Update method
 func (b *TargetSeekerBehavior) Update(w *World, o Object) {
 	if b.target == nil {
-		if t, err := b.pickNewTarget(w); err == nil {
+		if t, err := w.GetTarget(); err == nil {
 			b.SetTarget(t)
-			// b.populateVisibilityGraph(w, o)
 			b.populateMoveGraph(w, o)
 
 			// log.Printf("qt: %v", b.qt)
@@ -726,38 +717,40 @@ func (b *TargetSeekerBehavior) Update(w *World, o Object) {
 
 	if b.isAtTarget(o) {
 		log.Println("is at target")
+		b.targetsCaught++
 		return
 	}
 
-	// if stuck, try to recalculate path
-	// if b.turnsAtLocation > 4 {
-	// 	var err error
-	// 	startNode, err := b.qt.Locate(o.Phys().Location().Center())
-	// 	if err != nil {
-	// 		log.Fatal(err)
-	// 	}
-	// 	targetNode, err := b.qt.Locate(b.target.Bounds().Center())
-	// 	if err != nil {
-	// 		log.Fatal(err)
-	// 	}
+	// if stuck, redo the graph
+	if b.turnsAtLocation > 8 || len(b.path) == 0 {
+		b.populateMoveGraph(w, o)
+		var err error
+		startNode, err := b.qt.Locate(o.Phys().Location().Center())
+		if err != nil {
+			log.Fatal(err)
+		}
+		targetNode, err := b.qt.Locate(b.target.Bounds().Center())
+		if err != nil {
+			log.Fatal(err)
+		}
 
-	// 	b.path, b.cost, err = b.FindPath(startNode.Bounds().Center(), targetNode.Bounds().Center())
-	// 	if err != nil {
-	// 		log.Printf("error finding path: %v", err)
-	// 	}
+		b.path, b.cost, err = b.FindPath(startNode.Bounds().Center(), targetNode.Bounds().Center())
+		if err != nil {
+			log.Printf("error finding path: %v", err)
+		}
 
-	// 	b.fullpath = []*graph.Node{}
-	// 	for _, n := range b.path {
-	// 		b.fullpath = append(b.fullpath, n)
-	// 	}
-	// 	sn := graph.NewItemNode(uuid.New(), o.Phys().Location().Center(), 0)
-	// 	b.fullpath = append([]*graph.Node{sn}, b.fullpath...)
-	// 	b.source = o.Phys().Location().Center()
-	// 	log.Printf("Path found: %v", b.fullpath)
+		b.fullpath = []*graph.Node{}
+		for _, n := range b.path {
+			b.fullpath = append(b.fullpath, n)
+		}
+		sn := graph.NewItemNode(uuid.New(), o.Phys().Location().Center(), 0)
+		b.fullpath = append([]*graph.Node{sn}, b.fullpath...)
+		b.source = o.Phys().Location().Center()
+		// log.Printf("Path found: %v", b.fullpath)
 
-	// 	log.Printf("----> recalculated path!")
+		// log.Printf("----> recalculated path!")
 
-	// }
+	}
 
 	phys := o.NextPhys()
 
@@ -772,15 +765,13 @@ func (b *TargetSeekerBehavior) Update(w *World, o Object) {
 
 	if newDistance > currentDistance {
 		v := target.Sub(o.Phys().Location().Center())
-		b.Move(w, o, phys.CollisionBordersVector(w, v))
-		// b.Move(w, o, v)
-		return
+		phys.SetVel(v)
 	}
 
 	if phys.HaveCollisionAt(w) == "" {
 		// move, checking collisions with world borders
 		b.Move(w, o, phys.CollisionBordersVector(w, phys.Vel()))
-		// b.turnsAtLocation = 0
+		b.turnsAtLocation = 0
 	} else {
 		b.turnsAtLocation++
 	}
@@ -799,7 +790,7 @@ func (b *TargetSeekerBehavior) Draw(win *pixelgl.Window) {
 	}
 
 	// draw the quadtree
-	drawTree, colorTree, drawText, drawObjects := false, false, false, false
+	drawTree, colorTree, drawText, drawObjects := false, false, false, true
 	b.qt.Draw(win, drawTree, colorTree, drawText, drawObjects)
 
 	// draw the path

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"gogs.wetsnow.com/dant/alphaville/observer"
+	"gogs.wetsnow.com/dant/alphaville/utils"
 
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/pixelgl"
@@ -197,9 +198,19 @@ func (w *World) RemoveTarget(uuid string) {
 	w.targets = targets
 }
 
-// AvailableTargets returns a list of available targets in the world
-func (w *World) AvailableTargets() []Target {
-	return w.Targets()
+// GetTarget returns an available target
+func (w *World) GetTarget() (Target, error) {
+	if len(w.targets) == 0 {
+		return nil, fmt.Errorf("no available targets")
+	}
+
+	var targets []Target
+
+	for _, t := range w.targets {
+		targets = append(targets, t)
+	}
+
+	return targets[utils.RandomInt(0, len(targets))], nil
 }
 
 // AddGate adds a new gate to the world

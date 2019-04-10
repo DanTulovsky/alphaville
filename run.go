@@ -49,6 +49,8 @@ func processInput(win *pixelgl.Window, w *world.World, ctrl pixel.Vec) {
 	switch {
 	case win.JustPressed(pixelgl.KeySpace):
 		togglePause()
+	case win.JustPressed(pixelgl.KeyD):
+		toggleDebug(w)
 	}
 
 	mo := w.ManualControl
@@ -75,6 +77,10 @@ func processInput(win *pixelgl.Window, w *world.World, ctrl pixel.Vec) {
 
 func togglePause() {
 	paused = !paused
+}
+
+func toggleDebug(w *world.World) {
+
 }
 
 // update calls each object's update
@@ -104,14 +110,14 @@ func run() {
 
 	// populate the world
 	populate.AddTargetSeeker(w)
-	// populate.AddTargetSeeker(w)
+	populate.AddTargetSeeker(w)
 	// populate.RandomCircles(w, 2)
-	// populate.RandomRectangles(w, 20)
+	// populate.RandomRectangles(w, 8)
 	// populate.RandomEllipses(w, 2)
 	// populate.AddManualObject(w, 60, 60)
 	populate.AddGates(w, time.Second*1)
 	// populate.AddFixture(w)
-	populate.AddFixtures(w, 6)
+	// populate.AddFixtures(w, 6)
 	// add targets AFTER fixtures
 	populate.AddTarget(w, 10, maxTargets)
 

@@ -227,7 +227,7 @@ func AddTarget(w *world.World, radius float64, maxTargets int) {
 	for !valid {
 		l := pixel.V(
 			// TODO fix these!
-			utils.RandomFloat64(45, w.X-45),
+			utils.RandomFloat64(55, w.X-45),
 			utils.RandomFloat64(w.Ground.Phys().Location().Max.Y+55, w.Y-45))
 
 		t = world.NewSimpleTarget("one", l, radius)
