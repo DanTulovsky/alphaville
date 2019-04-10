@@ -234,6 +234,25 @@ func (o *BaseObjectPhys) HaveCollisionAt(w *World) string {
 		// location of other compared to o (above, below, right, left)
 		l := o.LocationOf(other)
 
+		switch l {
+		case "left":
+			if o.MovingRight() {
+				continue
+			}
+		case "right":
+			if o.MovingLeft() {
+				continue
+			}
+		case "above":
+			if o.MovingDown() {
+				continue
+			}
+		case "below":
+			if o.MovingUp() {
+				continue
+			}
+		}
+
 		// other moves as planned based on current velocity
 		if HaveCollisions(o.Location(), other.Phys().Location(), o.Vel(), other.Phys().Vel()) {
 			return l

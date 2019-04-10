@@ -368,82 +368,6 @@ func (b *TargetSeekerBehavior) scaledCollisionEdges(w *World, o Object) []pixel.
 	return l
 }
 
-// isVisible returns true if v is visible from p (no intersecting edges)
-func (b *TargetSeekerBehavior) isVisible(w *World, p, v pixel.Vec, edges []pixel.Line, n, other *graph.Node) bool {
-	for _, e := range edges {
-		if (e.A == p && e.B == v) || (e.A == v && e.B == p) {
-			// point are on the same segment, so visible
-			return true
-		}
-
-		// exclude points on the same object if they are not on the same edge (we only deal with Rectangles here)
-		if n.Object() == other.Object() {
-			if p.X != v.X && p.Y != v.Y {
-				return false
-			}
-		}
-		// exclude edges that include v or p
-		if e.A == v || e.B == v || e.A == p || e.B == p {
-			continue
-		}
-
-		// Currently broken https://github.com/faiface/pixel/issues/175
-		// once resolved, replace the code below
-		// if _, isect := pixel.L(p, v).Intersect(e); isect {
-		// 	return false
-		// }
-
-		ge := graph.Edge{A: p, B: v}
-		etemp := graph.Edge{A: e.A, B: e.B}
-		if graph.EdgesIntersect(ge, etemp) {
-			return false
-		}
-	}
-	return true
-}
-
-// populateVisibilityGraph creates a visibility graph
-// the nodes are verticies of augmented rectangles
-// the edges are paths between nodes that have no other node in between
-// polygonal map from here:
-// http://theory.stanford.edu/~amitp/GameProgramming/MapRepresentations.html#polygonal-maps
-func (b *TargetSeekerBehavior) populateVisibilityGraph(w *World, o Object) {
-	log.Printf("Populating visibility graph for %v", o.Name())
-	g := graph.New()
-	verticies := b.scaledCollisionVerticies(w, o)
-	edges := b.scaledCollisionEdges(w, o)
-
-	// Add all verticies (except source) to the graph
-	for _, v := range verticies {
-		g.AddNode(graph.NewItemNode(v.O, v.V, 1))
-	}
-
-	// source node
-	p := graph.NewItemNode(o.ID(), o.Phys().Location().Center(), 0)
-	g.AddNode(p)
-
-	// target, not part of any object
-	t := graph.NewItemNode(b.target.ID(), b.target.Location(), 1)
-	g.AddNode(t)
-	// log.Printf("target: %v", t.Value().V)
-
-	// populate visibility information for all nodes
-	for _, n := range g.Nodes() {
-		// log.Printf(">> checking visibility from %v", n)
-		for _, other := range g.Nodes() {
-			if n.Value().V == other.Value().V {
-				continue
-			}
-			// check if  v is visible from p
-			if b.isVisible(w, n.Value().V, other.Value().V, edges, n, other) {
-				g.AddEdge(n, other)
-			}
-		}
-	}
-
-	b.moveGraph = g
-}
-
 // populateMoveGraph creates a move graph by doing a
 // cell decomposition.  the nodes are cells between the fixtures, and the edges are
 // connections between them; from:
@@ -507,11 +431,14 @@ func (b *TargetSeekerBehavior) TargetsCaught() int64 {
 	return b.targetsCaught
 }
 
+// TurnsBlocked returns the number of turns this object hasn't moved
+func (b *TargetSeekerBehavior) TurnsBlocked() int {
+	return b.turnsAtLocation
+}
+
 // isAtTarget returns true if any part of the object covers the target
 func (b *TargetSeekerBehavior) isAtTarget(o Object) bool {
 
-	// if o.Phys().Location().Intersect(b.target.Bounds()) != pixel.R(0, 0, 0, 0) {
-	// if b.target.Bounds().Contains(o.Phys().Location().Center()) {
 	if utils.VecLen(o.Phys().Location().Center(), b.target.Bounds().Center()) < o.Speed() {
 
 		o.Notify(NewObjectEvent(
@@ -668,42 +595,86 @@ func (b *TargetSeekerBehavior) FindPath(start, target pixel.Vec) ([]*graph.Node,
 	return path, cost, err
 }
 
+// FindAndSetNewTarget grabs a new target from the world
+func (b *TargetSeekerBehavior) FindAndSetNewTarget(w *World, o Object) error {
+
+	var t Target
+	var err error
+
+	if t, err = w.GetTarget(); err != nil {
+		return fmt.Errorf("error picking target: %v", err)
+	}
+
+	t.Register(b)
+	b.SetTarget(t)
+	b.recalculateMoveInfo(w, o)
+
+	return nil
+}
+
+func (b *TargetSeekerBehavior) processTargetEvent(e *TargetEvent) {
+	for _, data := range e.Data() {
+		switch data.Key {
+		case "destroyed":
+			if b.target.ID().String() == data.Value {
+				// stop chasing destroyed targets
+				log.Printf("[%v] target [%v] destroyed need to pick another one", b.name, data.Value)
+				b.target.Deregister(b)
+				b.target = nil
+			}
+		}
+	}
+}
+
+// OnNotify runs when a notification is received
+func (b *TargetSeekerBehavior) OnNotify(e observer.Event) {
+	switch event := e.(type) {
+	case nil:
+		log.Printf("nil notification")
+	case *TargetEvent:
+		b.processTargetEvent(event)
+	}
+}
+
+// recalculateMoveInfo recalculates the path for an existing target
+func (b *TargetSeekerBehavior) recalculateMoveInfo(w *World, o Object) {
+	phys := o.NextPhys()
+
+	b.populateMoveGraph(w, o)
+	var err error
+	startNode, err := b.qt.Locate(phys.Location().Center())
+	if err != nil {
+		log.Fatal(err)
+	}
+	targetNode, err := b.qt.Locate(b.target.Bounds().Center())
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	b.path, b.cost, err = b.FindPath(startNode.Bounds().Center(), targetNode.Bounds().Center())
+	if err != nil {
+		// log.Printf("error finding path: %v", err)
+	}
+
+	b.fullpath = []*graph.Node{}
+	for _, n := range b.path {
+		b.fullpath = append(b.fullpath, n)
+	}
+	sn := graph.NewItemNode(uuid.New(), phys.Location().Center(), 0)
+	b.fullpath = append([]*graph.Node{sn}, b.fullpath...)
+	b.source = phys.Location().Center()
+}
+
 // Update implements the Behavior Update method
+// In this method, execute the planned move in the NextPhys object
+// If unable to do so due to any reason, change the Velocity, but do not move
+// this turn, otherwise collision detection fails.
 func (b *TargetSeekerBehavior) Update(w *World, o Object) {
+	phys := o.NextPhys()
+
 	if b.target == nil {
-		if t, err := w.GetTarget(); err == nil {
-			b.SetTarget(t)
-			b.populateMoveGraph(w, o)
-
-			// log.Printf("qt: %v", b.qt)
-			startNode, err := b.qt.Locate(o.Phys().Location().Center())
-			if err != nil {
-				log.Fatal(err)
-			}
-			targetNode, err := b.qt.Locate(b.target.Bounds().Center())
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			// log.Printf("startNode: %v (o at: %v)", startNode.Bounds(), o.Phys().Location().Center())
-			// log.Printf("targetNode: %v", targetNode.Bounds())
-
-			b.path, b.cost, err = b.FindPath(startNode.Bounds().Center(), targetNode.Bounds().Center())
-			if err != nil {
-				log.Printf("error finding path: %v", err)
-			}
-
-			b.fullpath = []*graph.Node{}
-			for _, n := range b.path {
-				b.fullpath = append(b.fullpath, n)
-			}
-			sn := graph.NewItemNode(uuid.New(), o.Phys().Location().Center(), 0)
-			b.fullpath = append([]*graph.Node{sn}, b.fullpath...)
-			b.source = o.Phys().Location().Center()
-			// log.Printf("Path found: %v", b.fullpath)
-
-		} else {
-			log.Printf("error picking target: %v", err)
+		if err := b.FindAndSetNewTarget(w, o); err != nil {
+			// no target found
 		}
 		return
 	}
@@ -716,44 +687,7 @@ func (b *TargetSeekerBehavior) Update(w *World, o Object) {
 
 	// if stuck, redo the graph
 	if b.turnsAtLocation > 8 || len(b.path) == 0 {
-		b.populateMoveGraph(w, o)
-		var err error
-		startNode, err := b.qt.Locate(o.Phys().Location().Center())
-		if err != nil {
-			log.Fatal(err)
-		}
-		targetNode, err := b.qt.Locate(b.target.Bounds().Center())
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		b.path, b.cost, err = b.FindPath(startNode.Bounds().Center(), targetNode.Bounds().Center())
-		if err != nil {
-			// log.Printf("error finding path: %v", err)
-		}
-
-		b.fullpath = []*graph.Node{}
-		for _, n := range b.path {
-			b.fullpath = append(b.fullpath, n)
-		}
-		sn := graph.NewItemNode(uuid.New(), o.Phys().Location().Center(), 0)
-		b.fullpath = append([]*graph.Node{sn}, b.fullpath...)
-		b.source = o.Phys().Location().Center()
-	}
-
-	phys := o.NextPhys()
-
-	d, target := b.Direction(w, o)
-	phys.SetManualVelocity(d)
-
-	// if moving takes us further away from the target than we currently are
-	// just move directly on top of the target, if possible
-	currentDistance := utils.VecLen(o.Phys().Location().Center(), target)
-	newDistance := utils.VecLen(o.Phys().Location().Moved(phys.Vel()).Center(), target)
-
-	if newDistance > currentDistance {
-		v := target.Sub(o.Phys().Location().Center())
-		phys.SetVel(v)
+		b.recalculateMoveInfo(w, o)
 	}
 
 	var randomEscape bool
@@ -764,23 +698,37 @@ func (b *TargetSeekerBehavior) Update(w *World, o Object) {
 		b.turnsAtLocation = 0
 	} else {
 		b.turnsAtLocation++
-		// if stuck for a very long time, move randomly
-		if b.turnsAtLocation > 20 {
-			randomEscape = true
-		}
 	}
 
+	// if stuck for a very long time, move randomly
+	if b.turnsAtLocation > 20 {
+		randomEscape = true
+	}
 	// unable to move via path for a long time, try random walk
 	if randomEscape {
+		log.Println("escaping...")
 		randx := float64(utils.RandomInt(-1, 2))
 		randy := float64(utils.RandomInt(-1, 2))
+		if randx != 0 {
+			randy = 0
+		}
 		v := pixel.V(randx, randy)
 		phys.SetManualVelocity(v)
+		return
+	}
 
-		if phys.HaveCollisionAt(w) == "" {
-			// move, checking collisions with world borders
-			b.Move(w, o, phys.CollisionBordersVector(w, phys.Vel()))
-		}
+	// Setup next move
+	d, target := b.Direction(w, o)
+	phys.SetManualVelocity(d)
+
+	// if moving takes us further away from the target than we currently are
+	// just move directly on top of the target, if possible
+	currentDistance := utils.VecLen(phys.Location().Center(), target)
+	newDistance := utils.VecLen(phys.Location().Moved(phys.Vel()).Center(), target)
+
+	if newDistance > currentDistance {
+		v := target.Sub(phys.Location().Center())
+		phys.SetVel(v)
 	}
 }
 

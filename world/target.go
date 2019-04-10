@@ -47,7 +47,6 @@ type simpleTarget struct {
 	color     color.Color
 	observers []observer.EventObserver
 	bounds    pixel.Rect // bounding box of target
-	claimed   bool
 }
 
 // NewSimpleTarget returns a new simple target

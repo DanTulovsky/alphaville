@@ -102,14 +102,14 @@ func RandomRectangles(w *world.World, n int) {
 }
 
 // AddTargetSeeker adds an object that seeks a target
-func AddTargetSeeker(w *world.World) {
+func AddTargetSeeker(w *world.World, name string, speed float64) {
 
-	var minWidth, maxWidth, minHeight, maxHeight, minMass, maxMass, minSpeed, maxSpeed float64
+	var minWidth, maxWidth, minHeight, maxHeight, minMass, maxMass float64
 
 	minWidth, maxWidth = 40, 41
 	minHeight, maxHeight = 40, 41
 	minMass, maxMass = 6, 10
-	minSpeed, maxSpeed = 2, w.MaxObjectSpeed
+	// minSpeed, maxSpeed = 2, w.MaxObjectSpeed
 
 	width := utils.RandomFloat64(minWidth, maxWidth)
 	height := utils.RandomFloat64(minHeight, maxHeight)
@@ -118,9 +118,9 @@ func AddTargetSeeker(w *world.World) {
 	finder := graph.DijkstraPath
 
 	o := world.NewRectObject(
-		fmt.Sprintf("ts-%v", utils.RandomInt(0, 9)),
+		fmt.Sprintf("ts-%v", name),
 		colornames.Yellow,
-		utils.RandomFloat64(minSpeed, maxSpeed),  // speed
+		speed,
 		utils.RandomFloat64(minMass, maxMass)/10, // mass
 		width,  // width
 		height, // height

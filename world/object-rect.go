@@ -109,16 +109,18 @@ func (o *RectObject) Draw(win *pixelgl.Window) {
 	txt.Color = colornames.Black
 
 	// center the text
-	label := o.name
+	label := []string{o.name}
 
 	switch b := o.behavior.(type) {
 	case *TargetSeekerBehavior:
-		label = fmt.Sprintf("%v\n(%v)", label, b.TargetsCaught())
+		label = append(label, fmt.Sprintf("%v, %v", b.TargetsCaught(), b.TurnsBlocked()))
 	}
 
-	txt.Dot.X -= txt.BoundsOf(o.name).W() / 2
+	for _, l := range label {
+		txt.Dot.X -= txt.BoundsOf(l).W() / 2
+		fmt.Fprintf(txt, "%v\n", l)
+	}
 
-	fmt.Fprintf(txt, "%v", label)
 	txt.Draw(win, pixel.IM)
 
 	// draw bounding box
