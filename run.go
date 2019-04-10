@@ -111,7 +111,9 @@ func run() {
 	// populate the world
 	populate.AddTargetSeeker(w)
 	populate.AddTargetSeeker(w)
-	// populate.RandomCircles(w, 2)
+	populate.AddTargetSeeker(w)
+	populate.AddTargetSeeker(w)
+	populate.RandomCircles(w, 2)
 	// populate.RandomRectangles(w, 8)
 	// populate.RandomEllipses(w, 2)
 	// populate.AddManualObject(w, 60, 60)

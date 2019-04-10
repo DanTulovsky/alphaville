@@ -476,13 +476,6 @@ func (b *TargetSeekerBehavior) populateMoveGraph(w *World, o Object) {
 	target := pixel.R(t.X, t.Y, t.X+1, t.Y+1)
 	fixtures = append(fixtures, target)
 
-	// add buffer around ground and walls
-	// left := pixel.R(0, 0, o.Phys().Location().W(), w.Y)
-	// right := pixel.R(w.X-o.Phys().Location().W(), 0, w.X, w.Y)
-	// top := pixel.R(0, w.Y, w.X, w.Y-o.Phys().Location().H())
-	// bottom := pixel.R(0, 0, w.X, w.Ground.Phys().Location().Max.Y+o.Phys().Location().H())
-	// fixtures = append(fixtures, left, right, top, bottom)
-
 	// minimum size of rectangle side at which we stop splitting
 	minSize := float64(6)
 
@@ -736,7 +729,7 @@ func (b *TargetSeekerBehavior) Update(w *World, o Object) {
 
 		b.path, b.cost, err = b.FindPath(startNode.Bounds().Center(), targetNode.Bounds().Center())
 		if err != nil {
-			log.Printf("error finding path: %v", err)
+			// log.Printf("error finding path: %v", err)
 		}
 
 		b.fullpath = []*graph.Node{}
@@ -746,20 +739,15 @@ func (b *TargetSeekerBehavior) Update(w *World, o Object) {
 		sn := graph.NewItemNode(uuid.New(), o.Phys().Location().Center(), 0)
 		b.fullpath = append([]*graph.Node{sn}, b.fullpath...)
 		b.source = o.Phys().Location().Center()
-		// log.Printf("Path found: %v", b.fullpath)
-
-		// log.Printf("----> recalculated path!")
-
 	}
 
 	phys := o.NextPhys()
 
 	d, target := b.Direction(w, o)
 	phys.SetManualVelocity(d)
-	// o.Phys().SetManualVelocity(d)
 
 	// if moving takes us further away from the target than we currently are
-	// just move directly on top of the target
+	// just move directly on top of the target, if possible
 	currentDistance := utils.VecLen(o.Phys().Location().Center(), target)
 	newDistance := utils.VecLen(o.Phys().Location().Moved(phys.Vel()).Center(), target)
 
@@ -768,12 +756,31 @@ func (b *TargetSeekerBehavior) Update(w *World, o Object) {
 		phys.SetVel(v)
 	}
 
-	if phys.HaveCollisionAt(w) == "" {
+	var randomEscape bool
+
+	if phys.HaveCollisionAt(w) == "" && !(phys.Vel() == pixel.ZV) {
 		// move, checking collisions with world borders
 		b.Move(w, o, phys.CollisionBordersVector(w, phys.Vel()))
 		b.turnsAtLocation = 0
 	} else {
 		b.turnsAtLocation++
+		// if stuck for a very long time, move randomly
+		if b.turnsAtLocation > 20 {
+			randomEscape = true
+		}
+	}
+
+	// unable to move via path for a long time, try random walk
+	if randomEscape {
+		randx := float64(utils.RandomInt(-1, 2))
+		randy := float64(utils.RandomInt(-1, 2))
+		v := pixel.V(randx, randy)
+		phys.SetManualVelocity(v)
+
+		if phys.HaveCollisionAt(w) == "" {
+			// move, checking collisions with world borders
+			b.Move(w, o, phys.CollisionBordersVector(w, phys.Vel()))
+		}
 	}
 }
 

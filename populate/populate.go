@@ -109,7 +109,7 @@ func AddTargetSeeker(w *world.World) {
 	minWidth, maxWidth = 40, 41
 	minHeight, maxHeight = 40, 41
 	minMass, maxMass = 6, 10
-	minSpeed, maxSpeed = 6, w.MaxObjectSpeed
+	minSpeed, maxSpeed = 2, w.MaxObjectSpeed
 
 	width := utils.RandomFloat64(minWidth, maxWidth)
 	height := utils.RandomFloat64(minHeight, maxHeight)
@@ -227,8 +227,8 @@ func AddTarget(w *world.World, radius float64, maxTargets int) {
 	for !valid {
 		l := pixel.V(
 			// TODO fix these!
-			utils.RandomFloat64(55, w.X-45),
-			utils.RandomFloat64(w.Ground.Phys().Location().Max.Y+55, w.Y-45))
+			utils.RandomFloat64(55, w.X-65),
+			utils.RandomFloat64(w.Ground.Phys().Location().Max.Y+65, w.Y-65))
 
 		t = world.NewSimpleTarget("one", l, radius)
 		valid = true
