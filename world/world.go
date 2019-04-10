@@ -41,7 +41,7 @@ func NewWorld(x, y float64, ground Object, gravity float64) *World {
 		Stats:   NewStats(),
 		// EventNotifier: observer.NewEventNotifier(),
 		ManualControl:  NewNullObject(),
-		MaxObjectSpeed: 1,
+		MaxObjectSpeed: 8,
 	}
 
 	w.Register(w.Stats)

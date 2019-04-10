@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"image/color"
+	"log"
 	"math"
 
 	"github.com/faiface/pixel/imdraw"
@@ -176,12 +177,12 @@ func (qt *Tree) subdivide(p *Node) {
 }
 
 // Locate returns the Node that contains the given rect, or nil.
-func (qt *Tree) Locate(pt pixel.Vec) *Node {
+func (qt *Tree) Locate(pt pixel.Vec) (*Node, error) {
 	// binary branching method assumes the point lies in the bounds
 	cnroot := qt.root
 	b := cnroot.bounds
 	if !b.Contains(pt) {
-		return nil
+		return nil, fmt.Errorf("%v does not contain %v", b, pt)
 	}
 
 	// apply affine transformations of the coordinate space, actually letting
@@ -213,7 +214,7 @@ func (qt *Tree) Locate(pt pixel.Vec) *Node {
 		childIdx := (ix&bit)>>k + ((iy&bit)>>k)<<1
 		node = node.c[childIdx]
 	}
-	return node
+	return node, nil
 }
 
 // ForEachLeaf calls the given function for each leaf node of the quadtree.
@@ -233,7 +234,7 @@ func (qt *Tree) ForEachLeaf(color color.Color, fn func(*Node)) {
 
 // ToGraph converts this tree into a graph
 func (qt *Tree) ToGraph(start, target pixel.Rect) *graph.Graph {
-
+	defer utils.Elapsed("qt converted to graph")
 	// convert start and target to small rect
 	// start := pixel.R(s.X, s.Y, s.X+1, s.Y+1)
 	// target := pixel.R(t.X, t.Y, t.X+1, t.Y+1)
@@ -242,8 +243,14 @@ func (qt *Tree) ToGraph(start, target pixel.Rect) *graph.Graph {
 
 	nodeNeighbors := make(map[*Node]NodeList)
 
-	startNode := qt.Locate(start.Center())
-	targetNode := qt.Locate(target.Center())
+	startNode, err := qt.Locate(start.Center())
+	if err != nil {
+		log.Fatal(err)
+	}
+	targetNode, err := qt.Locate(target.Center())
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	// must set this before calculating neighbors
 	startNode.SetColor(colornames.White)
@@ -278,7 +285,7 @@ func (qt *Tree) ToGraph(start, target pixel.Rect) *graph.Graph {
 // drawTree will draw the quadrants
 // drawText will label the centers of quadrants
 // drawObjects will draw the objects over the quadrants
-func (qt *Tree) Draw(win *pixelgl.Window, drawTree bool, drawText bool, drawObjects bool) {
+func (qt *Tree) Draw(win *pixelgl.Window, drawTree, colorTree, drawText, drawObjects bool) {
 
 	// Grab all the nodes
 	rectangles := NodeList{}
@@ -289,15 +296,16 @@ func (qt *Tree) Draw(win *pixelgl.Window, drawTree bool, drawText bool, drawObje
 
 	imd := imdraw.New(nil)
 
-	if drawTree {
+	if colorTree {
 		// rectangle itself
-		// for _, r := range rectangles {
-		// 	imd.Color = r.Color()
-		// 	imd.Push(r.Bounds().Min)
-		// 	imd.Push(r.Bounds().Max)
-		// 	imd.Rectangle(0)
-		// }
-
+		for _, r := range rectangles {
+			imd.Color = r.Color()
+			imd.Push(r.Bounds().Min)
+			imd.Push(r.Bounds().Max)
+			imd.Rectangle(0)
+		}
+	}
+	if drawTree {
 		// lines around it
 		for _, r := range rectangles {
 			imd.Color = colornames.Red

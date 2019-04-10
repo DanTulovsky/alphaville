@@ -193,3 +193,8 @@ func IntersectAny(r1 pixel.Rect, r2 []pixel.Rect) bool {
 	}
 	return false
 }
+
+//VecLen returns the length of the vector that is the distance between a and b
+func VecLen(a, b pixel.Vec) float64 {
+	return a.Sub(b).Len()
+}

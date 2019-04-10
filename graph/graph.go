@@ -242,7 +242,7 @@ type PathFinder func(*Graph, pixel.Vec, pixel.Vec) ([]*Node, int, error)
 func DrawPath(win *pixelgl.Window, path []*Node) {
 
 	imd := imdraw.New(nil)
-	imd.Color = colornames.Darkblue
+	imd.Color = colornames.Orange
 	for _, p := range path {
 		imd.Push(p.Value().V)
 	}

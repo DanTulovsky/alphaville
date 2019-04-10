@@ -33,7 +33,7 @@ const (
 	visibleWinMaxX, visibleWinMaxY = 1024, 1024
 	groundHeight                   = 40
 
-	maxTargets = 2
+	maxTargets = 1
 )
 
 // processMouseLeftInput handles left click

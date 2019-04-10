@@ -292,14 +292,15 @@ func (b *ManualBehavior) Draw(win *pixelgl.Window) {
 // TargetSeekerBehavior moves in shortest path to the target
 type TargetSeekerBehavior struct {
 	DefaultBehavior
-	target    Target
-	moveGraph *graph.Graph
-	qt        *quadtree.Tree
-	path      []*graph.Node
-	fullpath  []*graph.Node
-	cost      int
-	source    pixel.Vec
-	finder    graph.PathFinder // path finder function
+	target          Target
+	moveGraph       *graph.Graph
+	qt              *quadtree.Tree
+	path            []*graph.Node
+	fullpath        []*graph.Node
+	cost            int
+	source          pixel.Vec
+	finder          graph.PathFinder // path finder function
+	turnsAtLocation int              // number of turns at current location
 }
 
 // NewTargetSeekerBehavior return a TargetSeekerBehavior
@@ -328,8 +329,8 @@ func (b *TargetSeekerBehavior) scaledCollisionVerticies(w *World, o Object) []ve
 			continue // skip yourself
 		}
 
-		// until movemement is fixed, add an additional buffer around object
-		var buffer float64 = 10
+		// until movemment is fixed, add an additional buffer around object
+		var buffer float64 = 0
 		c := other.Phys().Location().Center()
 		size := pixel.V(other.Phys().Location().W()+o.Phys().Location().W()+buffer,
 			other.Phys().Location().H()+o.Phys().Location().H()+buffer)
@@ -353,7 +354,7 @@ func (b *TargetSeekerBehavior) scaledCollisionEdges(w *World, o Object) []pixel.
 		}
 
 		// until movement is fixed, add an additional buffer around object
-		var buffer float64 = 10
+		var buffer float64 = 0
 		c := other.Phys().Location().Center()
 		size := pixel.V(other.Phys().Location().W()+o.Phys().Location().W()+buffer,
 			other.Phys().Location().H()+o.Phys().Location().H()+buffer)
@@ -440,7 +441,6 @@ func (b *TargetSeekerBehavior) populateVisibilityGraph(w *World, o Object) {
 	}
 
 	b.moveGraph = g
-	log.Printf("%v", b.moveGraph)
 }
 
 // populateMoveGraph creates a move graph by doing a
@@ -460,7 +460,7 @@ func (b *TargetSeekerBehavior) populateMoveGraph(w *World, o Object) {
 		if o.ID() == other.ID() {
 			continue
 		}
-		var buffer float64 = 2
+		var buffer float64 = 4
 		c := other.Phys().Location().Center()
 		size := pixel.V(other.Phys().Location().W()+o.Phys().Location().W()+buffer,
 			other.Phys().Location().H()+o.Phys().Location().H()+buffer)
@@ -476,17 +476,20 @@ func (b *TargetSeekerBehavior) populateMoveGraph(w *World, o Object) {
 	fixtures = append(fixtures, target)
 
 	// add buffer around ground and walls
-	left := pixel.R(0, 0, o.Phys().Location().W(), w.Y)
-	right := pixel.R(w.X-o.Phys().Location().W(), 0, w.X, w.Y)
-	top := pixel.R(0, w.Y, w.X, w.Y-o.Phys().Location().H())
-	bottom := pixel.R(0, 0, w.X, w.Ground.Phys().Location().Max.Y+o.Phys().Location().H())
-	fixtures = append(fixtures, left, right, top, bottom)
+	// left := pixel.R(0, 0, o.Phys().Location().W(), w.Y)
+	// right := pixel.R(w.X-o.Phys().Location().W(), 0, w.X, w.Y)
+	// top := pixel.R(0, w.Y, w.X, w.Y-o.Phys().Location().H())
+	// bottom := pixel.R(0, 0, w.X, w.Ground.Phys().Location().Max.Y+o.Phys().Location().H())
+	// fixtures = append(fixtures, left, right, top, bottom)
 
 	// minimum size of rectangle side at which we stop splitting
 	minSize := float64(6)
 
 	// quadtree
-	qt, err := quadtree.NewTree(pixel.R(w.Ground.Phys().Location().Min.X, w.Ground.Phys().Location().Max.Y, w.X, w.Y), fixtures, minSize)
+	qtBounds := pixel.R(
+		w.Ground.Phys().Location().Min.X+o.Phys().Location().W(), w.Ground.Phys().Location().Max.Y+o.Phys().Location().H(),
+		w.X-o.Phys().Location().W(), w.Y-o.Phys().Location().H())
+	qt, err := quadtree.NewTree(qtBounds, fixtures, minSize)
 	if err != nil {
 		log.Fatalf("error creating quadtree: %v", err)
 	}
@@ -508,7 +511,9 @@ func (b *TargetSeekerBehavior) Target() Target {
 // isAtTarget returns true if any part of the object covers the target
 func (b *TargetSeekerBehavior) isAtTarget(o Object) bool {
 
-	if o.Phys().Location().Intersect(b.target.Bounds()) != pixel.R(0, 0, 0, 0) {
+	// if o.Phys().Location().Intersect(b.target.Bounds()) != pixel.R(0, 0, 0, 0) {
+	// if b.target.Bounds().Contains(o.Phys().Location().Center()) {
+	if utils.VecLen(o.Phys().Location().Center(), b.target.Bounds().Center()) < o.Speed() {
 
 		o.Notify(NewObjectEvent(
 			fmt.Sprintf("[%v] found target [%v]", o.Name(), b.target.Name()), time.Now(),
@@ -521,11 +526,13 @@ func (b *TargetSeekerBehavior) isAtTarget(o Object) bool {
 	return false
 }
 
-// Direction returns the next direction to travel to the target
-func (b *TargetSeekerBehavior) Direction(w *World, o Object) pixel.Vec {
+// Direction returns the next direction to travel and the target itself
+func (b *TargetSeekerBehavior) Direction(w *World, o Object) (pixel.Vec, pixel.Vec) {
 	// remove the current location from path
-	circle := pixel.C(o.Phys().Location().Center(), 6)
-	if len(b.path) > 0 && circle.Contains(b.path[0].Value().V) {
+	// circle := pixel.C(o.Phys().Location().Center(), o.Speed()*2)
+
+	// for len(b.path) > 0 && circle.Contains(b.path[0].Value().V) {
+	for len(b.path) > 0 && utils.VecLen(o.Phys().Location().Center(), b.path[0].Value().V) < o.Speed() {
 		// if len(b.path) > 0 && o.Phys().Location().Contains(b.path[0].Value().V) {
 
 		b.source = b.path[0].Value().V
@@ -534,7 +541,7 @@ func (b *TargetSeekerBehavior) Direction(w *World, o Object) pixel.Vec {
 
 	if len(b.path) == 0 {
 		// log.Printf("path ran out...")
-		return pixel.ZV
+		return pixel.ZV, pixel.V(0, 0)
 	}
 	source := b.source
 	// target is the next node in the path
@@ -542,14 +549,14 @@ func (b *TargetSeekerBehavior) Direction(w *World, o Object) pixel.Vec {
 	// current location of target seeker
 	c := o.Phys().Location().Center()
 
-	log.Printf("From: %v; To: %v\n", source, target)
-	log.Printf("  Current location: %v (%v)", o.Phys().Location(), o.Phys().Location().Center())
-	log.Printf("  Target location: %v", target)
-	log.Printf("  at target?: %v", b.isAtTarget(o))
+	// log.Printf("From: %v; To: %v\n", source, target)
+	// log.Printf("  Current location: %v (%v)", o.Phys().Location(), o.Phys().Location().Center())
+	// log.Printf("  Target location: %v", target)
+	// log.Printf("  at target?: %v", b.isAtTarget(o))
 	var moves []pixel.Vec
 
 	orient := graph.Orientation(source, target, c)
-	log.Printf("  orientation: %v", orient)
+	// log.Printf("  orientation: %v", orient)
 
 	if target.X > source.X {
 		if utils.LineSlope(source, target) > 0 {
@@ -639,12 +646,11 @@ func (b *TargetSeekerBehavior) Direction(w *World, o Object) pixel.Vec {
 	}
 
 	if len(moves) > 0 {
-		log.Println(moves)
-		return moves[utils.RandomInt(0, len(moves))]
+		return moves[utils.RandomInt(0, len(moves))], target
 	}
 
 	o.SetManualVelocity(pixel.ZV)
-	return pixel.ZV
+	return pixel.ZV, pixel.ZV
 
 }
 
@@ -657,14 +663,14 @@ func (b *TargetSeekerBehavior) pickNewTarget(w *World) (Target, error) {
 	}
 
 	t := targets[utils.RandomInt(0, len(targets))]
-	log.Printf("Picked new target %v", t.Location())
+	// log.Printf("Picked new target %v", t.Location())
 	return t, nil
 }
 
 // FindPath returns the path and cost between start and target
 func (b *TargetSeekerBehavior) FindPath(start, target pixel.Vec) ([]*graph.Node, int, error) {
 
-	log.Printf("looking for path from %v to %v", start, target)
+	// log.Printf("looking for path from %v to %v", start, target)
 	path, cost, err := b.finder(b.moveGraph, start, target)
 	if err != nil {
 		log.Printf("error finding path: %v", err)
@@ -685,13 +691,18 @@ func (b *TargetSeekerBehavior) Update(w *World, o Object) {
 			// b.populateVisibilityGraph(w, o)
 			b.populateMoveGraph(w, o)
 
-			log.Printf("qt: %v", b.qt)
-			log.Printf("g: %v", b.moveGraph)
-			startNode := b.qt.Locate(o.Phys().Location().Center())
-			targetNode := b.qt.Locate(b.target.Bounds().Center())
+			// log.Printf("qt: %v", b.qt)
+			startNode, err := b.qt.Locate(o.Phys().Location().Center())
+			if err != nil {
+				log.Fatal(err)
+			}
+			targetNode, err := b.qt.Locate(b.target.Bounds().Center())
+			if err != nil {
+				log.Fatal(err)
+			}
 
-			log.Printf("startNode: %v (o at: %v)", startNode.Bounds(), o.Phys().Location().Center())
-			log.Printf("targetNode: %v", targetNode.Bounds())
+			// log.Printf("startNode: %v (o at: %v)", startNode.Bounds(), o.Phys().Location().Center())
+			// log.Printf("targetNode: %v", targetNode.Bounds())
 
 			b.path, b.cost, err = b.FindPath(startNode.Bounds().Center(), targetNode.Bounds().Center())
 			if err != nil {
@@ -705,7 +716,7 @@ func (b *TargetSeekerBehavior) Update(w *World, o Object) {
 			sn := graph.NewItemNode(uuid.New(), o.Phys().Location().Center(), 0)
 			b.fullpath = append([]*graph.Node{sn}, b.fullpath...)
 			b.source = o.Phys().Location().Center()
-			log.Printf("Path found: %v", b.fullpath)
+			// log.Printf("Path found: %v", b.fullpath)
 
 		} else {
 			log.Printf("error picking target: %v", err)
@@ -718,15 +729,60 @@ func (b *TargetSeekerBehavior) Update(w *World, o Object) {
 		return
 	}
 
+	// if stuck, try to recalculate path
+	// if b.turnsAtLocation > 4 {
+	// 	var err error
+	// 	startNode, err := b.qt.Locate(o.Phys().Location().Center())
+	// 	if err != nil {
+	// 		log.Fatal(err)
+	// 	}
+	// 	targetNode, err := b.qt.Locate(b.target.Bounds().Center())
+	// 	if err != nil {
+	// 		log.Fatal(err)
+	// 	}
+
+	// 	b.path, b.cost, err = b.FindPath(startNode.Bounds().Center(), targetNode.Bounds().Center())
+	// 	if err != nil {
+	// 		log.Printf("error finding path: %v", err)
+	// 	}
+
+	// 	b.fullpath = []*graph.Node{}
+	// 	for _, n := range b.path {
+	// 		b.fullpath = append(b.fullpath, n)
+	// 	}
+	// 	sn := graph.NewItemNode(uuid.New(), o.Phys().Location().Center(), 0)
+	// 	b.fullpath = append([]*graph.Node{sn}, b.fullpath...)
+	// 	b.source = o.Phys().Location().Center()
+	// 	log.Printf("Path found: %v", b.fullpath)
+
+	// 	log.Printf("----> recalculated path!")
+
+	// }
+
 	phys := o.NextPhys()
 
-	d := b.Direction(w, o)
+	d, target := b.Direction(w, o)
 	phys.SetManualVelocity(d)
 	// o.Phys().SetManualVelocity(d)
+
+	// if moving takes us further away from the target than we currently are
+	// just move directly on top of the target
+	currentDistance := utils.VecLen(o.Phys().Location().Center(), target)
+	newDistance := utils.VecLen(o.Phys().Location().Moved(phys.Vel()).Center(), target)
+
+	if newDistance > currentDistance {
+		v := target.Sub(o.Phys().Location().Center())
+		b.Move(w, o, phys.CollisionBordersVector(w, v))
+		// b.Move(w, o, v)
+		return
+	}
 
 	if phys.HaveCollisionAt(w) == "" {
 		// move, checking collisions with world borders
 		b.Move(w, o, phys.CollisionBordersVector(w, phys.Vel()))
+		// b.turnsAtLocation = 0
+	} else {
+		b.turnsAtLocation++
 	}
 }
 
@@ -743,29 +799,10 @@ func (b *TargetSeekerBehavior) Draw(win *pixelgl.Window) {
 	}
 
 	// draw the quadtree
-	drawTree, drawText, drawObjects := true, false, true
-	b.qt.Draw(win, drawTree, drawText, drawObjects)
+	drawTree, colorTree, drawText, drawObjects := true, false, false, false
+	b.qt.Draw(win, drawTree, colorTree, drawText, drawObjects)
 
 	// draw the path
 	graph.DrawPath(win, b.fullpath)
-
-	// // Draw the path
-	// imd.Color = colornames.Lightblue
-	// // Draw the graph lines
-	// for n, other := range b.moveGraph.Edges() {
-	// 	for _, o := range other {
-	// 		imd.Push(n.Value().V)
-	// 		imd.Push(o.Value().V)
-	// 		imd.Line(1)
-	// 	}
-	// }
-
-	// // draw the graph
-	// imd.Color = b.target.Color()
-	// for _, p := range b.fullpath {
-	// 	imd.Push(p.Value().V)
-	// }
-	// imd.Line(1)
-	// imd.Draw(win)
 
 }

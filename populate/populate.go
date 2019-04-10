@@ -227,21 +227,25 @@ func AddTarget(w *world.World, radius float64, maxTargets int) {
 	for !valid {
 		l := pixel.V(
 			// TODO fix these!
-			utils.RandomFloat64(21, w.X-21),
-			utils.RandomFloat64(w.Ground.Phys().Location().Max.Y+21, w.Y-21))
+			utils.RandomFloat64(45, w.X-45),
+			utils.RandomFloat64(w.Ground.Phys().Location().Max.Y+55, w.Y-45))
 
 		t = world.NewSimpleTarget("one", l, radius)
 		valid = true
 		for _, f := range w.Fixtures() {
-			log.Printf("checking fixture: %v (target: %v)", f.Phys().Location(), t.Circle().Resized(20))
+			// log.Printf("checking fixture: %v (target: %v)", f.Phys().Location(), t.Circle().Resized(20))
 			// for now assume seekers are always 40, 40 rectangles, don't let targets end up inside
 			// augmented area of fixtures, do this by resizing the circle by half the width of the rect
-			if f.Phys().Location().IntersectCircle(t.Circle().Resized(20)) != pixel.ZV {
+			if f.Phys().Location().IntersectCircle(t.Circle().Resized(25)) != pixel.ZV {
 				valid = false
 			}
 		}
+
+		// check edges of the world
+		if w.Ground.Phys().Location().IntersectCircle(t.Circle().Resized(20)) != pixel.ZV {
+			valid = false
+		}
 	}
-	log.Printf("%v", t)
 	w.AddTarget(t)
 }
 
