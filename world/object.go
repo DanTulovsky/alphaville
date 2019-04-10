@@ -186,19 +186,7 @@ func (o *BaseObject) CheckIntersect(w *World) {
 		}
 		if o.NextPhys().Location().Intersect(other.Phys().Location()) != pixel.R(0, 0, 0, 0) {
 			log.Printf("%#+v (%v) intersects with %#v (%v)", o.name, o.NextPhys(), other.Name(), other.Phys())
-		}
-	}
-}
-
-// CheckIntersectRect prints out an error if this object intersects with another one
-func CheckIntersectRect(w *World, r pixel.Rect, id uuid.UUID) {
-	for _, other := range w.CollisionObjects() {
-		if id == other.ID() {
-			continue // skip yourself
-		}
-		if r.Intersect(other.Phys().Location()) != pixel.R(0, 0, 0, 0) {
-			log.Printf("> %#+v (%v) intersects with %#v (%v)", id, r, other.Name(), other.Phys())
-
+			log.Fatal("broken")
 		}
 	}
 }

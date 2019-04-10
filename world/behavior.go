@@ -146,21 +146,24 @@ func (b *DefaultBehavior) changeVerticalDirection(w *World, o Object) bool {
 func (b *DefaultBehavior) HandleCollisions(w *World, o Object) bool {
 	phys := o.NextPhys()
 
-	clocation := phys.HaveCollisionAt(w)
+	clocations := phys.HaveCollisionsAt(w)
 
-	switch {
-	case phys.MovingDown() && clocation == "below":
-		b.avoidCollisionBelow(phys)
-		return true
-	case phys.MovingUp() && clocation == "above":
-		b.avoidCollisionAbove(phys, w)
-		return true
-	case phys.MovingRight() && clocation == "right":
-		b.avoidCollisionRight(phys)
-		return true
-	case phys.MovingLeft() && clocation == "left":
-		b.avoidCollisionLeft(phys)
-		return true
+	for _, clocation := range clocations {
+
+		switch {
+		case phys.MovingDown() && clocation == "below":
+			b.avoidCollisionBelow(phys)
+			return true
+		case phys.MovingUp() && clocation == "above":
+			b.avoidCollisionAbove(phys, w)
+			return true
+		case phys.MovingRight() && clocation == "right":
+			b.avoidCollisionRight(phys)
+			return true
+		case phys.MovingLeft() && clocation == "left":
+			b.avoidCollisionLeft(phys)
+			return true
+		}
 	}
 	return false
 }
@@ -273,7 +276,7 @@ func NewManualBehavior() *ManualBehavior {
 func (b *ManualBehavior) Update(w *World, o Object) {
 	phys := o.NextPhys()
 
-	if phys.HaveCollisionAt(w) == "" {
+	if len(phys.HaveCollisionsAt(w)) == 0 {
 		b.Move(w, o, phys.CollisionBordersVector(w, phys.Vel()))
 	}
 }
@@ -686,13 +689,12 @@ func (b *TargetSeekerBehavior) Update(w *World, o Object) {
 	}
 
 	// if stuck, redo the graph
-	if b.turnsAtLocation > 8 || len(b.path) == 0 {
+	// if b.turnsAtLocation > 8 || len(b.path) == 0 {
+	if len(b.path) == 0 {
 		b.recalculateMoveInfo(w, o)
 	}
 
-	var randomEscape bool
-
-	if phys.HaveCollisionAt(w) == "" && !(phys.Vel() == pixel.ZV) {
+	if len(phys.HaveCollisionsAt(w)) == 0 && !(phys.Vel() == pixel.ZV) {
 		// move, checking collisions with world borders
 		b.Move(w, o, phys.CollisionBordersVector(w, phys.Vel()))
 		b.turnsAtLocation = 0
@@ -700,13 +702,8 @@ func (b *TargetSeekerBehavior) Update(w *World, o Object) {
 		b.turnsAtLocation++
 	}
 
-	// if stuck for a very long time, move randomly
-	if b.turnsAtLocation > 20 {
-		randomEscape = true
-	}
 	// unable to move via path for a long time, try random walk
-	if randomEscape {
-		log.Println("escaping...")
+	if b.turnsAtLocation > 20 {
 		randx := float64(utils.RandomInt(-1, 2))
 		randy := float64(utils.RandomInt(-1, 2))
 		if randx != 0 {
@@ -714,7 +711,7 @@ func (b *TargetSeekerBehavior) Update(w *World, o Object) {
 		}
 		v := pixel.V(randx, randy)
 		phys.SetManualVelocity(v)
-		return
+		return // delay actual move until next tick to avoid collision problems
 	}
 
 	// Setup next move
@@ -745,7 +742,7 @@ func (b *TargetSeekerBehavior) Draw(win *pixelgl.Window) {
 	}
 
 	// draw the quadtree
-	drawTree, colorTree, drawText, drawObjects := false, false, false, true
+	drawTree, colorTree, drawText, drawObjects := false, false, false, false
 	b.qt.Draw(win, drawTree, colorTree, drawText, drawObjects)
 
 	// draw the path

@@ -14,7 +14,7 @@ type ObjectPhys interface {
 
 	CollisionBordersVector(*World, pixel.Vec) pixel.Vec
 	CurrentMass() float64
-	HaveCollisionAt(*World) string
+	HaveCollisionsAt(*World) []string
 	IsAboveGround(w *World) bool
 	IsZeroMass() bool
 	Location() pixel.Rect
@@ -223,9 +223,11 @@ func (o *BaseObjectPhys) LocationOf(other Object) string {
 	return ""
 }
 
-// HaveCollisionAt returns the location of the collision (above, below, left, right) if there
+// HaveCollisionsAt returns all the location of the collisions (above, below, left, right) if there
 // is a collision, otherwise ""
-func (o *BaseObjectPhys) HaveCollisionAt(w *World) string {
+func (o *BaseObjectPhys) HaveCollisionsAt(w *World) []string {
+	collisions := []string{}
+
 	for _, other := range w.CollisionObjects() {
 		if o.parentObject.ID() == other.ID() {
 			continue // skip yourself
@@ -233,6 +235,10 @@ func (o *BaseObjectPhys) HaveCollisionAt(w *World) string {
 
 		// location of other compared to o (above, below, right, left)
 		l := o.LocationOf(other)
+		// log.Printf("o: %v; other: %v; l: %v", o.parentObject.Name(), other.Name(), l)
+		// log.Printf("o is: movingRight? %v; movingLeft? %v; movingUp? %v; movingDown? %v", o.MovingRight(), o.MovingLeft(), o.MovingUp(), o.MovingDown())
+
+		// log.Printf("other is: movingRight? %v; movingLeft? %v; movingUp? %v; movingDown? %v", other.Phys().MovingRight(), other.Phys().MovingLeft(), other.Phys().MovingUp(), other.Phys().MovingDown())
 
 		switch l {
 		case "left":
@@ -255,15 +261,15 @@ func (o *BaseObjectPhys) HaveCollisionAt(w *World) string {
 
 		// other moves as planned based on current velocity
 		if HaveCollisions(o.Location(), other.Phys().Location(), o.Vel(), other.Phys().Vel()) {
-			return l
+			collisions = append(collisions, l)
 		}
 		// other doesn't move
 		if HaveCollisions(o.Location(), other.Phys().Location(), o.Vel(), pixel.V(0, 0)) {
-			return l
+			collisions = append(collisions, l)
 		}
 	}
 
-	return ""
+	return collisions
 }
 
 // CollisionBordersVector returns a movement vector that avoids collision with outside world border given vel vector

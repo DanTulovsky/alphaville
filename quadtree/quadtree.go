@@ -242,11 +242,11 @@ func (qt *Tree) ToGraph(start, target pixel.Rect) *graph.Graph {
 
 	startNode, err := qt.Locate(start.Center())
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("%v", err)
 	}
 	targetNode, err := qt.Locate(target.Center())
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("%v", err)
 	}
 
 	// must set this before calculating neighbors
