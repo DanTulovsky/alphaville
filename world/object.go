@@ -25,6 +25,7 @@ type Object interface {
 	Behavior() Behavior
 	BoundingBox(pixel.Vec) pixel.Rect
 	CheckIntersect(*World)
+	Color() color.Color
 	Draw(*pixelgl.Window)
 	ID() uuid.UUID
 	IsSpawned() bool
@@ -108,6 +109,11 @@ func (o *BaseObject) BoundingBox(v pixel.Vec) pixel.Rect {
 // Name returns the object's name
 func (o *BaseObject) Name() string {
 	return o.name
+}
+
+// Color returns the object's color
+func (o *BaseObject) Color() color.Color {
+	return o.color
 }
 
 // Speed returns the object's speed

@@ -2,6 +2,7 @@ package world
 
 import (
 	"fmt"
+	"image/color"
 	"time"
 
 	"github.com/faiface/pixel/pixelgl"
@@ -141,11 +142,8 @@ func (g *Gate) Draw(win *pixelgl.Window) {
 	// TODO: Probably best to create ahead of time
 	imd := imdraw.New(nil)
 
-	if g.Reserved || g.Status == GateClosed {
-		imd.Color = colornames.Red
-	} else {
-		imd.Color = colornames.Green
-	}
+	imd.Color = g.Color()
+
 	imd.Push(g.Location)
 	imd.Circle(g.Radius, 2)
 	imd.Draw(win)
@@ -229,6 +227,14 @@ func (g *Gate) Mass() float64 {
 // NextPhys always returns nil
 func (g *Gate) NextPhys() ObjectPhys {
 	return nil
+}
+
+// Color returns the gate color
+func (g *Gate) Color() color.Color {
+	if g.Reserved || g.Status == GateClosed {
+		return colornames.Red
+	}
+	return colornames.Green
 }
 
 // Name always returns 'null'

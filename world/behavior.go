@@ -758,8 +758,11 @@ func (b *TargetSeekerBehavior) Draw(win *pixelgl.Window) {
 	drawTree, colorTree, drawText, drawObjects := false, false, false, false
 	b.qt.Draw(win, drawTree, colorTree, drawText, drawObjects)
 
-	// draw the path
-	l := graph.NewItemNode(uuid.New(), b.parent.Phys().Location().Center(), 0)
-	graph.DrawPath(win, append([]*graph.Node{l}, b.path...))
+	pathColor := b.parent.Color()
+	// draw the path from current location
+	// l := graph.NewItemNode(uuid.New(), b.parent.Phys().Location().Center(), 0)
+	// graph.DrawPath(win, append([]*graph.Node{l}, b.path...), pathColor)
 
+	// draw the path full path
+	graph.DrawPath(win, b.fullpath, pathColor)
 }

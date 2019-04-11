@@ -2,12 +2,12 @@ package graph
 
 import (
 	"fmt"
+	"image/color"
 	"math"
 	"sync"
 
 	"github.com/faiface/pixel/imdraw"
 	"github.com/faiface/pixel/pixelgl"
-	"golang.org/x/image/colornames"
 
 	"github.com/faiface/pixel"
 	"github.com/google/uuid"
@@ -228,10 +228,10 @@ func EdgesIntersect(l1, l2 Edge) bool {
 type PathFinder func(*Graph, pixel.Vec, pixel.Vec) ([]*Node, int, error)
 
 // DrawPath draws the path
-func DrawPath(win *pixelgl.Window, path []*Node) {
+func DrawPath(win *pixelgl.Window, path []*Node, c color.Color) {
 
 	imd := imdraw.New(nil)
-	imd.Color = colornames.Orange
+	imd.Color = c
 	for _, p := range path {
 		imd.Push(p.Value().V)
 	}

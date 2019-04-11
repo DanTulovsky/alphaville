@@ -1,10 +1,13 @@
 package world
 
 import (
+	"image/color"
+
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/pixelgl"
 	"github.com/google/uuid"
 	"gogs.wetsnow.com/dant/alphaville/observer"
+	"golang.org/x/image/colornames"
 )
 
 // NullObject implements the Object interface, but doesn't do anything
@@ -35,6 +38,11 @@ func (o *NullObject) Behavior() Behavior {
 // ID returns the id
 func (o *NullObject) ID() uuid.UUID {
 	return o.id
+}
+
+// Color always return black
+func (o *NullObject) Color() color.Color {
+	return colornames.Black
 }
 
 // IsSpawned always return false

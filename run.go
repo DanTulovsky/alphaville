@@ -31,13 +31,12 @@ const (
 	MsPerUpdate = 4
 	gravity     = -2
 
-	// for now must be a square
-	worldMaxX, worldMaxY           = 1024, 1024
-	visibleWinMaxX, visibleWinMaxY = 1024, 1024
+	worldMaxX, worldMaxY           = 1200, 1200
+	visibleWinMaxX, visibleWinMaxY = worldMaxX, worldMaxY
 	groundHeight                   = 40
 
-	maxTargets     = 3
-	maxObjectSpeed = 2
+	maxTargets     = 4
+	maxObjectSpeed = 4
 )
 
 // processMouseLeftInput handles left click
@@ -118,17 +117,17 @@ func run() {
 	w := world.NewWorld(worldMaxX, worldMaxY, ground, gravity, maxObjectSpeed)
 
 	// populate the world
-	populate.AddTargetSeeker(w, "1", 2)
-	populate.AddTargetSeeker(w, "2", 0.1)
+	populate.AddTargetSeeker(w, "1", 4)
+	populate.AddTargetSeeker(w, "2", 3)
 	// populate.AddTargetSeeker(w, "3", 5)
 	// populate.AddTargetSeeker(w, "4")
-	// populate.RandomCircles(w, 2)
+	populate.RandomCircles(w, 2)
 	// populate.RandomRectangles(w, 2)
 	// populate.RandomEllipses(w, 2)
 	// populate.AddManualObject(w, 60, 60)
 	populate.AddGates(w, time.Second*1)
 	// populate.AddFixture(w)
-	populate.AddFixtures(w, 8)
+	populate.AddFixtures(w, 4)
 	// add targets AFTER fixtures
 	populate.AddTarget(w, 10, maxTargets)
 

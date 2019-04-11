@@ -117,9 +117,11 @@ func AddTargetSeeker(w *world.World, name string, speed float64) {
 	// path finder algorithm
 	finder := graph.DijkstraPath
 
+	randomColor := colornames.Map[colornames.Names[utils.RandomInt(0, len(colornames.Names))]]
+
 	o := world.NewRectObject(
 		fmt.Sprintf("ts-%v", name),
-		colornames.Yellow,
+		randomColor,
 		speed,
 		utils.RandomFloat64(minMass, maxMass)/10, // mass
 		width,  // width
