@@ -124,7 +124,7 @@ func AddTargetSeeker(w *world.World, name string, speed float64) {
 		utils.RandomFloat64(minMass, maxMass)/10, // mass
 		width,  // width
 		height, // height
-		world.NewTargetSeekerBehavior(graph.PathFinder(finder)), // default behavior
+		world.NewTargetSeekerBehavior(graph.PathFinder(finder)),
 	)
 
 	w.AddObject(o)

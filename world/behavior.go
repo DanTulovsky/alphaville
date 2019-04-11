@@ -751,7 +751,7 @@ func (b *TargetSeekerBehavior) Move(w *World, o Object, v pixel.Vec) {
 
 // Draw draws any artifacts of the behavior
 func (b *TargetSeekerBehavior) Draw(win *pixelgl.Window) {
-	if b.target == nil {
+	if b.target == nil || b.parent.Phys() == nil {
 		return
 	}
 
