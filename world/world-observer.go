@@ -29,7 +29,7 @@ func (w *World) processTargetEvent(e *TargetEvent) {
 	for _, data := range e.Data() {
 		switch data.Key {
 		case "destroyed":
-			w.RemoveTarget(data.Value)
+			w.RegisterTargetRemoval(data.Value)
 		}
 	}
 }

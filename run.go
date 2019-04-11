@@ -119,13 +119,13 @@ func run() {
 
 	// populate the world
 	populate.AddTargetSeeker(w, "1", 2)
-	populate.AddTargetSeeker(w, "2", 1)
+	populate.AddTargetSeeker(w, "2", 0.1)
 	// populate.AddTargetSeeker(w, "3", 5)
 	// populate.AddTargetSeeker(w, "4")
-	populate.RandomCircles(w, 2)
-	populate.RandomRectangles(w, 2)
-	populate.RandomEllipses(w, 2)
-	populate.AddManualObject(w, 60, 60)
+	// populate.RandomCircles(w, 2)
+	// populate.RandomRectangles(w, 2)
+	// populate.RandomEllipses(w, 2)
+	// populate.AddManualObject(w, 60, 60)
 	populate.AddGates(w, time.Second*1)
 	// populate.AddFixture(w)
 	populate.AddFixtures(w, 8)

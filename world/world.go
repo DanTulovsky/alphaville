@@ -3,6 +3,7 @@ package world
 import (
 	"fmt"
 	"log"
+	"math/rand"
 	"time"
 
 	"gogs.wetsnow.com/dant/alphaville/observer"
@@ -18,6 +19,7 @@ type World struct {
 	Gates          []*Gate  // entrances into the world
 	Objects        []Object // objects in the world
 	targets        []Target // targets in the world that TargetSeekers hunt
+	removeTargets  []Target // targets to be removed next turn
 	ManualControl  Object   // this object is human controlled
 	Ground         Object   // special, for now
 	fixtures       []Object // walls, floors, rocks, etc...
@@ -90,6 +92,8 @@ func (w *World) Draw(win *pixelgl.Window) {
 
 // Update updates all the objects in the world to their next state
 func (w *World) Update() {
+	w.Cleanup()
+
 	// update movable objects
 	for _, o := range w.SpawnedObjects() {
 		o.Update(w)
@@ -191,14 +195,42 @@ func (w *World) AddTarget(t Target) error {
 }
 
 // RemoveTarget removes a target from the world
-func (w *World) RemoveTarget(uuid string) {
+func (w *World) RemoveTarget(remove Target) {
 	targets := []Target{}
 	for _, t := range w.Targets() {
-		if t.ID().String() != uuid {
+		if t.ID() != remove.ID() {
 			targets = append(targets, t)
 		}
 	}
 	w.targets = targets
+}
+
+// RemoveOldTargets removes any targets slated for deletion
+func (w *World) RemoveOldTargets() {
+	if len(w.removeTargets) == 0 {
+		return
+	}
+
+	for _, t := range w.removeTargets {
+		w.RemoveTarget(t)
+	}
+
+	w.removeTargets = []Target{}
+}
+
+// Cleanup runs every tick and does general cleanup
+func (w *World) Cleanup() {
+	w.RemoveOldTargets()
+}
+
+// RegisterTargetRemoval marks this target for removal next turn
+func (w *World) RegisterTargetRemoval(uuid string) {
+	for _, t := range w.Targets() {
+		if t.ID().String() == uuid {
+			w.removeTargets = append(w.removeTargets, t)
+			t.SetAvailable(false)
+		}
+	}
 }
 
 // GetTarget returns an available target
@@ -210,7 +242,13 @@ func (w *World) GetTarget() (Target, error) {
 	var targets []Target
 
 	for _, t := range w.targets {
-		targets = append(targets, t)
+		if t.Available() {
+			targets = append(targets, t)
+		}
+	}
+
+	if len(targets) == 0 {
+		return nil, fmt.Errorf("no available targets")
 	}
 
 	return targets[utils.RandomInt(0, len(targets))], nil
@@ -290,7 +328,10 @@ func (w *World) ReserveGate(o Object) (*Gate, error) {
 		}
 	}
 
-	for _, g := range w.Gates {
+	r := rand.New(rand.NewSource(time.Now().Unix()))
+
+	for _, i := range r.Perm(len(w.Gates)) {
+		g := w.Gates[i]
 		if g.Reserve(o) == nil {
 			return g, nil
 		}

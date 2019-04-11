@@ -634,7 +634,7 @@ func (b *TargetSeekerBehavior) processTargetEvent(e *TargetEvent) {
 		case "destroyed":
 			if b.target.ID().String() == data.Value {
 				// stop chasing destroyed targets
-				log.Printf("[%v] target [%v] destroyed need to pick another one", b.name, data.Value)
+				log.Printf("[%v] target [%v] destroyed need to pick another one", b.parent.Name(), data.Value)
 				b.target.Deregister(b)
 				b.target = nil
 			}
@@ -696,7 +696,6 @@ func (b *TargetSeekerBehavior) Update(w *World, o Object) {
 	}
 
 	if b.isAtTarget(o) {
-		log.Println("is at target")
 		b.targetsCaught++
 		return
 	}

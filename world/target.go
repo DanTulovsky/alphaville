@@ -31,6 +31,8 @@ func NewTargetEvent(d string, t time.Time, data ...observer.EventData) observer.
 type Target interface {
 	observer.EventNotifier
 
+	Available() bool
+	SetAvailable(bool)
 	Color() color.Color
 	Bounds() pixel.Rect
 	Circle() pixel.Circle
@@ -47,16 +49,28 @@ type simpleTarget struct {
 	color     color.Color
 	observers []observer.EventObserver
 	bounds    pixel.Rect // bounding box of target
+	available bool
 }
 
 // NewSimpleTarget returns a new simple target
 func NewSimpleTarget(name string, l pixel.Vec, r float64) Target {
 	return &simpleTarget{
-		id:     uuid.New(),
-		name:   name,
-		bounds: pixel.R(l.X-r, l.Y-r, l.X+r, l.Y+r),
-		color:  colornames.Red,
+		id:        uuid.New(),
+		name:      name,
+		bounds:    pixel.R(l.X-r, l.Y-r, l.X+r, l.Y+r),
+		color:     colornames.Red,
+		available: true,
 	}
+}
+
+// Available returns availability of the target
+func (t *simpleTarget) Available() bool {
+	return t.available
+}
+
+// SetAvailable sets availability
+func (t *simpleTarget) SetAvailable(a bool) {
+	t.available = a
 }
 
 // Color returns the color of the target
@@ -97,8 +111,10 @@ func (t *simpleTarget) Deregister(obs observer.EventObserver) {
 
 // Notify notifies all observers on an event.
 func (t *simpleTarget) Notify(event observer.Event) {
-	for i := 0; i < len(t.observers); i++ {
-		t.observers[i].OnNotify(event)
+	// t.observers gets modified by objects unregistering on destruction
+	observers := t.observers
+	for i := 0; i < len(observers); i++ {
+		observers[i].OnNotify(event)
 	}
 }
 
@@ -116,7 +132,7 @@ func (t *simpleTarget) Name() string {
 func (t *simpleTarget) Destroy() {
 	t.Notify(NewTargetEvent(
 		"target destroyed", time.Now(), observer.EventData{Key: "destroyed", Value: t.id.String()}))
-	t = nil
+	// t = nil
 }
 
 // Draw draws the target
