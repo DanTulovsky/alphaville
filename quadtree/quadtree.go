@@ -267,9 +267,9 @@ func (qt *Tree) ToGraph(start, target pixel.Rect) *graph.Graph {
 	}
 
 	for node, neighbors := range nodeNeighbors {
-		gnode := g.FindNode(node.Bounds().Center())
+		gnode, _ := g.FindNode(node.Bounds().Center())
 		for _, n := range neighbors {
-			gneighbor := g.FindNode(n.Bounds().Center())
+			gneighbor, _ := g.FindNode(n.Bounds().Center())
 			g.AddEdge(gnode, gneighbor)
 		}
 		g.AddNode(gnode)

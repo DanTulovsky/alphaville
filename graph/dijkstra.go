@@ -41,12 +41,13 @@ func DijkstraPath(g *Graph, start, target pixel.Vec) (path []*Node, cost int, er
 	}
 
 	// ensure start and target are part of the graph
-	if g.FindNode(start) == nil {
-		err = fmt.Errorf("cannot find start %v in graph", start)
+	startNode, err := g.FindNode(start)
+	if err != nil {
+		err = fmt.Errorf("cannot find start %v in graph: %v", start, err)
 		return
 	}
-	if g.FindNode(target) == nil {
-		err = fmt.Errorf("cannot find target %v in graph", target)
+	if _, er := g.FindNode(target); er != nil {
+		err = fmt.Errorf("cannot find target %v in graph: %v", target, er)
 		return
 	}
 
@@ -55,7 +56,7 @@ func DijkstraPath(g *Graph, start, target pixel.Vec) (path []*Node, cost int, er
 	previous := make(map[*Node]*Node) // previously visited node
 
 	// add starting point to the frontier as it'll be the first node visited
-	frontier.Set(g.FindNode(start), 0)
+	frontier.Set(startNode, 0)
 
 	// run until we visited every node in the frontier
 	for !frontier.IsEmpty() {
@@ -115,7 +116,7 @@ func DijkstraPath(g *Graph, start, target pixel.Vec) (path []*Node, cost int, er
 	}
 
 	// add the origin at the end of the path
-	path = append(path, g.FindNode(start))
+	path = append(path, startNode)
 	// path = append(path, NewItemNode(uuid.New(), start, 0))
 
 	// reverse the path because it was popilated

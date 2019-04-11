@@ -73,7 +73,7 @@ type Graph struct {
 	lock  sync.RWMutex
 }
 
-// NewGraph returns a new graph
+// New returns a new graph
 func New() *Graph {
 	nodes := make([]*Node, 0)
 	edges := make(map[Node][]*Node)
@@ -95,15 +95,14 @@ func (g *Graph) Edges() map[Node][]*Node {
 }
 
 // FindNode returns the node with the provided value
-func (g *Graph) FindNode(v pixel.Vec) *Node {
+func (g *Graph) FindNode(v pixel.Vec) (*Node, error) {
 	for _, n := range g.nodes {
 		if n.value.V == v {
-			return n
+			return n, nil
 		}
 	}
-	// log.Printf("cannot find: %v", v)
-	// log.Printf("%v", g)
-	return nil
+
+	return nil, fmt.Errorf("unable to find %v", v)
 }
 
 // AddNode adds a node to the graph
