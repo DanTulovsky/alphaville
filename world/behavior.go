@@ -688,10 +688,11 @@ func (b *TargetSeekerBehavior) Update(w *World, o Object) {
 		return
 	}
 
-	// if stuck, redo the graph
-	// if b.turnsAtLocation > 8 || len(b.path) == 0 {
-	if len(b.path) == 0 {
-		b.recalculateMoveInfo(w, o)
+	// if stuck, redo the graph, but not too often to let things move out of the way
+	if len(b.path) == 0 || b.turnsAtLocation > 8 {
+		if b.turnsAtLocation%35 == 0 {
+			b.recalculateMoveInfo(w, o)
+		}
 	}
 
 	if len(phys.HaveCollisionsAt(w)) == 0 && !(phys.Vel() == pixel.ZV) {
@@ -703,20 +704,20 @@ func (b *TargetSeekerBehavior) Update(w *World, o Object) {
 	}
 
 	// unable to move via path for a long time, try random walk
-	if b.turnsAtLocation > 20 {
+	if b.turnsAtLocation > 50 {
 		randx := float64(utils.RandomInt(-1, 2))
 		randy := float64(utils.RandomInt(-1, 2))
-		if randx != 0 {
-			randy = 0
-		}
+		// if randx != 0 {
+		// 	randy = 0
+		// }
 		v := pixel.V(randx, randy)
-		phys.SetManualVelocity(v)
+		phys.SetManualVelocityXY(v)
 		return // delay actual move until next tick to avoid collision problems
 	}
 
 	// Setup next move
 	d, target := b.Direction(w, o)
-	phys.SetManualVelocity(d)
+	phys.SetManualVelocityXY(d)
 
 	// if moving takes us further away from the target than we currently are
 	// just move directly on top of the target, if possible

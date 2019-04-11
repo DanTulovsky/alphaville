@@ -14,6 +14,9 @@ import (
 	"gogs.wetsnow.com/dant/alphaville/populate"
 	"gogs.wetsnow.com/dant/alphaville/world"
 	"golang.org/x/image/colornames"
+
+	"net/http"
+	_ "net/http/pprof"
 )
 
 var (
@@ -100,6 +103,11 @@ func run() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	rand.Seed(time.Now().UnixNano())
 
+	// start http server for pprof
+	go func() {
+		log.Println(http.ListenAndServe("localhost:6060", nil))
+	}()
+
 	ground := world.NewGroundObject(
 		"ground", colornames.White, 0, 0, worldMaxX, groundHeight)
 	groundPhys := world.NewBaseObjectPhys(pixel.R(0, 0, worldMaxX, groundHeight), ground)
@@ -110,16 +118,16 @@ func run() {
 
 	// populate the world
 	populate.AddTargetSeeker(w, "1", 5)
-	// populate.AddTargetSeeker(w, "2", 5)
+	populate.AddTargetSeeker(w, "2", 5)
 	// populate.AddTargetSeeker(w, "3", 5)
 	// populate.AddTargetSeeker(w, "4")
-	// populate.RandomCircles(w, 50)
-	populate.RandomRectangles(w, 10)
-	// populate.RandomEllipses(w, 2)
-	populate.AddManualObject(w, 60, 60)
+	populate.RandomCircles(w, 2)
+	populate.RandomRectangles(w, 2)
+	populate.RandomEllipses(w, 2)
+	// populate.AddManualObject(w, 60, 60)
 	populate.AddGates(w, time.Second*1)
 	// populate.AddFixture(w)
-	// populate.AddFixtures(w, 1)
+	populate.AddFixtures(w, 2)
 	// add targets AFTER fixtures
 	populate.AddTarget(w, 10, maxTargets)
 

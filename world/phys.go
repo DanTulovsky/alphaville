@@ -27,6 +27,7 @@ type ObjectPhys interface {
 	ParentObject() Object
 	PreviousVel() pixel.Vec
 	SetManualVelocity(v pixel.Vec)
+	SetManualVelocityXY(v pixel.Vec)
 	// SetManualVelocityXY(v pixel.Vec)
 	Stop()
 	Stopped() bool
@@ -317,6 +318,25 @@ func (o *BaseObjectPhys) SetManualVelocity(v pixel.Vec) {
 	case v.Y < 0:
 		v.Y = o.ParentObject().Speed() * -1
 		v.X = 0
+	}
+
+	o.SetVel(v)
+}
+
+// SetManualVelocityXY sets the manual object's velocity
+func (o *BaseObjectPhys) SetManualVelocityXY(v pixel.Vec) {
+
+	switch {
+	case v.X < 0:
+		v.X = o.ParentObject().Speed() * -1
+	case v.X > 0:
+		v.X = o.ParentObject().Speed()
+	}
+	switch {
+	case v.Y > 0:
+		v.Y = o.ParentObject().Speed()
+	case v.Y < 0:
+		v.Y = o.ParentObject().Speed() * -1
 	}
 
 	o.SetVel(v)
