@@ -126,9 +126,9 @@ func run() {
 	// populate.AddTargetSeeker(w, "4")
 	populate.RandomCircles(w, 2)
 	// populate.RandomRectangles(w, 2)
-	// populate.RandomEllipses(w, 2)
+	populate.RandomEllipses(w, 2)
 	// populate.AddManualObject(w, 60, 60)
-	populate.AddGates(w, time.Second*1)
+	populate.AddGates(w, time.Second*10)
 	// populate.AddFixture(w)
 	populate.AddFixtures(w, 4)
 	// add targets AFTER fixtures
