@@ -68,19 +68,19 @@ func (n *Node) String() string {
 
 // Graph is the item graph (bi-directional)
 type Graph struct {
-	nodes []*Node
-	edges map[Node][]*Node
-	lock  sync.RWMutex
+	nodes      []*Node
+	edges      map[Node][]*Node
+	valueNodes map[pixel.Vec]*Node
+	lock       sync.RWMutex
 }
 
 // New returns a new graph
 func New() *Graph {
-	nodes := make([]*Node, 0)
-	edges := make(map[Node][]*Node)
 
 	return &Graph{
-		nodes: nodes,
-		edges: edges,
+		nodes:      make([]*Node, 0),
+		edges:      make(map[Node][]*Node),
+		valueNodes: make(map[pixel.Vec]*Node),
 	}
 }
 
@@ -96,12 +96,9 @@ func (g *Graph) Edges() map[Node][]*Node {
 
 // FindNode returns the node with the provided value
 func (g *Graph) FindNode(v pixel.Vec) (*Node, error) {
-	for _, n := range g.nodes {
-		if n.value.V == v {
-			return n, nil
-		}
+	if n, ok := g.valueNodes[v]; ok {
+		return n, nil
 	}
-
 	return nil, fmt.Errorf("unable to find %v", v)
 }
 
@@ -110,6 +107,7 @@ func (g *Graph) AddNode(n *Node) {
 	g.lock.Lock()
 	defer g.lock.Unlock()
 	g.nodes = append(g.nodes, n)
+	g.valueNodes[n.Value().V] = n
 }
 
 // slow...
@@ -134,14 +132,6 @@ func (g *Graph) AddEdge(n1, n2 *Node) {
 	} else {
 		g.edges[*n1] = append(g.edges[*n1], n2)
 	}
-
-	// if _, ok := g.edges[*n2]; ok {
-	// 	if !edgeInList(n1, g.edges[*n2]) {
-	// 		g.edges[*n2] = append(g.edges[*n2], n1)
-	// 	}
-	// } else {
-	// 	g.edges[*n2] = append(g.edges[*n2], n1)
-	// }
 }
 
 // String is the string representation of the graph
