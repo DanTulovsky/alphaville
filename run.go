@@ -10,6 +10,7 @@ import (
 
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/pixelgl"
+	"github.com/lucasb-eyer/go-colorful"
 	"gogs.wetsnow.com/dant/alphaville/observer"
 	"gogs.wetsnow.com/dant/alphaville/populate"
 	"gogs.wetsnow.com/dant/alphaville/world"
@@ -35,7 +36,7 @@ const (
 	visibleWinMaxX, visibleWinMaxY = worldMaxX, worldMaxY
 	groundHeight                   = 40
 
-	maxTargets     = 4
+	maxTargets     = 6
 	maxObjectSpeed = 4
 )
 
@@ -117,17 +118,19 @@ func run() {
 	w := world.NewWorld(worldMaxX, worldMaxY, ground, gravity, maxObjectSpeed)
 
 	// populate the world
-	populate.AddTargetSeeker(w, "1", 4)
-	populate.AddTargetSeeker(w, "2", 3)
-	// populate.AddTargetSeeker(w, "3", 5)
-	// populate.AddTargetSeeker(w, "4")
+	tsColors := colorful.FastHappyPalette(10)
+	populate.AddTargetSeeker(w, "1", 4, tsColors[0])
+	populate.AddTargetSeeker(w, "2", 3, tsColors[1])
+	populate.AddTargetSeeker(w, "3", 5, tsColors[2])
+	populate.AddTargetSeeker(w, "4", 2.2, tsColors[3])
+
 	populate.RandomCircles(w, 2)
-	// populate.RandomRectangles(w, 2)
-	// populate.RandomEllipses(w, 2)
+	populate.RandomRectangles(w, 2)
+	populate.RandomEllipses(w, 2)
 	// populate.AddManualObject(w, 60, 60)
 	populate.AddGates(w, time.Second*1)
 	// populate.AddFixture(w)
-	populate.AddFixtures(w, 4)
+	populate.AddFixtures(w, 5)
 	// add targets AFTER fixtures
 	populate.AddTarget(w, 10, maxTargets)
 

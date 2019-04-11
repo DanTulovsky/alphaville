@@ -632,6 +632,9 @@ func (b *TargetSeekerBehavior) processTargetEvent(e *TargetEvent) {
 	for _, data := range e.Data() {
 		switch data.Key {
 		case "destroyed":
+			if b.target == nil {
+				return
+			}
 			if b.target.ID().String() == data.Value {
 				// stop chasing destroyed targets
 				log.Printf("[%v] target [%v] destroyed need to pick another one", b.parent.Name(), data.Value)

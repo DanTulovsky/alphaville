@@ -2,11 +2,13 @@ package populate
 
 import (
 	"fmt"
+	"image/color"
 	"log"
 	"math"
 	"time"
 
 	"github.com/faiface/pixel"
+	"github.com/lucasb-eyer/go-colorful"
 	"gogs.wetsnow.com/dant/alphaville/graph"
 	"gogs.wetsnow.com/dant/alphaville/utils"
 	"gogs.wetsnow.com/dant/alphaville/world"
@@ -24,14 +26,13 @@ func RandomEllipses(w *world.World, n int) {
 	minSpeed, maxSpeed = 0.1, w.MaxObjectSpeed
 
 	for i := 0; i < n; i++ {
-		randomColor := colornames.Map[colornames.Names[utils.RandomInt(0, len(colornames.Names))]]
 
 		a := utils.RandomFloat64(minRadius, maxRadius+1)
 		b := utils.RandomFloat64(minRadius, maxRadius+1)
 
 		o := world.NewEllipseObject(
 			fmt.Sprintf("%v", i),
-			randomColor,
+			colorful.FastWarmColor(),
 			utils.RandomFloat64(minSpeed, maxSpeed),  // speed
 			utils.RandomFloat64(minMass, maxMass)/10, // mass
 			a,   // x radius
@@ -54,13 +55,11 @@ func RandomCircles(w *world.World, n int) {
 	minSpeed, maxSpeed = 0.1, w.MaxObjectSpeed
 
 	for i := 0; i < n; i++ {
-		randomColor := colornames.Map[colornames.Names[utils.RandomInt(0, len(colornames.Names))]]
-
 		radius := utils.RandomFloat64(minRadius, maxRadius+1)
 
 		o := world.NewCircleObject(
 			fmt.Sprintf("%v", i),
-			randomColor,
+			colorful.FastWarmColor(),
 			utils.RandomFloat64(minSpeed, maxSpeed),  // speed
 			utils.RandomFloat64(minMass, maxMass)/10, // mass
 			radius, // radius
@@ -82,14 +81,13 @@ func RandomRectangles(w *world.World, n int) {
 	minSpeed, maxSpeed = 0.1, w.MaxObjectSpeed
 
 	for i := 0; i < n; i++ {
-		randomColor := colornames.Map[colornames.Names[utils.RandomInt(0, len(colornames.Names))]]
 
 		width := utils.RandomFloat64(minWidth, maxWidth+1)
 		height := utils.RandomFloat64(minHeight, maxHeight)
 
 		o := world.NewRectObject(
 			fmt.Sprintf("%v", i),
-			randomColor,
+			colorful.FastWarmColor(),
 			utils.RandomFloat64(minSpeed, maxSpeed),  // speed
 			utils.RandomFloat64(minMass, maxMass)/10, // mass
 			width,  // width
@@ -102,7 +100,7 @@ func RandomRectangles(w *world.World, n int) {
 }
 
 // AddTargetSeeker adds an object that seeks a target
-func AddTargetSeeker(w *world.World, name string, speed float64) {
+func AddTargetSeeker(w *world.World, name string, speed float64, c color.Color) {
 
 	var minWidth, maxWidth, minHeight, maxHeight, minMass, maxMass float64
 
@@ -114,14 +112,16 @@ func AddTargetSeeker(w *world.World, name string, speed float64) {
 	width := utils.RandomFloat64(minWidth, maxWidth)
 	height := utils.RandomFloat64(minHeight, maxHeight)
 
+	if c == nil {
+		c = colorful.FastWarmColor()
+	}
+
 	// path finder algorithm
 	finder := graph.DijkstraPath
 
-	randomColor := colornames.Map[colornames.Names[utils.RandomInt(0, len(colornames.Names))]]
-
 	o := world.NewRectObject(
 		fmt.Sprintf("ts-%v", name),
-		randomColor,
+		c,
 		speed,
 		utils.RandomFloat64(minMass, maxMass)/10, // mass
 		width,  // width
@@ -256,7 +256,7 @@ func AddFixture(w *world.World) {
 
 	var width float64 = 144
 	var height float64 = 64
-	f := world.NewFixture("one", colornames.Green, width, height)
+	f := world.NewFixture("one", colorful.FastWarmColor(), width, height)
 	f.Place(pixel.V(761, 171))
 	w.AddFixture(f)
 
@@ -269,6 +269,8 @@ func AddFixtures(w *world.World, numFixtures int) {
 	var maxWidth float64 = 20
 	var minHeight float64 = 6
 	var maxHeight float64 = w.Y - 100
+
+	fcolors := colorful.FastWarmPalette(numFixtures)
 
 	for x := 0; x < numFixtures; x++ {
 
@@ -284,7 +286,7 @@ func AddFixtures(w *world.World, numFixtures int) {
 			lX := utils.RandomFloat64(width, w.X-width)
 			lY := utils.RandomFloat64(height, w.Y-height)
 
-			f = world.NewFixture(fmt.Sprintf("block-%v", x), colornames.Green, width, height)
+			f = world.NewFixture(fmt.Sprintf("block-%v", x), fcolors[x], width, height)
 			f.Place(pixel.V(lX, lY))
 
 			for _, other := range w.Fixtures() {
