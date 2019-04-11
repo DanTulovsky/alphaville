@@ -36,7 +36,8 @@ const (
 	visibleWinMaxX, visibleWinMaxY = 1024, 1024
 	groundHeight                   = 40
 
-	maxTargets = 3
+	maxTargets     = 3
+	maxObjectSpeed = 2
 )
 
 // processMouseLeftInput handles left click
@@ -114,20 +115,20 @@ func run() {
 	ground.SetPhys(groundPhys)
 	ground.SetNextPhys(ground.Phys().Copy())
 
-	w := world.NewWorld(worldMaxX, worldMaxY, ground, gravity)
+	w := world.NewWorld(worldMaxX, worldMaxY, ground, gravity, maxObjectSpeed)
 
 	// populate the world
-	populate.AddTargetSeeker(w, "1", 5)
-	populate.AddTargetSeeker(w, "2", 5)
+	populate.AddTargetSeeker(w, "1", 2)
+	populate.AddTargetSeeker(w, "2", 1)
 	// populate.AddTargetSeeker(w, "3", 5)
 	// populate.AddTargetSeeker(w, "4")
 	populate.RandomCircles(w, 2)
 	populate.RandomRectangles(w, 2)
 	populate.RandomEllipses(w, 2)
-	// populate.AddManualObject(w, 60, 60)
+	populate.AddManualObject(w, 60, 60)
 	populate.AddGates(w, time.Second*1)
 	// populate.AddFixture(w)
-	populate.AddFixtures(w, 2)
+	populate.AddFixtures(w, 8)
 	// add targets AFTER fixtures
 	populate.AddTarget(w, 10, maxTargets)
 
@@ -190,7 +191,7 @@ func run() {
 		frames++
 		select {
 		case <-second:
-			win.SetTitle(fmt.Sprintf("%s | FPS: %d", cfg.Title, frames))
+			win.SetTitle(fmt.Sprintf("%s | FPS: %d | UPS: %d", cfg.Title, frames, updates))
 			w.Notify(
 				w.NewWorldEvent(fmt.Sprintf("fps"), time.Now(),
 					observer.EventData{Key: "fps", Value: strconv.Itoa(frames)},

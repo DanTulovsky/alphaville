@@ -28,8 +28,8 @@ type World struct {
 	observers []observer.EventObserver
 }
 
-// NewWorld returns a new worldof size x, y
-func NewWorld(x, y float64, ground Object, gravity float64) *World {
+// NewWorld returns a new world of size x, y
+func NewWorld(x, y float64, ground Object, gravity float64, maxSpeed float64) *World {
 
 	w := &World{
 		Objects: []Object{},
@@ -42,7 +42,7 @@ func NewWorld(x, y float64, ground Object, gravity float64) *World {
 		Stats:   NewStats(),
 		// EventNotifier: observer.NewEventNotifier(),
 		ManualControl:  NewNullObject(),
-		MaxObjectSpeed: 2,
+		MaxObjectSpeed: maxSpeed,
 	}
 
 	w.Register(w.Stats)
@@ -50,12 +50,15 @@ func NewWorld(x, y float64, ground Object, gravity float64) *World {
 	return w
 }
 
-// SpawnAllNew spanws all new objects
+// SpawnAllNew spawns all new objects
 func (w *World) SpawnAllNew() {
 	for _, o := range w.UnSpawnedObjects() {
 
 		if !o.IsSpawned() {
-			if err := w.SpawnObject(o); err != nil {
+			if gate, err := w.SpawnObject(o); err != nil {
+				if gate != nil {
+					gate.Release()
+				}
 				continue
 			}
 		}
@@ -235,12 +238,12 @@ func (w *World) AddGate(g *Gate) error {
 }
 
 // SpawnObject tries to grab a gate and spawn, if area around is available
-// We also create the Phys() of the object here
-func (w *World) SpawnObject(o Object) error {
+// We also create the Phys() of the object here, it returns the reserved gate
+func (w *World) SpawnObject(o Object) (*Gate, error) {
 
 	g, err := w.ReserveGate(o)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	phys := NewBaseObjectPhys(o.BoundingBox(g.Location), o)
@@ -251,9 +254,9 @@ func (w *World) SpawnObject(o Object) error {
 	}
 
 	// Spawn happens after everything already moved, so simply check for intersections here
-	for _, other := range w.SpawnedObjects() {
+	for _, other := range append(w.SpawnedObjects(), w.Fixtures()...) {
 		if phys.Location().Intersect(other.Phys().Location()) != pixel.R(0, 0, 0, 0) {
-			return fmt.Errorf("not spawning, would intersect with %v", other.Name())
+			return g, fmt.Errorf("not spawning, would intersect with %v", other.Name())
 		}
 	}
 
@@ -274,7 +277,7 @@ func (w *World) SpawnObject(o Object) error {
 			"object [%v] spawned", o.Name()), time.Now(),
 		observer.EventData{Key: "spawn", Value: fmt.Sprintf("%T", o)}))
 
-	return nil
+	return g, nil
 }
 
 // ReserveGate returns (and reserves) a gate to be used by an object
@@ -293,7 +296,7 @@ func (w *World) ReserveGate(o Object) (*Gate, error) {
 		}
 	}
 
-	return nil, fmt.Errorf("no avalable gates")
+	return nil, fmt.Errorf("no available gates")
 }
 
 // CheckIntersect checks if any objects in the world intersect and prints an error.

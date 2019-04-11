@@ -27,9 +27,14 @@ type CircleObject struct {
 func NewCircleObject(name string, color color.Color, speed, mass, radius float64, behavior Behavior) *CircleObject {
 
 	o := &CircleObject{
-		NewBaseObject(name, color, speed, mass, behavior),
+		NewBaseObject(name, color, speed, mass),
 		radius,
 	}
+	if behavior == nil {
+		behavior = NewDefaultBehavior()
+	}
+	o.behavior = behavior
+	o.behavior.SetParent(o)
 
 	return o
 }

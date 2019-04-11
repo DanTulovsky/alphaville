@@ -152,21 +152,21 @@ func AddManualObject(w *world.World, width, height float64) {
 // AddGates adds gates to the world
 func AddGates(w *world.World, coolDown time.Duration) {
 
-	var filterManualOnly world.GateFilter = func(o world.Object) bool {
-		switch o.Behavior().(type) {
-		case *world.ManualBehavior:
-			return true
-		}
-		return false
-	}
+	// var filterManualOnly world.GateFilter = func(o world.Object) bool {
+	// 	switch o.Behavior().(type) {
+	// 	case *world.ManualBehavior:
+	// 		return true
+	// 	}
+	// 	return false
+	// }
 
-	var filterTargetSeekerOnly world.GateFilter = func(o world.Object) bool {
-		switch o.Behavior().(type) {
-		case *world.TargetSeekerBehavior:
-			return true
-		}
-		return false
-	}
+	// var filterTargetSeekerOnly world.GateFilter = func(o world.Object) bool {
+	// 	switch o.Behavior().(type) {
+	// 	case *world.TargetSeekerBehavior:
+	// 		return true
+	// 	}
+	// 	return false
+	// }
 
 	type gate struct {
 		name     string
@@ -185,7 +185,7 @@ func AddGates(w *world.World, coolDown time.Duration) {
 			status:   world.GateOpen,
 			coolDown: 1 * time.Second,
 			radius:   20,
-			filters:  []world.GateFilter{filterTargetSeekerOnly},
+			// filters:  []world.GateFilter{filterTargetSeekerOnly},
 		},
 		{
 			name:     "Two",
@@ -200,7 +200,7 @@ func AddGates(w *world.World, coolDown time.Duration) {
 			status:   world.GateOpen,
 			coolDown: 2 * time.Second,
 			radius:   25,
-			filters:  []world.GateFilter{filterManualOnly},
+			// filters:  []world.GateFilter{filterManualOnly},
 		},
 	}
 
@@ -263,10 +263,10 @@ func AddFixture(w *world.World) {
 // AddFixtures add fixtures to the world.
 func AddFixtures(w *world.World, numFixtures int) {
 
-	var minWidth float64 = 60
-	var maxWidth float64 = 300
-	var minHeight float64 = 40
-	var maxHeight float64 = 400
+	var minWidth float64 = 6
+	var maxWidth float64 = 20
+	var minHeight float64 = 6
+	var maxHeight float64 = w.Y - 100
 
 	for x := 0; x < numFixtures; x++ {
 

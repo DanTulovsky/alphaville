@@ -28,10 +28,15 @@ type EllipseObject struct {
 func NewEllipseObject(name string, color color.Color, speed, mass, a, b float64, behavior Behavior) *EllipseObject {
 
 	o := &EllipseObject{
-		NewBaseObject(name, color, speed, mass, behavior),
+		NewBaseObject(name, color, speed, mass),
 		a,
 		b,
 	}
+	if behavior == nil {
+		behavior = NewDefaultBehavior()
+	}
+	o.behavior = behavior
+	o.behavior.SetParent(o)
 
 	return o
 }

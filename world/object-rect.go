@@ -53,7 +53,7 @@ Mass: {{.Mass}}
 func NewGroundObject(name string, color color.Color, speed, mass, width, height float64) *RectObject {
 
 	o := &RectObject{
-		NewBaseObject(name, color, speed, mass, nil),
+		NewBaseObject(name, color, speed, mass),
 		width,
 		height,
 	}
@@ -65,10 +65,15 @@ func NewGroundObject(name string, color color.Color, speed, mass, width, height 
 func NewRectObject(name string, color color.Color, speed, mass, width, height float64, behavior Behavior) *RectObject {
 
 	o := &RectObject{
-		NewBaseObject(name, color, speed, mass, behavior),
+		NewBaseObject(name, color, speed, mass),
 		width,
 		height,
 	}
+	if behavior == nil {
+		behavior = NewDefaultBehavior()
+	}
+	o.behavior = behavior
+	o.behavior.SetParent(o)
 
 	return o
 }

@@ -23,6 +23,8 @@ type Behavior interface {
 	Description() string
 	Draw(win *pixelgl.Window)
 	Name() string
+	Parent() Object
+	SetParent(Object)
 	Update(*World, Object)
 }
 
@@ -30,6 +32,7 @@ type Behavior interface {
 type DefaultBehavior struct {
 	description string
 	name        string
+	parent      Object
 }
 
 // NewDefaultBehavior return a DefaultBehavior
@@ -64,6 +67,16 @@ Behavior
 // Name returns the name of the behavior
 func (b *DefaultBehavior) Name() string {
 	return b.name
+}
+
+// Parent returns the parent object of the behavior
+func (b *DefaultBehavior) Parent() Object {
+	return b.parent
+}
+
+// SetParent returns the parent object of the behavior
+func (b *DefaultBehavior) SetParent(p Object) {
+	b.parent = p
 }
 
 // Description returns the name of the behavior
@@ -747,6 +760,7 @@ func (b *TargetSeekerBehavior) Draw(win *pixelgl.Window) {
 	b.qt.Draw(win, drawTree, colorTree, drawText, drawObjects)
 
 	// draw the path
-	graph.DrawPath(win, b.fullpath)
+	l := graph.NewItemNode(uuid.New(), b.parent.Phys().Location().Center(), 0)
+	graph.DrawPath(win, append([]*graph.Node{l}, b.path...))
 
 }

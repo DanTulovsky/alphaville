@@ -85,12 +85,8 @@ type BaseObject struct {
 
 // NewBaseObject return a new rectangular object
 // phys bounding box is set based on width, height, unless phys is provided
-func NewBaseObject(name string, color color.Color, speed, mass float64, behavior Behavior) BaseObject {
+func NewBaseObject(name string, color color.Color, speed, mass float64) BaseObject {
 	o := BaseObject{}
-
-	if behavior == nil {
-		behavior = NewDefaultBehavior()
-	}
 
 	o.name = name
 	o.id = uuid.New()
@@ -99,7 +95,6 @@ func NewBaseObject(name string, color color.Color, speed, mass float64, behavior
 	o.mass = mass
 	o.imd = imdraw.New(nil)
 	o.phys = nil
-	o.behavior = behavior
 
 	return o
 }
@@ -186,7 +181,7 @@ func (o *BaseObject) CheckIntersect(w *World) {
 		}
 		if o.NextPhys().Location().Intersect(other.Phys().Location()) != pixel.R(0, 0, 0, 0) {
 			log.Printf("%#+v (%v) intersects with %#v (%v)", o.name, o.NextPhys(), other.Name(), other.Phys())
-			log.Fatal("broken")
+			// log.Fatal("broken")
 		}
 	}
 }
