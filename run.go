@@ -4,6 +4,7 @@ import (
 	"fmt"
 	_ "image/png"
 	"log"
+	"math"
 	"math/rand"
 	"strconv"
 	"time"
@@ -103,6 +104,8 @@ func run() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	rand.Seed(time.Now().UnixNano())
 
+	m := pixelgl.PrimaryMonitor()
+	mWidth, mHeight := m.Size()
 	// start http server for pprof
 	go func() {
 		log.Println(http.ListenAndServe("localhost:6060", nil))
@@ -114,7 +117,7 @@ func run() {
 	ground.SetPhys(groundPhys)
 	ground.SetNextPhys(ground.Phys().Copy())
 
-	w := world.NewWorld(worldMaxX, worldMaxY, ground, gravity, maxObjectSpeed)
+	w := world.NewWorld(math.Min(mWidth, worldMaxX), math.Min(mHeight, worldMaxY), ground, gravity, maxObjectSpeed)
 
 	// populate the world
 	populate.AddTargetSeeker(w, "1", 4)
@@ -132,9 +135,10 @@ func run() {
 	populate.AddTarget(w, 10, maxTargets)
 
 	cfg := pixelgl.WindowConfig{
-		Title:  "Play!",
-		Bounds: pixel.R(0, 0, visibleWinMaxX, visibleWinMaxY),
-		VSync:  true,
+		Title:     "Play!",
+		Bounds:    pixel.R(0, 0, math.Min(mWidth, visibleWinMaxX), math.Min(mHeight, visibleWinMaxY)),
+		VSync:     true,
+		Resizable: true,
 	}
 
 	win, err := pixelgl.NewWindow(cfg)
