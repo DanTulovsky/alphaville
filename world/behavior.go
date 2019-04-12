@@ -429,7 +429,7 @@ func (b *TargetSeekerBehavior) populateMoveGraph(w *World) {
 			continue
 		}
 		// TODO remove this buffer
-		var buffer float64 // must be larger than quadtree.NewTree( ... minSize), why?
+		var buffer float64 = 1 // must be larger than quadtree.NewTree( ... minSize), why?
 		c := other.Phys().Location().Center()
 		size := pixel.V(other.Phys().Location().W()+phys.Location().W()+buffer,
 			other.Phys().Location().H()+phys.Location().H()+buffer)
@@ -445,6 +445,7 @@ func (b *TargetSeekerBehavior) populateMoveGraph(w *World) {
 	fixtures = append(fixtures, target)
 
 	// minimum size of rectangle side at which we stop splitting
+	// based on the size of the target seeker
 	minSize := math.Min(phys.Location().W(), phys.Location().H())
 
 	// quadtree
