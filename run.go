@@ -56,6 +56,8 @@ func processInput(win *pixelgl.Window, w *world.World, ctrl pixel.Vec) {
 		togglePause()
 	case win.JustPressed(pixelgl.KeyD):
 		toggleDebug(w)
+	case win.JustPressed(pixelgl.MouseButtonLeft):
+		processMouseLeftInput(w, win.MousePosition())
 	}
 
 	mo := w.ManualControl
@@ -72,8 +74,6 @@ func processInput(win *pixelgl.Window, w *world.World, ctrl pixel.Vec) {
 		ctrl.Y++
 	case win.Pressed(pixelgl.KeyDown):
 		ctrl.Y--
-	case win.JustPressed(pixelgl.MouseButtonLeft):
-		processMouseLeftInput(w, win.MousePosition())
 	}
 
 	mo.SetManualVelocity(ctrl)
@@ -126,17 +126,17 @@ func run() {
 	// populate the world
 	tsColors := colorful.FastHappyPalette(10)
 	populate.AddTargetSeeker(w, "1", 4, tsColors[0])
-	populate.AddTargetSeeker(w, "2", 3, tsColors[1])
+	// populate.AddTargetSeeker(w, "2", 3, tsColors[1])
 	// populate.AddTargetSeeker(w, "3", 5, tsColors[2])
 	// populate.AddTargetSeeker(w, "4", 2.2, tsColors[3])
 
 	populate.RandomCircles(w, 2)
 	populate.RandomRectangles(w, 2)
-	populate.RandomEllipses(w, 2)
+	// populate.RandomEllipses(w, 2)
 	// populate.AddManualObject(w, 60, 60)
 	populate.AddGates(w, time.Second*10)
 	// populate.AddFixture(w)
-	populate.AddFixtures(w, 5)
+	populate.AddFixtures(w, 6)
 	// add targets AFTER fixtures
 	populate.AddTarget(w, 10, maxTargets)
 

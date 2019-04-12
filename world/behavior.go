@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"html/template"
 	"log"
+	"math"
 	"time"
 
 	"gogs.wetsnow.com/dant/alphaville/quadtree"
@@ -336,6 +337,30 @@ type vertecy struct {
 	O uuid.UUID
 }
 
+// String returns ...
+func (b *TargetSeekerBehavior) String() string {
+	buf := bytes.NewBufferString("")
+	tmpl, err := template.New("physObject").Parse(
+		`
+Behavior
+  Name: {{.Name}}	
+	Desc: {{.Description}}	
+	Target: {{.Target.Location}}
+	Turns At Location: {{.TurnsBlocked}}
+	Targets Caught: {{.TargetsCaught}}
+`)
+
+	if err != nil {
+		log.Fatalf("behavior conversion error: %v", err)
+	}
+	err = tmpl.Execute(buf, b)
+	if err != nil {
+		log.Fatalf("behavior conversion error: %v", err)
+	}
+
+	return buf.String()
+}
+
 // scaledCollisionVerticies returns a list of all verticies of all collision objects
 // scaled by half the size of o
 func (b *TargetSeekerBehavior) scaledCollisionVerticies(w *World, o Object) []vertecy {
@@ -390,39 +415,41 @@ func (b *TargetSeekerBehavior) scaledCollisionEdges(w *World, o Object) []pixel.
 // https://cs.stanford.edu/people/eroberts/courses/soco/projects/1998-99/robotics/basicmotion.html
 // https://www.dis.uniroma1.it/~oriolo/amr/slides/MotionPlanning1_Slides.pdf
 // o is the target seeker
-func (b *TargetSeekerBehavior) populateMoveGraph(w *World, o Object) {
+func (b *TargetSeekerBehavior) populateMoveGraph(w *World) {
 	// log.Printf("Populating move graph for %v", o.Name())
 
 	// augmented fixtures, these are what we check collisions against
 	// they are grown by 1/2 size of object on each side to account for movement
 	fixtures := []pixel.Rect{}
 
+	phys := b.parent.Phys()
+
 	for _, other := range w.CollisionObjects() {
-		if o.ID() == other.ID() {
+		if b.parent.ID() == other.ID() {
 			continue
 		}
-		var buffer float64 = 8 // must tbe larger than quadtree.NewTree( ... minSize)
+		var buffer float64 = 0 // must be larger than quadtree.NewTree( ... minSize), why?
 		c := other.Phys().Location().Center()
-		size := pixel.V(other.Phys().Location().W()+o.Phys().Location().W()+buffer,
-			other.Phys().Location().H()+o.Phys().Location().H()+buffer)
+		size := pixel.V(other.Phys().Location().W()+phys.Location().W()+buffer,
+			other.Phys().Location().H()+phys.Location().H()+buffer)
 		scaled := other.Phys().Location().Resized(c, size)
 		fixtures = append(fixtures, scaled)
 	}
 
 	// add start and target to the quadtree
-	s := o.Phys().Location().Center()
+	s := phys.Location().Center()
 	t := b.target.Location()
 	start := pixel.R(s.X, s.Y, s.X+1, s.Y+1)
 	target := pixel.R(t.X, t.Y, t.X+1, t.Y+1)
 	fixtures = append(fixtures, target)
 
 	// minimum size of rectangle side at which we stop splitting
-	minSize := float64(6)
+	minSize := math.Min(phys.Location().W(), phys.Location().H())
 
 	// quadtree
 	qtBounds := pixel.R(
-		w.Ground.Phys().Location().Min.X+o.Phys().Location().W(), w.Ground.Phys().Location().Max.Y+o.Phys().Location().H(),
-		w.X-o.Phys().Location().W(), w.Y-o.Phys().Location().H())
+		w.Ground.Phys().Location().Min.X+phys.Location().W(), w.Ground.Phys().Location().Max.Y+phys.Location().H(),
+		w.X-phys.Location().W(), w.Y-phys.Location().H())
 	qt, err := quadtree.NewTree(qtBounds, fixtures, minSize)
 	if err != nil {
 		log.Fatalf("error creating quadtree: %v", err)
@@ -659,7 +686,7 @@ func (b *TargetSeekerBehavior) OnNotify(e observer.Event) {
 func (b *TargetSeekerBehavior) recalculateMoveInfo(w *World, o Object) {
 	phys := o.NextPhys()
 
-	b.populateMoveGraph(w, o)
+	b.populateMoveGraph(w)
 	var err error
 	startNode, err := b.qt.Locate(phys.Location().Center())
 	if err != nil {
@@ -758,7 +785,7 @@ func (b *TargetSeekerBehavior) Draw(win *pixelgl.Window) {
 	}
 
 	// draw the quadtree
-	drawTree, colorTree, drawText, drawObjects := false, false, false, false
+	drawTree, colorTree, drawText, drawObjects := true, false, false, true
 	b.qt.Draw(win, drawTree, colorTree, drawText, drawObjects)
 
 	pathColor := b.parent.Color()

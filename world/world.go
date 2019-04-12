@@ -386,5 +386,11 @@ func (w *World) ObjectClicked(v pixel.Vec) (Object, error) {
 			return g, nil
 		}
 	}
+
+	for _, t := range append(w.Targets()) {
+		if t.Circle().Contains(v) {
+			return t, nil
+		}
+	}
 	return nil, fmt.Errorf("no object at %v", v)
 }

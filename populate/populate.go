@@ -232,7 +232,7 @@ func AddTarget(w *world.World, radius float64, maxTargets int) {
 			utils.RandomFloat64(55, w.X-65),
 			utils.RandomFloat64(w.Ground.Phys().Location().Max.Y+65, w.Y-65))
 
-		t = world.NewSimpleTarget("one", l, radius)
+		t = world.NewSimpleTarget("one", l, radius, "desc")
 		valid = true
 		for _, f := range w.Fixtures() {
 			// log.Printf("checking fixture: %v (target: %v)", f.Phys().Location(), t.Circle().Resized(20))

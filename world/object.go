@@ -59,9 +59,10 @@ func NewObjectEvent(d string, t time.Time, data ...observer.EventData) observer.
 
 // BaseObject is the base object
 type BaseObject struct {
-	name  string
-	id    uuid.UUID
-	color color.Color
+	name        string
+	description string
+	id          uuid.UUID
+	color       color.Color
 
 	// initial Speed and Mass of BaseObject
 	speed float64 // horizontal Speed (negative means move left)
@@ -104,6 +105,11 @@ func NewBaseObject(name string, color color.Color, speed, mass float64) BaseObje
 func (o *BaseObject) BoundingBox(v pixel.Vec) pixel.Rect {
 	log.Fatalf("using BaseObject BoundingBox, please implement: \n%#+v", o)
 	return pixel.R(0, 0, 0, 0)
+}
+
+// Description returns the object's description
+func (o *BaseObject) Description() string {
+	return o.description
 }
 
 // Name returns the object's name

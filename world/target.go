@@ -1,7 +1,10 @@
 package world
 
 import (
+	"bytes"
+	"html/template"
 	"image/color"
+	"log"
 	"time"
 
 	"github.com/faiface/pixel"
@@ -29,21 +32,23 @@ func NewTargetEvent(d string, t time.Time, data ...observer.EventData) observer.
 
 // Target is something that target seekers hunt
 type Target interface {
-	observer.EventNotifier
+	// observer.EventNotifier
+	Object
 
 	Available() bool
 	SetAvailable(bool)
-	Color() color.Color
+	// Color() color.Color
 	Bounds() pixel.Rect
 	Circle() pixel.Circle
-	ID() uuid.UUID
+	// ID() uuid.UUID
 	Destroy()
-	Draw(*pixelgl.Window)
+	// Draw(*pixelgl.Window)
 	Location() pixel.Vec
-	Name() string
+	// Name() string
 }
 
 type simpleTarget struct {
+	BaseObject
 	id        uuid.UUID
 	name      string
 	color     color.Color
@@ -53,14 +58,40 @@ type simpleTarget struct {
 }
 
 // NewSimpleTarget returns a new simple target
-func NewSimpleTarget(name string, l pixel.Vec, r float64) Target {
-	return &simpleTarget{
+func NewSimpleTarget(name string, l pixel.Vec, r float64, d string) Target {
+	st := &simpleTarget{
 		id:        uuid.New(),
 		name:      name,
 		bounds:    pixel.R(l.X-r, l.Y-r, l.X+r, l.Y+r),
 		color:     colornames.Red,
 		available: true,
 	}
+	st.description = d
+	return st
+}
+
+// String ...
+func (t *simpleTarget) String() string {
+
+	buf := bytes.NewBufferString("")
+	tmpl, err := template.New("simpleTarget").Parse(
+		`
+Target
+  Name: {{.Name}}	
+	Desc: {{.Description}}	
+	Available: {{.Available}}
+	Location: {{.Circle.Center}} (r={{.Circle.Radius}})
+`)
+
+	if err != nil {
+		log.Fatalf("behavior conversion error: %v", err)
+	}
+	err = tmpl.Execute(buf, t)
+	if err != nil {
+		log.Fatalf("behavior conversion error: %v", err)
+	}
+
+	return buf.String()
 }
 
 // Available returns availability of the target
