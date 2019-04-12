@@ -428,7 +428,8 @@ func (b *TargetSeekerBehavior) populateMoveGraph(w *World) {
 		if b.parent.ID() == other.ID() {
 			continue
 		}
-		var buffer float64 = 0 // must be larger than quadtree.NewTree( ... minSize), why?
+		// TODO remove this buffer
+		var buffer float64 // must be larger than quadtree.NewTree( ... minSize), why?
 		c := other.Phys().Location().Center()
 		size := pixel.V(other.Phys().Location().W()+phys.Location().W()+buffer,
 			other.Phys().Location().H()+phys.Location().H()+buffer)
