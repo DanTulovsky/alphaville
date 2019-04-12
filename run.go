@@ -107,6 +107,8 @@ func run() {
 
 	m := pixelgl.PrimaryMonitor()
 	mWidth, mHeight := m.Size()
+	mWidth = mWidth - 60
+	mHeight = mHeight - 60
 
 	// start http server for pprof
 	go func() {
@@ -140,7 +142,7 @@ func run() {
 
 	cfg := pixelgl.WindowConfig{
 		Title:     "Play!",
-		Bounds:    pixel.R(0, 0, math.Min(mWidth-60, visibleWinMaxX), math.Min(mHeight-60, visibleWinMaxY)),
+		Bounds:    pixel.R(0, 0, math.Min(mWidth, visibleWinMaxX), math.Min(mHeight, visibleWinMaxY)),
 		VSync:     true,
 		Resizable: false,
 	}
