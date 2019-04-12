@@ -11,7 +11,7 @@ import (
 
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/pixelgl"
-	"github.com/lucasb-eyer/go-colorful"
+	colorful "github.com/lucasb-eyer/go-colorful"
 	"gogs.wetsnow.com/dant/alphaville/observer"
 	"gogs.wetsnow.com/dant/alphaville/populate"
 	"gogs.wetsnow.com/dant/alphaville/world"
@@ -107,6 +107,7 @@ func run() {
 
 	m := pixelgl.PrimaryMonitor()
 	mWidth, mHeight := m.Size()
+
 	// start http server for pprof
 	go func() {
 		log.Println(http.ListenAndServe("localhost:6060", nil))
@@ -124,8 +125,8 @@ func run() {
 	tsColors := colorful.FastHappyPalette(10)
 	populate.AddTargetSeeker(w, "1", 4, tsColors[0])
 	populate.AddTargetSeeker(w, "2", 3, tsColors[1])
-	populate.AddTargetSeeker(w, "3", 5, tsColors[2])
-	populate.AddTargetSeeker(w, "4", 2.2, tsColors[3])
+	// populate.AddTargetSeeker(w, "3", 5, tsColors[2])
+	// populate.AddTargetSeeker(w, "4", 2.2, tsColors[3])
 
 	populate.RandomCircles(w, 2)
 	populate.RandomRectangles(w, 2)
@@ -139,9 +140,9 @@ func run() {
 
 	cfg := pixelgl.WindowConfig{
 		Title:     "Play!",
-		Bounds:    pixel.R(0, 0, math.Min(mWidth, visibleWinMaxX), math.Min(mHeight, visibleWinMaxY)),
+		Bounds:    pixel.R(0, 0, math.Min(mWidth-60, visibleWinMaxX), math.Min(mHeight-60, visibleWinMaxY)),
 		VSync:     true,
-		Resizable: true,
+		Resizable: false,
 	}
 
 	win, err := pixelgl.NewWindow(cfg)
