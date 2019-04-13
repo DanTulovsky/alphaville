@@ -37,7 +37,7 @@ const (
 	visibleWinMaxX, visibleWinMaxY = worldMaxX, worldMaxY
 	groundHeight                   = 40
 
-	maxTargets     = 6
+	maxTargets     = 1
 	maxObjectSpeed = 4
 )
 
@@ -130,15 +130,15 @@ func run() {
 	// populate.AddTargetSeeker(w, "3", 5, tsColors[2])
 	// populate.AddTargetSeeker(w, "4", 2.2, tsColors[3])
 
-	populate.RandomCircles(w, 2)
-	populate.RandomRectangles(w, 2)
+	// populate.RandomCircles(w, 2)
+	// populate.RandomRectangles(w, 1)
 	// populate.RandomEllipses(w, 2)
 	// populate.AddManualObject(w, 60, 60)
 	populate.AddGates(w, time.Second*10)
 	// populate.AddFixture(w)
-	populate.AddFixtures(w, 6)
+	// populate.AddFixtures(w, 1)
 	// add targets AFTER fixtures
-	populate.AddTarget(w, 10, maxTargets)
+	populate.AddTarget(w, 1, maxTargets)
 
 	cfg := pixelgl.WindowConfig{
 		Title:     "Play!",

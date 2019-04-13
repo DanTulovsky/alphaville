@@ -36,7 +36,6 @@ func NewTree(bounds pixel.Rect, objects []pixel.Rect, minSize float64) (*Tree, e
 		color:   colornames.Gray,
 		objects: objects,
 		c:       make([]*Node, 4),
-		size:    bounds.H(),
 		level:   0,
 	}
 
@@ -58,7 +57,6 @@ func (qt *Tree) newNode(bounds pixel.Rect, parent *Node, location Quadrant) *Nod
 		parent:   parent,
 		location: location,
 		c:        make([]*Node, 4),
-		size:     bounds.W(),
 		level:    level,
 	}
 
@@ -68,7 +66,7 @@ func (qt *Tree) newNode(bounds pixel.Rect, parent *Node, location Quadrant) *Nod
 
 	// populate the objects of this node from the parent
 	for _, o := range parent.Objects() {
-		if utils.Intersect(n.bounds, o) {
+		if utils.Intersect(n.bounds, o) || n.bounds.Contains(o.Center()) {
 			n.objects = append(n.objects, o)
 		}
 	}
@@ -176,7 +174,7 @@ func (qt *Tree) subdivide(p *Node) {
 	// p.color = colornames.Black
 }
 
-// Locate returns the Node that contains the given rect, or nil.
+// Locate returns the Node that contains the given point, or nil.
 func (qt *Tree) Locate(pt pixel.Vec) (*Node, error) {
 	// binary branching method assumes the point lies in the bounds
 	cnroot := qt.root
@@ -198,7 +196,7 @@ func (qt *Tree) Locate(pt pixel.Vec) (*Node, error) {
 	// and then represent use product in binary form
 	x = float64(pt.X-b.Min.X) / float64(b.W())
 	y = float64(pt.Y-b.Min.Y) / float64(b.H())
-	k = qt.nLevels - 1
+	k = qt.nLevels
 	ix := uint(x * math.Pow(2.0, float64(k)))
 	iy := uint(y * math.Pow(2.0, float64(k)))
 
@@ -242,16 +240,19 @@ func (qt *Tree) ToGraph(start, target pixel.Rect) *graph.Graph {
 
 	startNode, err := qt.Locate(start.Center())
 	if err != nil {
-		log.Printf("%v", err)
+		log.Fatalf("%v", err)
 	}
 	targetNode, err := qt.Locate(target.Center())
 	if err != nil {
-		log.Printf("%v", err)
+		log.Fatalf("%v", err)
 	}
 
 	// must set this before calculating neighbors
 	startNode.SetColor(colornames.White)
 	targetNode.SetColor(colornames.White)
+
+	log.Printf("start: (%v) %v (n: %v) (t: %v)", startNode.Color(), startNode.bounds, startNode.bounds.Center(), start.Center())
+	log.Printf("target: (%v) %v (n: %v) (t: %v)", targetNode.Color(), targetNode.bounds, targetNode.bounds.Center(), target.Center())
 
 	perNode := func(n *Node) {
 		neighbors := n.Neighbors()
@@ -259,6 +260,18 @@ func (qt *Tree) ToGraph(start, target pixel.Rect) *graph.Graph {
 	}
 	// get all the nodes + neighbors
 	qt.ForEachLeaf(colornames.Gray, perNode)
+
+	for n, neighbors := range nodeNeighbors {
+		if n.Color() == colornames.Black {
+			log.Printf("(%v) %v(%v)", n.Color(), n.bounds, n.bounds.Center())
+		}
+		for _, neighbor := range neighbors {
+			if n.Color() == colornames.Black {
+				log.Printf("  (%v) %v (%v)", neighbor.Color(), neighbor.bounds, neighbor.bounds.Center())
+			}
+			// log.Printf("%v: %v", n.Color(), neighbor.Color())
+		}
+	}
 
 	// TODO: Should be able to do this in one pass
 	for node := range nodeNeighbors {
@@ -269,8 +282,12 @@ func (qt *Tree) ToGraph(start, target pixel.Rect) *graph.Graph {
 	for node, neighbors := range nodeNeighbors {
 		gnode, _ := g.FindNode(node.Bounds().Center())
 		for _, n := range neighbors {
-			gneighbor, _ := g.FindNode(n.Bounds().Center())
-			g.AddEdge(gnode, gneighbor)
+			if gneighbor, err := g.FindNode(n.Bounds().Center()); err == nil {
+				g.AddEdge(gnode, gneighbor)
+			} else {
+				log.Println(err)
+			}
+
 		}
 		g.AddNode(gnode)
 	}
@@ -301,9 +318,11 @@ func (qt *Tree) Draw(win *pixelgl.Window, drawTree, colorTree, drawText, drawObj
 			imd.Push(r.Bounds().Max)
 			imd.Rectangle(0)
 		}
+		imd.Draw(win)
 	}
 	if drawTree {
 		// lines around it
+		imd := imdraw.New(nil)
 		for _, r := range rectangles {
 			imd.Color = colornames.Red
 			for _, l := range r.Bounds().Edges() {
@@ -312,13 +331,15 @@ func (qt *Tree) Draw(win *pixelgl.Window, drawTree, colorTree, drawText, drawObj
 				imd.Line(1)
 			}
 		}
+		imd.Draw(win)
 	}
 
 	if drawText {
 		for _, r := range rectangles {
-			txt := text.New(r.Bounds().Center(), utils.Atlas())
-			txt.Color = colornames.Darkgray
-			label := fmt.Sprintf("%v,\n%v", r.Bounds().Center().X, r.Bounds().Center().Y)
+			c := r.Bounds().Center().Floor()
+			txt := text.New(c, utils.Atlas())
+			txt.Color = colornames.Green
+			label := fmt.Sprintf("%v,\n%v", c.X, c.Y)
 			txt.Dot.X -= txt.BoundsOf(label).W() / 2
 			fmt.Fprintf(txt, "%v", label)
 			txt.Draw(win, pixel.IM)
@@ -327,6 +348,7 @@ func (qt *Tree) Draw(win *pixelgl.Window, drawTree, colorTree, drawText, drawObj
 
 	if drawObjects {
 		// draw the objects
+		imd := imdraw.New(nil)
 		imd.Color = colornames.Yellow
 
 		for _, r := range qt.Root().Objects() {
@@ -334,7 +356,7 @@ func (qt *Tree) Draw(win *pixelgl.Window, drawTree, colorTree, drawText, drawObj
 			imd.Push(r.Max)
 			imd.Rectangle(2)
 		}
+		imd.Draw(win)
 	}
 
-	imd.Draw(win)
 }

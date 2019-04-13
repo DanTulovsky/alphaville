@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"html/template"
 	"log"
-	"math"
 	"time"
 
 	"gogs.wetsnow.com/dant/alphaville/quadtree"
@@ -429,7 +428,7 @@ func (b *TargetSeekerBehavior) populateMoveGraph(w *World) {
 			continue
 		}
 		// TODO remove this buffer
-		var buffer float64 = 1 // must be larger than quadtree.NewTree( ... minSize), why?
+		var buffer float64 = 0 // must be larger than quadtree.NewTree( ... minSize), why?
 		c := other.Phys().Location().Center()
 		size := pixel.V(other.Phys().Location().W()+phys.Location().W()+buffer,
 			other.Phys().Location().H()+phys.Location().H()+buffer)
@@ -440,13 +439,14 @@ func (b *TargetSeekerBehavior) populateMoveGraph(w *World) {
 	// add start and target to the quadtree
 	s := phys.Location().Center()
 	t := b.target.Location()
-	start := pixel.R(s.X, s.Y, s.X+1, s.Y+1)
-	target := pixel.R(t.X, t.Y, t.X+1, t.Y+1)
-	fixtures = append(fixtures, target)
+	start := pixel.R(s.X, s.Y, s.X, s.Y)
+	target := pixel.R(t.X, t.Y, t.X, t.Y)
+	fixtures = append(fixtures, start, target)
 
 	// minimum size of rectangle side at which we stop splitting
 	// based on the size of the target seeker
-	minSize := math.Min(phys.Location().W(), phys.Location().H())
+	// minSize := math.Min(phys.Location().W(), phys.Location().H())
+	var minSize float64 = 300
 
 	// quadtree
 	qtBounds := pixel.R(
@@ -637,6 +637,7 @@ func (b *TargetSeekerBehavior) FindPath(start, target pixel.Vec) ([]*graph.Node,
 	// add the path from the center of the quadrant to the target inside of it
 	path = append(path, graph.NewItemNode(uuid.New(), b.target.Location(), 0))
 
+	log.Printf(">>> %v", path)
 	return path, cost, err
 }
 
@@ -787,7 +788,7 @@ func (b *TargetSeekerBehavior) Draw(win *pixelgl.Window) {
 	}
 
 	// draw the quadtree
-	drawTree, colorTree, drawText, drawObjects := true, false, false, true
+	drawTree, colorTree, drawText, drawObjects := true, true, true, true
 	b.qt.Draw(win, drawTree, colorTree, drawText, drawObjects)
 
 	pathColor := b.parent.Color()

@@ -37,8 +37,7 @@ type Node struct {
 	location Quadrant    // node location inside its parent
 	level    uint        // the level of this node
 
-	size float64  // size of a quadrant side
-	cn   [4]*Node // cardinal neighbours
+	cn [4]*Node // cardinal neighbours
 }
 
 // Objects returns the list of objects covered by this node
