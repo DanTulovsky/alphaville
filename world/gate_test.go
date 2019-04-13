@@ -27,7 +27,7 @@ func TestNewGate(t *testing.T) {
 			args: args{
 				l: pixel.V(10, 10),
 				s: GateOpen,
-				w: NewWorld(768, 1024, nil, 2),
+				w: NewWorld(768, 1024, nil, 2, 2),
 				c: time.Minute * 1,
 				r: 20,
 			},
@@ -38,7 +38,7 @@ func TestNewGate(t *testing.T) {
 			args: args{
 				l: pixel.V(100, 100),
 				s: GateOpen,
-				w: NewWorld(68, 1024, nil, 2),
+				w: NewWorld(68, 1024, nil, 2, 2),
 				c: time.Minute * 1,
 				r: 20,
 			},
@@ -75,7 +75,7 @@ func TestGate_Reserve(t *testing.T) {
 				Status:   GateOpen,
 				Reserved: false,
 				coolDown: time.Minute * 1,
-				object:   NewBaseObject("", colornames.Red, 0, 0, nil),
+				object:   NewBaseObject("", colornames.Red, 0, 0),
 			},
 			wantErr: false,
 		},
@@ -86,7 +86,7 @@ func TestGate_Reserve(t *testing.T) {
 				Status:   GateClosed,
 				Reserved: false,
 				coolDown: time.Minute * 1,
-				object:   NewBaseObject("", colornames.Red, 0, 0, nil),
+				object:   NewBaseObject("", colornames.Red, 0, 0),
 			},
 			wantErr: true,
 		},
@@ -97,7 +97,7 @@ func TestGate_Reserve(t *testing.T) {
 				Status:   GateOpen,
 				Reserved: true,
 				coolDown: time.Minute * 1,
-				object:   NewBaseObject("", colornames.Red, 0, 0, nil),
+				object:   NewBaseObject("", colornames.Red, 0, 0),
 			},
 			wantErr: true,
 		},
@@ -132,7 +132,7 @@ func TestGate_UnReserve(t *testing.T) {
 				Location: pixel.V(100, 100),
 				Status:   GateOpen,
 				Reserved: false,
-				object:   NewBaseObject("", colornames.Red, 0, 0, nil),
+				object:   NewBaseObject("", colornames.Red, 0, 0),
 			},
 		},
 	}
@@ -144,7 +144,7 @@ func TestGate_UnReserve(t *testing.T) {
 			}
 			g.Release()
 			if g.Reserved != false {
-				t.Errorf("Expected gate %v to be unrserved, but it's not.", g)
+				t.Errorf("Expected gate %v to be unreserved, but it's not.", g)
 			}
 		})
 	}

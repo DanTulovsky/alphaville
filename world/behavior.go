@@ -335,7 +335,7 @@ func NewTargetSeekerBehavior(f graph.PathFinder) *TargetSeekerBehavior {
 	return b
 }
 
-type vertecy struct {
+type vertex struct {
 	V pixel.Vec
 	O uuid.UUID
 }
@@ -362,54 +362,6 @@ Behavior
 	}
 
 	return buf.String()
-}
-
-// scaledCollisionVerticies returns a list of all verticies of all collision objects
-// scaled by half the size of o
-func (b *TargetSeekerBehavior) scaledCollisionVerticies(w *World, o Object) []vertecy {
-	v := []vertecy{}
-
-	for _, other := range w.CollisionObjects() {
-		if o.ID() == other.ID() {
-			continue // skip yourself
-		}
-
-		// until movemment is fixed, add an additional buffer around object
-		var buffer float64 = 0
-		c := other.Phys().Location().Center()
-		size := pixel.V(other.Phys().Location().W()+o.Phys().Location().W()+buffer,
-			other.Phys().Location().H()+o.Phys().Location().H()+buffer)
-		vertecies := other.Phys().Location().Resized(c, size).Vertices()
-
-		for _, vr := range vertecies {
-			v = append(v, vertecy{V: vr, O: other.ID()})
-		}
-	}
-	return v
-}
-
-// scaledCollisionEdges returns a list of all edges of all collision objects
-// scaled by half the size of o
-func (b *TargetSeekerBehavior) scaledCollisionEdges(w *World, o Object) []pixel.Line {
-	l := []pixel.Line{}
-
-	for _, other := range w.CollisionObjects() {
-		if o.ID() == other.ID() {
-			continue // skip yourself
-		}
-
-		// until movement is fixed, add an additional buffer around object
-		var buffer float64 = 0
-		c := other.Phys().Location().Center()
-		size := pixel.V(other.Phys().Location().W()+o.Phys().Location().W()+buffer,
-			other.Phys().Location().H()+o.Phys().Location().H()+buffer)
-		scaled := other.Phys().Location().Resized(c, size)
-
-		edges := scaled.Edges()
-		l = append(l, edges[0], edges[1], edges[2], edges[3])
-
-	}
-	return l
 }
 
 // populateMoveGraph creates a move graph by doing a
@@ -488,7 +440,8 @@ func (b *TargetSeekerBehavior) TurnsBlocked() int {
 // isAtTarget returns true if any part of the object covers the target
 func (b *TargetSeekerBehavior) isAtTarget(o Object) bool {
 
-	if utils.VecLen(o.Phys().Location().Center(), b.target.Bounds().Center()) < o.Speed() {
+	// if utils.VecLen(o.Phys().Location().Center(), b.target.Bounds().Center()) < o.Speed() {
+	if o.Phys().Location().Contains(b.target.Location()) {
 
 		o.Notify(NewObjectEvent(
 			fmt.Sprintf("[%v] found target [%v]", o.Name(), b.target.Name()), time.Now(),

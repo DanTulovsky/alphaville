@@ -8,10 +8,11 @@ import (
 
 func TestNewWorld(t *testing.T) {
 	type args struct {
-		x       float64
-		y       float64
-		ground  Object
-		gravity float64
+		x        float64
+		y        float64
+		ground   Object
+		gravity  float64
+		maxSpeed float64
 	}
 	tests := []struct {
 		name string
@@ -21,10 +22,11 @@ func TestNewWorld(t *testing.T) {
 		{
 			name: "success",
 			args: args{
-				x:       100,
-				y:       200,
-				ground:  nil,
-				gravity: 2,
+				x:        100,
+				y:        200,
+				ground:   nil,
+				gravity:  2,
+				maxSpeed: 2,
 			},
 			want: &World{
 				X:              100,
@@ -33,15 +35,15 @@ func TestNewWorld(t *testing.T) {
 				Gates:          []*Gate{},
 				Ground:         nil,
 				gravity:        2,
+				MaxObjectSpeed: 2,
 				Stats:          NewStats(),
 				ManualControl:  NewNullObject(),
-				MaxObjectSpeed: 1,
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := NewWorld(tt.args.x, tt.args.y, tt.args.ground, tt.args.gravity)
+			got := NewWorld(tt.args.x, tt.args.y, tt.args.ground, tt.args.gravity, tt.args.maxSpeed)
 			diff := deep.Equal(got, tt.want)
 			if len(diff) != 0 {
 				t.Errorf("NewWorld() = %v, want %v\nDiff: %v", got, tt.want, diff)
