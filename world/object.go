@@ -187,7 +187,8 @@ func (o *BaseObject) SwapNextState() {
 
 // CheckIntersect prints out an error if this object intersects with another one
 func (o *BaseObject) CheckIntersect(w *World) {
-	for _, other := range w.CollisionObjects() {
+	cobjects, _ := w.CollisionObjects()
+	for _, other := range cobjects {
 		if o.ID() == other.ID() {
 			continue // skip yourself
 		}

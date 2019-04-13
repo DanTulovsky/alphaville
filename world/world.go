@@ -1,10 +1,14 @@
 package world
 
 import (
+	"bytes"
 	"fmt"
 	"log"
+	"math"
 	"math/rand"
 	"time"
+
+	"gogs.wetsnow.com/dant/alphaville/quadtree"
 
 	"gogs.wetsnow.com/dant/alphaville/observer"
 	"gogs.wetsnow.com/dant/alphaville/utils"
@@ -15,9 +19,14 @@ import (
 
 // World defines the world
 type World struct {
-	X, Y           float64  // size of the world
-	Gates          []*Gate  // entrances into the world
-	Objects        []Object // objects in the world
+	name    string
+	X, Y    float64  // size of the world
+	Gates   []*Gate  // entrances into the world
+	Objects []Object // objects in the world
+
+	// qt keeps track of all the collidable objects in the world
+	qt *quadtree.Tree
+
 	targets        []Target // targets in the world that TargetSeekers hunt
 	removeTargets  []Target // targets to be removed next turn
 	ManualControl  Object   // this object is human controlled
@@ -26,6 +35,8 @@ type World struct {
 	gravity        float64
 	Stats          *Stats // world stats, an observer of events happening in the world
 	MaxObjectSpeed float64
+
+	MinObjectSide float64 // minimum side of any object in the world
 
 	observers []observer.EventObserver
 }
@@ -45,11 +56,31 @@ func NewWorld(x, y float64, ground Object, gravity float64, maxSpeed float64) *W
 		// EventNotifier: observer.NewEventNotifier(),
 		ManualControl:  NewNullObject(),
 		MaxObjectSpeed: maxSpeed,
+		MinObjectSide:  20,
 	}
+	qt, err := quadtree.NewTree(pixel.R(0, 0, x, y), []pixel.Rect{}, w.MinObjectSide)
+	if err != nil {
+		log.Fatalf("cannot create world: %v", err)
+	}
+
+	w.qt = qt
 
 	w.Register(w.Stats)
 	w.Notify(w.NewWorldEvent(fmt.Sprintf("The world is created..."), time.Now()))
 	return w
+}
+
+// String ...
+func (w *World) String() string {
+	output := bytes.NewBufferString("")
+
+	fmt.Fprintln(output, "")
+	fmt.Fprintf(output, "World: %v", w.name)
+	fmt.Fprintf(output, "  Size: [%v, %v]", w.X, w.Y)
+	fmt.Fprintf(output, "  QT:\n  %v", w.qt)
+	fmt.Fprintln(output, "")
+
+	return output.String()
 }
 
 // SpawnAllNew spawns all new objects
@@ -93,6 +124,13 @@ func (w *World) Draw(win *pixelgl.Window) {
 // Update updates all the objects in the world to their next state
 func (w *World) Update() {
 	w.Cleanup()
+
+	// TODO: Replace with updating an existing tree when possible
+	var err error
+	w.qt, err = quadtree.NewTree(pixel.R(0, 0, w.X, w.Y), w.CollisionObjectsRects(), w.MinObjectSide)
+	if err != nil {
+		log.Fatalf("error creating world qt: %v", err)
+	}
 
 	// update movable objects
 	for _, o := range w.SpawnedObjects() {
@@ -158,18 +196,81 @@ func (w *World) UnSpawnedObjects() []Object {
 }
 
 // CollisionObjects returns all objects for which to check collisions.
-func (w *World) CollisionObjects() []Object {
-	return append(w.SpawnedObjects(), w.Fixtures()...)
+func (w *World) CollisionObjects() ([]Object, error) {
+	return append(w.SpawnedObjects(), w.Fixtures()...), nil
+}
+
+// CollisionObjectsWith returns all objects for which to check collisions for the given object
+func (w *World) CollisionObjectsWith(o Object) ([]Object, error) {
+	cobjects := []Object{}
+
+	// Find the quadrant in w.qt that includes center of o
+	node, err := w.qt.Locate(o.Phys().Location().Center())
+	if err != nil {
+		return nil, err
+	}
+	// walk up the parent objects until node fully encloses o, with no intersections
+	isect := true
+
+	for isect {
+		if utils.Intersect(node.Bounds(), o.Phys().Location()) {
+			node = node.Parent()
+			isect = false
+		}
+	}
+
+	// convert pixel.Rect to object
+	// TODO: Make this faster
+
+	allCollissionObjects, _ := w.CollisionObjects()
+	for _, o := range allCollissionObjects {
+		for _, n := range node.Objects() {
+			if o.Phys().Location() == n {
+				cobjects = append(cobjects, o)
+			}
+		}
+	}
+
+	return cobjects, nil
+}
+
+// CollisionRects returns all object rectangles for which to check collisions.
+func (w *World) CollisionObjectsRects() []pixel.Rect {
+
+	objects := append(w.SpawnedObjects(), w.Fixtures()...)
+	rects := make([]pixel.Rect, len(objects))
+
+	for _, o := range objects {
+		rects = append(rects, o.Phys().Location())
+	}
+	return rects
+}
+
+// checkObjectValid checks if the object is valid to be added to the world
+func (w *World) checkObjectValid(o Object) error {
+	sizex, sizey := o.BoundingBox(pixel.ZV).Size().XY()
+	if math.Min(sizex, sizey) < w.MinObjectSide {
+		return fmt.Errorf("object too small; min side is %v, object is: [%v, %v]", w.MinObjectSide, sizex, sizey)
+	}
+	return nil
 }
 
 // AddObject adds a new object to the world
-func (w *World) AddObject(o Object) {
+func (w *World) AddObject(o Object) error {
+	if err := w.checkObjectValid(o); err != nil {
+		return err
+	}
 	w.Objects = append(w.Objects, o)
+	return nil
 }
 
 // AddFixture adds a new fixture to the world
-func (w *World) AddFixture(o Object) {
+func (w *World) AddFixture(o Object) error {
+	if err := w.checkObjectValid(o); err != nil {
+		return err
+	}
 	w.fixtures = append(w.fixtures, o)
+	return nil
 }
 
 // AddTarget adds a new target to the world
@@ -363,7 +464,7 @@ func (w *World) End() {
 
 // ShowStats dumps the world stats to stdout
 func (w *World) ShowStats() {
-	fmt.Printf("%v", w.Stats)
+	fmt.Printf("%v\n", w.Stats)
 }
 
 // ObjectClicked returns the object at coordinates v

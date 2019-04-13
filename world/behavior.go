@@ -390,7 +390,8 @@ func (b *TargetSeekerBehavior) populateMoveGraph(w *World) {
 
 	phys := b.parent.Phys()
 
-	for _, other := range w.CollisionObjects() {
+	cobjects, _ := w.CollisionObjects() // must be all for now
+	for _, other := range cobjects {
 		if b.parent.ID() == other.ID() {
 			continue
 		}

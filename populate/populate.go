@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/faiface/pixel"
-	"github.com/lucasb-eyer/go-colorful"
+	colorful "github.com/lucasb-eyer/go-colorful"
 	"gogs.wetsnow.com/dant/alphaville/graph"
 	"gogs.wetsnow.com/dant/alphaville/utils"
 	"gogs.wetsnow.com/dant/alphaville/world"
@@ -20,7 +20,7 @@ func RandomEllipses(w *world.World, n int) {
 
 	var minRadius, maxRadius, minMass, maxMass, minSpeed, maxSpeed float64
 
-	minRadius = 10
+	minRadius = w.MinObjectSide / 2
 	maxRadius = 60
 	minMass, maxMass = 1, 10
 	minSpeed, maxSpeed = 0.1, w.MaxObjectSpeed
@@ -40,7 +40,9 @@ func RandomEllipses(w *world.World, n int) {
 			nil, // default behavior
 		)
 
-		w.AddObject(o)
+		if err := w.AddObject(o); err != nil {
+			log.Fatalf("cannot add object: %v", err)
+		}
 	}
 }
 
@@ -49,7 +51,7 @@ func RandomCircles(w *world.World, n int) {
 
 	var minRadius, maxRadius, minMass, maxMass, minSpeed, maxSpeed float64
 
-	minRadius = 10
+	minRadius = w.MinObjectSide / 2
 	maxRadius = 60
 	minMass, maxMass = 1, 10
 	minSpeed, maxSpeed = 0.1, w.MaxObjectSpeed
@@ -66,7 +68,9 @@ func RandomCircles(w *world.World, n int) {
 			nil,    // default behavior
 		)
 
-		w.AddObject(o)
+		if err := w.AddObject(o); err != nil {
+			log.Fatalf("cannot add object: %v", err)
+		}
 	}
 }
 
@@ -75,8 +79,8 @@ func RandomRectangles(w *world.World, n int) {
 
 	var minWidth, maxWidth, minHeight, maxHeight, minMass, maxMass, minSpeed, maxSpeed float64
 
-	minWidth, maxWidth = 10, 81
-	minHeight, maxHeight = 10, 81
+	minWidth, maxWidth = w.MinObjectSide, 81
+	minHeight, maxHeight = w.MinObjectSide, 81
 	minMass, maxMass = 6, 10
 	minSpeed, maxSpeed = 0.1, w.MaxObjectSpeed
 
@@ -95,7 +99,9 @@ func RandomRectangles(w *world.World, n int) {
 			nil,    // default behavior
 		)
 
-		w.AddObject(o)
+		if err := w.AddObject(o); err != nil {
+			log.Fatalf("cannot add object: %v", err)
+		}
 	}
 }
 
@@ -104,8 +110,8 @@ func AddTargetSeeker(w *world.World, name string, speed float64, c color.Color) 
 
 	var minWidth, maxWidth, minHeight, maxHeight, minMass, maxMass float64
 
-	minWidth, maxWidth = 40, 41
-	minHeight, maxHeight = 40, 41
+	minWidth, maxWidth = w.MinObjectSide+20, w.MinObjectSide+21
+	minHeight, maxHeight = w.MinObjectSide+20, w.MinObjectSide+21
 	minMass, maxMass = 6, 10
 	// minSpeed, maxSpeed = 2, w.MaxObjectSpeed
 
@@ -129,7 +135,9 @@ func AddTargetSeeker(w *world.World, name string, speed float64, c color.Color) 
 		world.NewTargetSeekerBehavior(graph.PathFinder(finder)),
 	)
 
-	w.AddObject(o)
+	if err := w.AddObject(o); err != nil {
+		log.Fatalf("cannot add object: %v", err)
+	}
 }
 
 // AddManualObject adds a manually controlled object to the world
@@ -147,7 +155,9 @@ func AddManualObject(w *world.World, width, height float64) {
 		behavior,
 	)
 
-	w.AddObject(o)
+	if err := w.AddObject(o); err != nil {
+		log.Fatalf("cannot add object: %v", err)
+	}
 	w.ManualControl = o
 }
 
@@ -216,10 +226,10 @@ func AddGates(w *world.World, coolDown time.Duration) {
 }
 
 // AddTarget adds targets to the world
-func AddTarget(w *world.World, radius float64, maxTargets int) {
+func AddTarget(w *world.World, radius float64, maxTargets int) error {
 
 	if len(w.Targets()) >= maxTargets {
-		return
+		return fmt.Errorf("already too many targets %v of %v", len(w.Targets()), maxTargets)
 	}
 
 	var valid bool
@@ -236,38 +246,44 @@ func AddTarget(w *world.World, radius float64, maxTargets int) {
 		valid = true
 		for _, f := range w.Fixtures() {
 			// log.Printf("checking fixture: %v (target: %v)", f.Phys().Location(), t.Circle().Resized(20))
-			// for now assume seekers are always 40, 40 rectangles, don't let targets end up inside
+			// for now assume seekers are always MinObjectSize, MinObjectSize rectangles, don't let targets end up inside
 			// augmented area of fixtures, do this by resizing the circle by half the width of the rect
-			if f.Phys().Location().IntersectCircle(t.Circle().Resized(25)) != pixel.ZV {
+			if f.Phys().Location().IntersectCircle(t.Circle().Resized(w.MinObjectSide+4)) != pixel.ZV {
 				valid = false
 			}
 		}
 
 		// check edges of the world
-		if w.Ground.Phys().Location().IntersectCircle(t.Circle().Resized(20)) != pixel.ZV {
+		if w.Ground.Phys().Location().IntersectCircle(t.Circle().Resized(w.MinObjectSide+4)) != pixel.ZV {
 			valid = false
 		}
 	}
-	w.AddTarget(t)
+	if err := w.AddTarget(t); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // AddFixture adds one specific fixture to the world
-func AddFixture(w *world.World) {
+func AddFixture(w *world.World) error {
 
 	var width float64 = 144
 	var height float64 = 64
 	f := world.NewFixture("one", colorful.FastWarmColor(), width, height)
 	f.Place(pixel.V(761, 171))
-	w.AddFixture(f)
-
+	if err := w.AddFixture(f); err != nil {
+		return err
+	}
+	return nil
 }
 
 // AddFixtures add fixtures to the world.
 func AddFixtures(w *world.World, numFixtures int) {
 
-	var minWidth float64 = 6
-	var maxWidth float64 = 20
-	var minHeight float64 = 6
+	var minWidth float64 = w.MinObjectSide
+	var maxWidth float64 = w.MinObjectSide + 30
+	var minHeight float64 = w.MinObjectSide
 	var maxHeight float64 = w.Y - 100
 
 	fcolors := colorful.FastWarmPalette(numFixtures)
@@ -302,7 +318,9 @@ func AddFixtures(w *world.World, numFixtures int) {
 			}
 
 		}
-		w.AddFixture(f)
+		if err := w.AddFixture(f); err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	// f := world.NewFixture("block1", colornames.Green, width, height)

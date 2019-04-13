@@ -49,13 +49,24 @@ func processMouseLeftInput(w *world.World, v pixel.Vec) {
 	}
 }
 
+func dumpWorldInfo(w *world.World) {
+	log.Printf("%v", w)
+}
+
+func dumpWorldStats(w *world.World) {
+	w.ShowStats()
+}
 func processInput(win *pixelgl.Window, w *world.World, ctrl pixel.Vec) {
 
 	switch {
 	case win.JustPressed(pixelgl.KeySpace):
 		togglePause()
 	case win.JustPressed(pixelgl.KeyD):
-		toggleDebug(w)
+		toggleDebug(w) // doesn't do anything yet
+	case win.JustPressed(pixelgl.KeyW):
+		dumpWorldInfo(w)
+	case win.JustPressed(pixelgl.KeyS):
+		dumpWorldStats(w)
 	case win.JustPressed(pixelgl.MouseButtonLeft):
 		processMouseLeftInput(w, win.MousePosition())
 	}
@@ -181,8 +192,13 @@ func run() {
 
 		if !paused {
 			populate.AddTarget(w, 10, maxTargets)
-			update(w)
-			updates++
+			// update(w)
+			// updates++
+			for lag >= MsPerUpdate {
+				update(w)
+				updates++
+				lag -= MsPerUpdate
+			}
 		}
 
 		// // update the game state

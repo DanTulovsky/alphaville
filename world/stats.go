@@ -10,12 +10,12 @@ import (
 	"gogs.wetsnow.com/dant/alphaville/utils"
 )
 
-// Stats keeps trackof world wide stats
+// Stats keeps track of world wide stats
 // Implements observer.EventObserver interface
 type Stats struct {
 	Fps            int // frames per second
 	ObjectsSpawned int // number of spawned objects
-	Ups            int // updates (ticks) sper second
+	Ups            int // updates (ticks) per second
 }
 
 // NewStats returns a Stats object
@@ -73,9 +73,9 @@ func (s *Stats) processTargetEvent(e *TargetEvent) {
 	for _, data := range e.Data() {
 		switch data.Key {
 		case "created":
-			log.Printf("target [%v] created", data.Value)
+			// log.Printf("target [%v] created", data.Value)
 		case "destroyed":
-			log.Printf("target [%v] destroyed", data.Value)
+			// log.Printf("target [%v] destroyed", data.Value)
 		}
 	}
 }

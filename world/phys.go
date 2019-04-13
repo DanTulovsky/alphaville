@@ -103,7 +103,7 @@ func (o *BaseObjectPhys) PreviousVel() pixel.Vec {
 	return o.previousVel
 }
 
-// Vel returns the current velocity vecotr
+// Vel returns the current velocity vector
 func (o *BaseObjectPhys) Vel() pixel.Vec {
 	return o.vel
 }
@@ -228,8 +228,15 @@ func (o *BaseObjectPhys) LocationOf(other Object) string {
 // is a collision, otherwise ""
 func (o *BaseObjectPhys) HaveCollisionsAt(w *World) []string {
 	collisions := []string{}
+	// collisionObjects, err := w.CollisionObjects()
+	collisionObjects, err := w.CollisionObjectsWith(o.parentObject)
+	if err != nil {
+		log.Fatalf("%v is not in the world qt", o.parentObject.Name())
+	}
 
-	for _, other := range w.CollisionObjects() {
+	// Check collisions only with objects that intersect the same quadrant that fully contains o
+	for _, other := range collisionObjects {
+		log.Printf("Checking collisions with %v objects", len(collisionObjects))
 		if o.parentObject.ID() == other.ID() {
 			continue // skip yourself
 		}

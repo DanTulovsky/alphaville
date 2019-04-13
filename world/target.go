@@ -37,14 +37,10 @@ type Target interface {
 
 	Available() bool
 	SetAvailable(bool)
-	// Color() color.Color
 	Bounds() pixel.Rect
 	Circle() pixel.Circle
-	// ID() uuid.UUID
 	Destroy()
-	// Draw(*pixelgl.Window)
 	Location() pixel.Vec
-	// Name() string
 }
 
 type simpleTarget struct {

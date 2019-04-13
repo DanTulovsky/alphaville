@@ -115,6 +115,9 @@ func DijkstraPath(g *Graph, start, target pixel.Vec) (path []*Node, cost int, er
 		return
 	}
 
+	// Do not add the origin, as this makes sometimes move backwards
+	// and leads to meeting ones getting stuck for long periods of time
+
 	// add the origin at the end of the path
 	// path = append(path, startNode)
 	// path = append(path, NewItemNode(uuid.New(), start, 0))
