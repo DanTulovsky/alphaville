@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"html/template"
 	"log"
+	"math"
 	"time"
 
 	"gogs.wetsnow.com/dant/alphaville/quadtree"
@@ -308,16 +309,17 @@ func (b *ManualBehavior) Draw(win *pixelgl.Window) {
 // TargetSeekerBehavior moves in shortest path to the target
 type TargetSeekerBehavior struct {
 	DefaultBehavior
-	target          Target
-	moveGraph       *graph.Graph
-	qt              *quadtree.Tree
-	path            []*graph.Node
-	fullpath        []*graph.Node
-	cost            int
-	source          pixel.Vec
-	finder          graph.PathFinder // path finder function
-	turnsAtLocation int              // number of turns at current location
-	targetsCaught   int64
+	target            Target
+	moveGraph         *graph.Graph
+	qt                *quadtree.Tree
+	path              []*graph.Node
+	fullpath          []*graph.Node
+	cost              int
+	source            pixel.Vec
+	finder            graph.PathFinder // path finder function
+	turnsAtLocation   int              // number of turns at current location
+	targetsCaught     int64
+	targetAcquireTime time.Time
 }
 
 // NewTargetSeekerBehavior return a TargetSeekerBehavior
@@ -445,8 +447,8 @@ func (b *TargetSeekerBehavior) populateMoveGraph(w *World) {
 
 	// minimum size of rectangle side at which we stop splitting
 	// based on the size of the target seeker
-	// minSize := math.Min(phys.Location().W(), phys.Location().H())
-	var minSize float64 = 300
+	minSize := math.Min(phys.Location().W(), phys.Location().H())
+	// var minSize float64 = 300
 
 	// quadtree
 	qtBounds := pixel.R(
@@ -637,7 +639,6 @@ func (b *TargetSeekerBehavior) FindPath(start, target pixel.Vec) ([]*graph.Node,
 	// add the path from the center of the quadrant to the target inside of it
 	path = append(path, graph.NewItemNode(uuid.New(), b.target.Location(), 0))
 
-	log.Printf(">>> %v", path)
 	return path, cost, err
 }
 
@@ -654,6 +655,7 @@ func (b *TargetSeekerBehavior) FindAndSetNewTarget(w *World, o Object) error {
 	t.Register(b)
 	b.SetTarget(t)
 	b.recalculateMoveInfo(w, o)
+	b.targetAcquireTime = time.Now()
 
 	return nil
 }
@@ -667,7 +669,7 @@ func (b *TargetSeekerBehavior) processTargetEvent(e *TargetEvent) {
 			}
 			if b.target.ID().String() == data.Value {
 				// stop chasing destroyed targets
-				log.Printf("[%v] target [%v] destroyed need to pick another one", b.parent.Name(), data.Value)
+				// log.Printf("[%v] target [%v] destroyed need to pick another one", b.parent.Name(), data.Value)
 				b.target.Deregister(b)
 				b.target = nil
 			}
@@ -733,6 +735,14 @@ func (b *TargetSeekerBehavior) Update(w *World, o Object) {
 		return
 	}
 
+	// If too much wall clock time has passed, give up on this target and find another one
+	if time.Since(b.targetAcquireTime) > time.Second*time.Duration(utils.RandomInt(5, 10)) {
+		log.Printf("[%v] TIme to catch [%v] expired, trying another target...", b.parent.Name(), b.target.Name())
+		if err := b.FindAndSetNewTarget(w, o); err != nil {
+		}
+		return
+	}
+
 	// if stuck, redo the graph, but not too often to let things move out of the way
 	if len(b.path) == 0 || b.turnsAtLocation > 8 {
 		if b.turnsAtLocation%35 == 0 {
@@ -788,7 +798,7 @@ func (b *TargetSeekerBehavior) Draw(win *pixelgl.Window) {
 	}
 
 	// draw the quadtree
-	drawTree, colorTree, drawText, drawObjects := true, true, true, true
+	drawTree, colorTree, drawText, drawObjects := false, false, false, false
 	b.qt.Draw(win, drawTree, colorTree, drawText, drawObjects)
 
 	pathColor := b.parent.Color()

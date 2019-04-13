@@ -64,8 +64,26 @@ func (qt *Tree) newNode(bounds pixel.Rect, parent *Node, location Quadrant) *Nod
 		qt.nLevels = level
 	}
 
+	// TODO: when inserting points, include if on left and bottom border, exclude otherwise
+	// Probably same for rectangles that intersect the border exactly?
 	// populate the objects of this node from the parent
 	for _, o := range parent.Objects() {
+
+		// This is a point posing as a rectangle
+		if o.Area() == 0 {
+			// If the intersection is on the top or right edge, do not count
+			right := pixel.L(pixel.V(n.bounds.Max.X, n.bounds.Min.Y),
+				pixel.V(n.bounds.Max.X, n.bounds.Max.Y))
+			top := pixel.L(pixel.V(n.bounds.Min.X, n.bounds.Max.Y),
+				pixel.V(n.bounds.Max.X, n.bounds.Max.Y))
+
+			if right.Contains(o.Center()) || top.Contains(o.Center()) {
+				// the neighbor will claim this point
+				continue
+			}
+		}
+
+		// This is an actual rectangle
 		if utils.Intersect(n.bounds, o) || n.bounds.Contains(o.Center()) {
 			n.objects = append(n.objects, o)
 		}
@@ -251,27 +269,12 @@ func (qt *Tree) ToGraph(start, target pixel.Rect) *graph.Graph {
 	startNode.SetColor(colornames.White)
 	targetNode.SetColor(colornames.White)
 
-	log.Printf("start: (%v) %v (n: %v) (t: %v)", startNode.Color(), startNode.bounds, startNode.bounds.Center(), start.Center())
-	log.Printf("target: (%v) %v (n: %v) (t: %v)", targetNode.Color(), targetNode.bounds, targetNode.bounds.Center(), target.Center())
-
 	perNode := func(n *Node) {
 		neighbors := n.Neighbors()
 		nodeNeighbors[n] = neighbors
 	}
 	// get all the nodes + neighbors
 	qt.ForEachLeaf(colornames.Gray, perNode)
-
-	for n, neighbors := range nodeNeighbors {
-		if n.Color() == colornames.Black {
-			log.Printf("(%v) %v(%v)", n.Color(), n.bounds, n.bounds.Center())
-		}
-		for _, neighbor := range neighbors {
-			if n.Color() == colornames.Black {
-				log.Printf("  (%v) %v (%v)", neighbor.Color(), neighbor.bounds, neighbor.bounds.Center())
-			}
-			// log.Printf("%v: %v", n.Color(), neighbor.Color())
-		}
-	}
 
 	// TODO: Should be able to do this in one pass
 	for node := range nodeNeighbors {
