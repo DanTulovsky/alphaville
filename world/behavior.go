@@ -309,24 +309,26 @@ func (b *ManualBehavior) Draw(win *pixelgl.Window) {
 // TargetSeekerBehavior moves in shortest path to the target
 type TargetSeekerBehavior struct {
 	DefaultBehavior
-	target            Target
-	moveGraph         *graph.Graph
-	qt                *quadtree.Tree
-	path              []*graph.Node
-	fullpath          []*graph.Node
-	cost              int
-	source            pixel.Vec
-	finder            graph.PathFinder // path finder function
-	turnsAtLocation   int              // number of turns at current location
-	targetsCaught     int64
-	targetAcquireTime time.Time
+	target               Target
+	moveGraph            *graph.Graph
+	qt                   *quadtree.Tree
+	path                 []*graph.Node
+	fullpath             []*graph.Node
+	cost                 int
+	source               pixel.Vec
+	finder               graph.PathFinder // path finder function
+	turnsAtLocation      int              // number of turns at current location
+	targetsCaught        int64
+	targetAcquireTime    time.Time
+	maxTargetAcquireTime time.Duration
 }
 
 // NewTargetSeekerBehavior return a TargetSeekerBehavior
 func NewTargetSeekerBehavior(f graph.PathFinder) *TargetSeekerBehavior {
 	b := &TargetSeekerBehavior{
-		moveGraph: nil,
-		finder:    f,
+		moveGraph:            nil,
+		finder:               f,
+		maxTargetAcquireTime: time.Second * time.Duration(utils.RandomInt(5, 10)),
 	}
 	b.name = "target_seeker"
 	b.description = "Travels in shortest path to target, if given, otherwise stands still."
@@ -736,8 +738,8 @@ func (b *TargetSeekerBehavior) Update(w *World, o Object) {
 	}
 
 	// If too much wall clock time has passed, give up on this target and find another one
-	if time.Since(b.targetAcquireTime) > time.Second*time.Duration(utils.RandomInt(5, 10)) {
-		log.Printf("[%v] TIme to catch [%v] expired, trying another target...", b.parent.Name(), b.target.Name())
+	if time.Since(b.targetAcquireTime) > b.maxTargetAcquireTime {
+		log.Printf("[%v] Time (%v) to catch [%v] expired, trying another target...", b.parent.Name(), time.Since(b.targetAcquireTime), b.target.Name())
 		if err := b.FindAndSetNewTarget(w, o); err != nil {
 		}
 		return
