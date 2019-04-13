@@ -321,8 +321,8 @@ type TargetSeekerBehavior struct {
 	targetsCaught   int64
 
 	// TODO: Change this to be based on expected steps rather than wall time
-	targetAcquireTime    time.Time
-	maxTargetAcquireTime time.Duration
+	targetAcquireTime    time.Time     // when this target was acquired
+	maxTargetAcquireTime time.Duration // max allowed time to get to the target
 }
 
 // NewTargetSeekerBehavior return a TargetSeekerBehavior
@@ -330,7 +330,7 @@ func NewTargetSeekerBehavior(f graph.PathFinder) *TargetSeekerBehavior {
 	b := &TargetSeekerBehavior{
 		moveGraph:            nil,
 		finder:               f,
-		maxTargetAcquireTime: time.Second * time.Duration(utils.RandomInt(5, 10)),
+		maxTargetAcquireTime: time.Second * time.Duration(utils.RandomInt(20, 60)),
 	}
 	b.name = "target_seeker"
 	b.description = "Travels in shortest path to target, if given, otherwise stands still."
@@ -340,6 +340,14 @@ func NewTargetSeekerBehavior(f graph.PathFinder) *TargetSeekerBehavior {
 type vertex struct {
 	V pixel.Vec
 	O uuid.UUID
+}
+
+func (b *TargetSeekerBehavior) RemainingTargetAcquireTime() time.Duration {
+	return (b.maxTargetAcquireTime - time.Since(b.targetAcquireTime)).Round(time.Millisecond)
+}
+
+func (b *TargetSeekerBehavior) MaxTargetAcquireTime() time.Duration {
+	return b.maxTargetAcquireTime.Round(time.Millisecond)
 }
 
 // String returns ...
@@ -352,6 +360,7 @@ Behavior
 	Desc: {{.Description}}	
 	Target ({{.Target.ID}}): {{.Target.Location}}
 	Turns At Location: {{.TurnsBlocked}}
+	Remaining Time to Reach Target: {{.RemainingTargetAcquireTime}} of {{.MaxTargetAcquireTime}}
 	Targets Caught: {{.TargetsCaught}}
 `)
 
@@ -686,7 +695,7 @@ func (b *TargetSeekerBehavior) Update(w *World, o Object) {
 
 	// If too much wall clock time has passed, give up on this target and find another one
 	if time.Since(b.targetAcquireTime) > b.maxTargetAcquireTime {
-		log.Printf("[%v] Time (%v) to catch [%v] expired, trying another target...", b.parent.Name(), time.Since(b.targetAcquireTime), b.target.Name())
+		log.Printf("[%v] Time spent (%v) to catch [%v] expired (max %v), trying another target...", b.parent.Name(), time.Since(b.targetAcquireTime), b.target.Name(), b.maxTargetAcquireTime)
 		if err := b.FindAndSetNewTarget(w, o); err != nil {
 		}
 		return

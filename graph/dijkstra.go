@@ -1,10 +1,10 @@
 /*
 From: https://github.com/albertorestifo/dijkstra
 
-Package dijkstra is an highly optimised implementation of the Dijkstra
+Package dijkstra is an highly optimized implementation of the Dijkstra
 algorithm, used for find the shortest path between points of a graph.
 
-A graph is a map of points and map to the neighbouring points in the graph and
+A graph is a map of points and map to the neighboring points in the graph and
 the cost to reach them.
 A trivial example of a graph definition is:
 
@@ -116,7 +116,7 @@ func DijkstraPath(g *Graph, start, target pixel.Vec) (path []*Node, cost int, er
 	}
 
 	// add the origin at the end of the path
-	path = append(path, startNode)
+	// path = append(path, startNode)
 	// path = append(path, NewItemNode(uuid.New(), start, 0))
 
 	// reverse the path because it was popilated

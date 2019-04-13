@@ -125,9 +125,9 @@ func run() {
 
 	// populate the world
 	tsColors := colorful.FastHappyPalette(10)
-	populate.AddTargetSeeker(w, "1", 4, tsColors[0])
+	populate.AddTargetSeeker(w, "1", 3, tsColors[0])
 	populate.AddTargetSeeker(w, "2", 4, tsColors[1])
-	populate.AddTargetSeeker(w, "3", 1, tsColors[2])
+	populate.AddTargetSeeker(w, "3", 5, tsColors[2])
 	// populate.AddTargetSeeker(w, "4", 2.2, tsColors[3])
 
 	// populate.RandomCircles(w, 2)
@@ -136,7 +136,7 @@ func run() {
 	// populate.AddManualObject(w, 60, 60)
 	populate.AddGates(w, time.Second*10)
 	// populate.AddFixture(w)
-	populate.AddFixtures(w, 4)
+	populate.AddFixtures(w, 8)
 	// add targets AFTER fixtures
 	populate.AddTarget(w, 10, maxTargets)
 
