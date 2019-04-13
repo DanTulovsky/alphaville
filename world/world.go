@@ -145,7 +145,7 @@ func (w *World) SpawnedObjects() []Object {
 	return objs
 }
 
-// UnSpawnedObjects returns all the unspawned objects in the world
+// UnSpawnedObjects returns all the ready to spawn objects in the world
 func (w *World) UnSpawnedObjects() []Object {
 	var objs []Object
 	for _, o := range w.Objects {

@@ -106,3 +106,8 @@ func (s *Stats) OnNotify(e observer.Event) {
 		s.processObjectEvent(event)
 	}
 }
+
+// Name returns the name of this object
+func (s *Stats) Name() string {
+	return "global_stats"
+}

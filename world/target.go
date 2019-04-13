@@ -81,6 +81,7 @@ Target
 	Desc: {{.Description}}	
 	Available: {{.Available}}
 	Location: {{.Circle.Center}} (r={{.Circle.Radius}})
+	ID: {{.ID}}
 `)
 
 	if err != nil {
@@ -132,6 +133,8 @@ func (t *simpleTarget) Register(obs observer.EventObserver) {
 }
 
 // Deregister de-registers an observer for notifying on.
+// TODO: This causes problems if called because it modifies the t.observers list
+// that something is iterating over.
 func (t *simpleTarget) Deregister(obs observer.EventObserver) {
 	for i := 0; i < len(t.observers); i++ {
 		if obs == t.observers[i] {
@@ -144,9 +147,12 @@ func (t *simpleTarget) Deregister(obs observer.EventObserver) {
 func (t *simpleTarget) Notify(event observer.Event) {
 	// t.observers gets modified by objects unregistering on destruction
 	observers := t.observers
+	// log.Printf("observers before: %v", len(observers))
 	for i := 0; i < len(observers); i++ {
-		observers[i].OnNotify(event)
+		// log.Printf("processing observer %v", observers[i].Name())
+		t.observers[i].OnNotify(event)
 	}
+	// log.Printf("observers after: %v", len(observers))
 }
 
 // Location returns the target's location

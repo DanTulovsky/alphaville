@@ -48,6 +48,11 @@ func (w *World) OnNotify(e observer.Event) {
 	}
 }
 
+// Name returns the name of the world
+func (w *World) Name() string {
+	return "world"
+}
+
 type worldEvent struct {
 	observer.BaseEvent
 }

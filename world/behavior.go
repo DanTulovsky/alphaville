@@ -309,16 +309,18 @@ func (b *ManualBehavior) Draw(win *pixelgl.Window) {
 // TargetSeekerBehavior moves in shortest path to the target
 type TargetSeekerBehavior struct {
 	DefaultBehavior
-	target               Target
-	moveGraph            *graph.Graph
-	qt                   *quadtree.Tree
-	path                 []*graph.Node
-	fullpath             []*graph.Node
-	cost                 int
-	source               pixel.Vec
-	finder               graph.PathFinder // path finder function
-	turnsAtLocation      int              // number of turns at current location
-	targetsCaught        int64
+	target          Target
+	moveGraph       *graph.Graph
+	qt              *quadtree.Tree
+	path            []*graph.Node
+	fullpath        []*graph.Node
+	cost            int
+	source          pixel.Vec
+	finder          graph.PathFinder // path finder function
+	turnsAtLocation int              // number of turns at current location
+	targetsCaught   int64
+
+	// TODO: Change this to be based on expected steps rather than wall time
 	targetAcquireTime    time.Time
 	maxTargetAcquireTime time.Duration
 }
@@ -348,7 +350,7 @@ func (b *TargetSeekerBehavior) String() string {
 Behavior
   Name: {{.Name}}	
 	Desc: {{.Description}}	
-	Target: {{.Target.Location}}
+	Target ({{.Target.ID}}): {{.Target.Location}}
 	Turns At Location: {{.TurnsBlocked}}
 	Targets Caught: {{.TargetsCaught}}
 `)
@@ -609,6 +611,8 @@ func (b *TargetSeekerBehavior) FindAndSetNewTarget(w *World, o Object) error {
 
 	t.Register(b)
 	b.SetTarget(t)
+	// log.Printf("[%v] target [%v] acquired", b.parent.Name(), t.ID())
+
 	b.recalculateMoveInfo(w, o)
 	b.targetAcquireTime = time.Now()
 
@@ -625,20 +629,10 @@ func (b *TargetSeekerBehavior) processTargetEvent(e *TargetEvent) {
 			if b.target.ID().String() == data.Value {
 				// stop chasing destroyed targets
 				// log.Printf("[%v] target [%v] destroyed need to pick another one", b.parent.Name(), data.Value)
-				b.target.Deregister(b)
+				// b.target.Deregister(b)
 				b.target = nil
 			}
 		}
-	}
-}
-
-// OnNotify runs when a notification is received
-func (b *TargetSeekerBehavior) OnNotify(e observer.Event) {
-	switch event := e.(type) {
-	case nil:
-		log.Printf("nil notification")
-	case *TargetEvent:
-		b.processTargetEvent(event)
 	}
 }
 
@@ -758,9 +752,25 @@ func (b *TargetSeekerBehavior) Draw(win *pixelgl.Window) {
 
 	pathColor := b.parent.Color()
 	// draw the path from current location
-	// l := graph.NewItemNode(uuid.New(), b.parent.Phys().Location().Center(), 0)
-	// graph.DrawPath(win, append([]*graph.Node{l}, b.path...), pathColor)
+	l := graph.NewItemNode(uuid.New(), b.parent.Phys().Location().Center(), 0)
+	graph.DrawPath(win, append([]*graph.Node{l}, b.path...), pathColor)
 
 	// draw the path full path
-	graph.DrawPath(win, b.fullpath, pathColor)
+	// graph.DrawPath(win, b.fullpath, pathColor)
+}
+
+// Implement the EventObserver interface
+// OnNotify runs when a notification is received
+func (b *TargetSeekerBehavior) OnNotify(e observer.Event) {
+	switch event := e.(type) {
+	case nil:
+		log.Printf("nil notification")
+	case *TargetEvent:
+		b.processTargetEvent(event)
+	}
+}
+
+// Name returns the name of the object with this behavior
+func (b *TargetSeekerBehavior) Name() string {
+	return b.parent.Name()
 }
