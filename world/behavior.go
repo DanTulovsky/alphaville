@@ -12,7 +12,6 @@ import (
 	"golang.org/x/image/colornames"
 
 	"github.com/faiface/pixel/pixelgl"
-	"github.com/google/uuid"
 
 	"github.com/faiface/pixel"
 	"gogs.wetsnow.com/dant/alphaville/graph"
@@ -335,11 +334,6 @@ func NewTargetSeekerBehavior(f quadtree.PathFinder) *TargetSeekerBehavior {
 	b.name = "target_seeker"
 	b.description = "Travels in shortest path to target, if given, otherwise stands still."
 	return b
-}
-
-type vertex struct {
-	V pixel.Vec
-	O uuid.UUID
 }
 
 func (b *TargetSeekerBehavior) RemainingTargetAcquireTime() time.Duration {
@@ -681,12 +675,13 @@ func (b *TargetSeekerBehavior) recalculateMoveInfo(w *World, o Object) {
 		log.Fatal(err)
 	}
 
+	b.fullpath = []pixel.Vec{}
 	b.path, b.cost, err = b.FindPath(startNode.Bounds().Center(), targetNode.Bounds().Center())
 	if err != nil {
+		return
 		// log.Printf("error finding path: %v", err)
 	}
 
-	b.fullpath = []pixel.Vec{}
 	for _, n := range b.path {
 		b.fullpath = append(b.fullpath, n.Bounds().Center())
 	}
@@ -711,6 +706,7 @@ func (b *TargetSeekerBehavior) Update(w *World, o Object) {
 	if b.target == nil {
 		if err := b.FindAndSetNewTarget(w, o); err != nil {
 			// no target found
+			return
 		}
 		return
 	}
@@ -724,6 +720,7 @@ func (b *TargetSeekerBehavior) Update(w *World, o Object) {
 	if time.Since(b.targetAcquireTime) > b.maxTargetAcquireTime {
 		log.Printf("[%v] Time spent (%v) to catch [%v] expired (max %v), trying another target...", b.parent.Name(), time.Since(b.targetAcquireTime), b.target.Name(), b.maxTargetAcquireTime)
 		if err := b.FindAndSetNewTarget(w, o); err != nil {
+			log.Printf("... but failed to find new target: %v", err)
 		}
 		return
 	}

@@ -205,6 +205,7 @@ func AddGates(w *world.World) {
 			status:   world.GateOpen,
 			coolDown: time.Second * time.Duration(utils.RandomInt(2, 10)),
 			radius:   25,
+			filters:  []world.GateFilter(gate.DefaultGateFilter),
 		},
 		{
 			name:     "manual only",

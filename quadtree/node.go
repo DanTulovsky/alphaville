@@ -220,9 +220,7 @@ func (n *Node) updateNeighbours() {
 
 	if n.cn[South] != nil {
 		// To update the southern CN of a quadrant Q that is being
-		// decomposed: Q.CN3.CN1=Q.Ch[SE]
-		// TODO: there seems to be a typo in the paper.
-		// should have read this instead: Q.CN3.CN1=Q.Ch[SW]
+		// decomposed: Q.CN3.CN1=Q.Ch[SW]
 		if n.cn[South] != nil && n.cn[South].cn[North] == n {
 			n.cn[South].cn[North] = n.c[Southwest]
 		}

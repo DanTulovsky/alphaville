@@ -165,9 +165,7 @@ func (w *World) NextTick() {
 func (w *World) Targets() []Target {
 	var targets []Target
 
-	for _, t := range w.targets {
-		targets = append(targets, t)
-	}
+	targets = append(targets, w.targets...)
 	return targets
 }
 
@@ -185,9 +183,7 @@ func (w *World) TargetObjects() []Object {
 func (w *World) Fixtures() []Object {
 	var fs []Object
 
-	for _, f := range w.fixtures {
-		fs = append(fs, f)
-	}
+	fs = append(fs, w.fixtures...)
 	return fs
 }
 
@@ -232,7 +228,7 @@ func (w *World) CollisionObjectsWith(o Object) ([]Object, error) {
 	// walk up the parent objects until node fully encloses o, with no intersections
 	isect := true
 
-	// TODO: But also need to account for objects that might go into the node...
+	// TODO: But also need to account for objects that might go into the node?
 	for isect {
 		if utils.RectContains(node.Bounds(), o.Phys().Location()) {
 			isect = false

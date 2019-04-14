@@ -106,7 +106,9 @@ func TestGate_Reserve(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			g := NewGate("", tt.fields.Location, tt.fields.Status, tt.fields.coolDown, 10)
 			if tt.fields.Reserved {
-				g.Reserve(&tt.fields.object)
+				if err := g.Reserve(&tt.fields.object); err != nil {
+					t.Errorf("failed to reserve gate: %v", err)
+				}
 			}
 			if err := g.Reserve(&tt.fields.object); (err != nil) != tt.wantErr {
 				t.Errorf("Gate.Reserve() error = %v, wantErr %v", err, tt.wantErr)
@@ -140,7 +142,9 @@ func TestGate_UnReserve(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			g := NewGate("", tt.fields.Location, tt.fields.Status, 0, 10)
 			if tt.fields.Reserved {
-				g.Reserve(&tt.fields.object)
+				if err := g.Reserve(&tt.fields.object); err != nil {
+					t.Errorf("failed to reserve gate: %v", err)
+				}
 			}
 			g.Release()
 			if g.Reserved != false {

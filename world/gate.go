@@ -72,8 +72,8 @@ type Gate struct {
 // GateFilter filters what object is allowed to use the gate, it should return true if allowed
 type GateFilter func(Object) bool
 
-// defaultGateFilter allows all objects
-var defaultGateFilter = func(Object) bool {
+// DefaultGateFilter allows all objects
+var DefaultGateFilter = func(Object) bool {
 	return true
 }
 
@@ -106,7 +106,7 @@ func (g *Gate) CanSpawn() bool {
 		return false
 	case g.Reserved:
 		return false
-	case time.Now().Sub(g.LastSpawn) < g.SpawnCoolDown:
+	case time.Since(g.LastSpawn) < g.SpawnCoolDown:
 		return false
 	}
 	return true
@@ -158,7 +158,7 @@ func (g *Gate) Draw(win *pixelgl.Window) {
 	case g.Status == GateClosed:
 		label = "inf"
 	case !g.CanSpawn():
-		label = fmt.Sprintf("%v", g.SpawnCoolDown-time.Now().Sub(g.LastSpawn).Truncate(time.Second))
+		label = fmt.Sprintf("%v", g.SpawnCoolDown-time.Since(g.LastSpawn).Truncate(time.Second))
 	default:
 		label = "inf"
 
