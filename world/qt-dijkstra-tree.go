@@ -15,7 +15,7 @@ A trivial example of a graph definition is:
 	}
 
 */
-package quadtree
+package world
 
 import (
 	"fmt"
@@ -28,13 +28,21 @@ type node struct {
 	cost int
 }
 
+// PathFinder is a path finder algorithm
+type PathFinder interface {
+	Path(t *Tree, start, target pixel.Vec) (path NodeList, cost int, err error)
+}
+
+type DijkstraPathFinder struct {
+}
+
 // Graph is a rappresentation of how the points in our graph are connected
 // between each other
 // type Graph map[string]map[string]int
 
 // DijkstraPath finds the shortest path between start and target, also returning the
 // total cost of the found path.
-func DijkstraPathTree(t *Tree, start, target pixel.Vec) (path NodeList, cost int, err error) {
+func (d *DijkstraPathFinder) Path(t *Tree, start, target pixel.Vec) (path NodeList, cost int, err error) {
 	if len(t.Leaves) == 0 {
 		err = fmt.Errorf("cannot find path in empty graph")
 		return
@@ -132,6 +140,3 @@ func DijkstraPathTree(t *Tree, start, target pixel.Vec) (path NodeList, cost int
 	// path = append(path, NewItemNode(uuid.New(), target, 0))
 	return
 }
-
-// PathFinder is a function that returns the path between start and dest
-type PathFinder func(*Tree, pixel.Vec, pixel.Vec) (NodeList, int, error)

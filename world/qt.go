@@ -1,4 +1,4 @@
-package quadtree
+package world
 
 import (
 	"bytes"
@@ -248,56 +248,6 @@ func (qt *Tree) ForEachLeaf(color color.Color, fn func(*Node)) {
 		}
 	}
 }
-
-// ToGraph converts this tree into a graph
-// func (qt *Tree) ToGraph(start, target pixel.Rect) *graph.Graph {
-// 	defer utils.Elapsed("qt converted to graph")
-
-// 	g := graph.New()
-
-// 	nodeNeighbors := make(map[*Node]NodeList)
-
-// 	startNode, err := qt.Locate(start.Center())
-// 	if err != nil {
-// 		log.Fatalf("%v", err)
-// 	}
-// 	targetNode, err := qt.Locate(target.Center())
-// 	if err != nil {
-// 		log.Fatalf("%v", err)
-// 	}
-
-// 	// must set this before calculating neighbors
-// 	startNode.SetColor(colornames.White)
-// 	targetNode.SetColor(colornames.White)
-
-// 	perNode := func(n *Node) {
-// 		neighbors := n.Neighbors()
-// 		nodeNeighbors[n] = neighbors
-// 	}
-// 	// get all the nodes + neighbors
-// 	qt.ForEachLeaf(colornames.Gray, perNode)
-
-// 	// TODO: Should be able to do this in one pass
-// 	for node := range nodeNeighbors {
-// 		gnode := graph.NewItemNode(uuid.New(), node.Bounds().Center(), 1)
-// 		g.AddNode(gnode)
-// 	}
-
-// 	for node, neighbors := range nodeNeighbors {
-// 		gnode, _ := g.FindNode(node.Bounds().Center())
-// 		for _, n := range neighbors {
-// 			if gneighbor, err := g.FindNode(n.Bounds().Center()); err == nil {
-// 				g.AddEdge(gnode, gneighbor)
-// 			} else {
-// 				log.Println(err)
-// 			}
-
-// 		}
-// 		g.AddNode(gnode)
-// 	}
-
-// 	return g
-// }
 
 // Draw draws the quadtree
 // drawTree will draw the quadrants

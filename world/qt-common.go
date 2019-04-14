@@ -1,4 +1,4 @@
-package quadtree
+package world
 
 import "fmt"
 
@@ -13,7 +13,6 @@ const (
 	Northeast
 	Southwest
 	Southeast
-	rootQuadrant
 )
 
 const quadrantName = "NorthwestNortheastSouthwestSoutheastrootQuadrant"

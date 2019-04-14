@@ -8,8 +8,6 @@ import (
 	"math/rand"
 	"time"
 
-	"gogs.wetsnow.com/dant/alphaville/quadtree"
-
 	"gogs.wetsnow.com/dant/alphaville/observer"
 	"gogs.wetsnow.com/dant/alphaville/utils"
 
@@ -25,7 +23,7 @@ type World struct {
 	Objects []Object // objects in the world
 
 	// qt keeps track of all the collidable objects in the world
-	qt *quadtree.Tree
+	qt *Tree
 
 	targets        []Target // targets in the world that TargetSeekers hunt
 	removeTargets  []Target // targets to be removed next turn
@@ -61,7 +59,7 @@ func NewWorld(x, y float64, ground Object, gravity float64, maxSpeed float64, de
 		MinObjectSide:  20,
 		debug:          debug,
 	}
-	qt, err := quadtree.NewTree(pixel.R(0, 0, x, y), []pixel.Rect{}, w.MinObjectSide)
+	qt, err := NewTree(pixel.R(0, 0, x, y), []pixel.Rect{}, w.MinObjectSide)
 	if err != nil {
 		log.Fatalf("cannot create world: %v", err)
 	}
@@ -87,7 +85,7 @@ func (w *World) String() string {
 }
 
 // QuadTree returns the world quadtree
-func (w *World) QuadTree() *quadtree.Tree {
+func (w *World) QuadTree() *Tree {
 	return w.qt
 }
 
@@ -137,7 +135,7 @@ func (w *World) Update() {
 
 	// TODO: Replace with updating an existing tree when possible
 	var err error
-	w.qt, err = quadtree.NewTree(pixel.R(0, 0, w.X, w.Y), w.CollisionObjectsRects(), w.MinObjectSide)
+	w.qt, err = NewTree(pixel.R(0, 0, w.X, w.Y), w.CollisionObjectsRects(), w.MinObjectSide)
 	if err != nil {
 		log.Fatalf("error creating world qt: %v", err)
 	}

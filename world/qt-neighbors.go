@@ -1,4 +1,4 @@
-package quadtree
+package world
 
 import "golang.org/x/image/colornames"
 
@@ -34,9 +34,9 @@ func equalSizeNeighbour(n *Node, dir Side) *Node {
 	return neighbour
 }
 
-// neighbours calls fn for each leaf neighbours of the current node it finds in
+// Neighbours calls fn for each leaf neighbours of the current node it finds in
 // the given direction
-func neighbours(n *Node, dir Side, fn func(*Node)) {
+func Neighbours(n *Node, dir Side, fn func(*Node)) {
 	// If no neighbour can be found in the given
 	// direction, node will be null.
 	node := equalSizeNeighbour(n, dir)
@@ -48,14 +48,14 @@ func neighbours(n *Node, dir Side, fn func(*Node)) {
 			// The neighbour isn't a leaf node so we need to
 			// go further down matching its children, but in
 			// the opposite direction from where we came.
-			children(node, opposite(dir), fn)
+			Children(node, opposite(dir), fn)
 		}
 	}
 }
 
-// children calls fn for each leaf children of this node it finds in the given
+// Children calls fn for each leaf children of this node it finds in the given
 // direction.
-func children(n *Node, dir Side, fn func(*Node)) {
+func Children(n *Node, dir Side, fn func(*Node)) {
 	var (
 		s1, s2 *Node
 	)
@@ -64,15 +64,12 @@ func children(n *Node, dir Side, fn func(*Node)) {
 	case North:
 		s1 = n.Child(Northeast)
 		s2 = n.Child(Northwest)
-		break
 	case East:
 		s1 = n.Child(Northeast)
 		s2 = n.Child(Southeast)
-		break
 	case South:
 		s1 = n.Child(Southeast)
 		s2 = n.Child(Southwest)
-		break
 	case West:
 		s1 = n.Child(Northwest)
 		s2 = n.Child(Southwest)
@@ -81,12 +78,12 @@ func children(n *Node, dir Side, fn func(*Node)) {
 	if s1.Color() != colornames.Gray {
 		fn(s1)
 	} else {
-		children(s1, dir, fn)
+		Children(s1, dir, fn)
 	}
 
 	if s2.Color() != colornames.Gray {
 		fn(s2)
 	} else {
-		children(s2, dir, fn)
+		Children(s2, dir, fn)
 	}
 }

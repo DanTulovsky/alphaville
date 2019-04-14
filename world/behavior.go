@@ -8,7 +8,6 @@ import (
 	"math"
 	"time"
 
-	"gogs.wetsnow.com/dant/alphaville/quadtree"
 	"golang.org/x/image/colornames"
 
 	"github.com/faiface/pixel/pixelgl"
@@ -310,14 +309,14 @@ func (b *ManualBehavior) Draw(win *pixelgl.Window) {
 type TargetSeekerBehavior struct {
 	DefaultBehavior
 	target   Target
-	qt       *quadtree.Tree
-	path     quadtree.NodeList
+	qt       *Tree
+	path     NodeList
 	fullpath []pixel.Vec
 	cost     int
 	source   pixel.Vec
 	// finder          graph.PathFinder // path finder function
-	finder          quadtree.PathFinder // path finder function
-	turnsAtLocation int                 // number of turns at current location
+	finder          PathFinder // path finder function
+	turnsAtLocation int        // number of turns at current location
 	targetsCaught   int64
 
 	// TODO: Change this to be based on expected steps rather than wall time
@@ -326,7 +325,7 @@ type TargetSeekerBehavior struct {
 }
 
 // NewTargetSeekerBehavior return a TargetSeekerBehavior
-func NewTargetSeekerBehavior(f quadtree.PathFinder) *TargetSeekerBehavior {
+func NewTargetSeekerBehavior(f PathFinder) *TargetSeekerBehavior {
 	b := &TargetSeekerBehavior{
 		finder:               f,
 		maxTargetAcquireTime: time.Second * time.Duration(utils.RandomInt(10, 20)),
@@ -351,12 +350,12 @@ func (b *TargetSeekerBehavior) String() string {
 		`
 Behavior
   Name: {{.Name}}	
-	Desc: {{.Description}}	
-	Target ({{.Target.ID}}): {{.Target.Location}}
-	Turns At Location: {{.TurnsBlocked}}
-	Remaining Time to Reach Target: {{.RemainingTargetAcquireTime}} of {{.MaxTargetAcquireTime}}
-	Targets Caught: {{.TargetsCaught}}
-	Path to Target: {{.FullPath}}
+    Desc: {{.Description}}	
+    Target ({{.Target.ID}}): {{.Target.Location}}
+    Turns At Location: {{.TurnsBlocked}}
+    Remaining Time to Reach Target: {{.RemainingTargetAcquireTime}} of {{.MaxTargetAcquireTime}}
+    Targets Caught: {{.TargetsCaught}}
+    Path to Target: {{.FullPath}}
 `)
 
 	if err != nil {
@@ -381,7 +380,7 @@ func (b *TargetSeekerBehavior) FullPath() []pixel.Vec {
 // populateMoveGraph creates a quadtree of the current world used to find the path from o (the seeker) to target
 // https://cs.stanford.edu/people/eroberts/courses/soco/projects/1998-99/robotics/basicmotion.html
 // https://www.dis.uniroma1.it/~oriolo/amr/slides/MotionPlanning1_Slides.pdf
-func (b *TargetSeekerBehavior) populateMoveGraph(w *World) *quadtree.Tree {
+func (b *TargetSeekerBehavior) populateMoveGraph(w *World) *Tree {
 	// log.Printf("Populating move graph for %v", o.Name())
 
 	// augmented fixtures, these are what we check collisions against
@@ -420,7 +419,7 @@ func (b *TargetSeekerBehavior) populateMoveGraph(w *World) *quadtree.Tree {
 	qtBounds := pixel.R(
 		w.Ground.Phys().Location().Min.X+phys.Location().W()/2, w.Ground.Phys().Location().Max.Y+phys.Location().H()/2,
 		w.X-phys.Location().W()/2, w.Y-phys.Location().H()/2)
-	qt, err := quadtree.NewTree(qtBounds, fixtures, minSize)
+	qt, err := NewTree(qtBounds, fixtures, minSize)
 	if err != nil {
 		log.Fatalf("error creating quadtree: %v", err)
 	}
@@ -611,10 +610,10 @@ func (b *TargetSeekerBehavior) Direction(w *World, o Object) (pixel.Vec, pixel.V
 }
 
 // FindPath returns the path and cost between start and target
-func (b *TargetSeekerBehavior) FindPath(start, target pixel.Vec) (quadtree.NodeList, int, error) {
+func (b *TargetSeekerBehavior) FindPath(start, target pixel.Vec) (NodeList, int, error) {
 
 	// log.Printf("looking for path from %v to %v", start, target)
-	path, cost, err := b.finder(b.qt, start, target)
+	path, cost, err := b.finder.Path(b.qt, start, target)
 	if err != nil {
 		// log.Println(err)
 		return nil, 0, err
@@ -794,10 +793,10 @@ func (b *TargetSeekerBehavior) Draw(win *pixelgl.Window) {
 			drawPath[i+1] = b.path[i].Bounds().Center()
 		}
 		drawPath[len(drawPath)-1] = b.target.Bounds().Center()
-		quadtree.DrawPath(win, drawPath, pathColor)
+		DrawPath(win, drawPath, pathColor)
 	}
 	// draw the full path
-	// quadtree.DrawPath(win, b.fullpath, pathColor)
+	// DrawPath(win, b.fullpath, pathColor)
 }
 
 // Implement the EventObserver interface

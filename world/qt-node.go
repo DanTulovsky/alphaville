@@ -1,4 +1,4 @@
-package quadtree
+package world
 
 // from: https://github.com/arl/go-rquad/blob/master/cnnode.go
 
