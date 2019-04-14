@@ -29,7 +29,7 @@ var (
 
 	debug = &world.DebugConfig{
 		QT: world.QuadTreeDebug{
-			DrawTree:    false,
+			DrawTree:    true,
 			ColorTree:   false,
 			DrawText:    false,
 			DrawObjects: false,
@@ -46,7 +46,7 @@ const (
 	visibleWinMaxX, visibleWinMaxY = worldMaxX, worldMaxY
 	groundHeight                   = 40
 
-	maxTargets     = 2
+	maxTargets     = 3
 	maxObjectSpeed = 4
 )
 
@@ -146,9 +146,9 @@ func run() {
 	// populate the world
 	tsColors := colorful.FastHappyPalette(10)
 	populate.AddTargetSeeker(w, "1", 3, tsColors[0])
-	// populate.AddTargetSeeker(w, "2", 4, tsColors[1])
-	// populate.AddTargetSeeker(w, "3", 5, tsColors[2])
-	// populate.AddTargetSeeker(w, "4", 2.2, tsColors[3])
+	populate.AddTargetSeeker(w, "2", 4, tsColors[1])
+	populate.AddTargetSeeker(w, "3", 5, tsColors[2])
+	populate.AddTargetSeeker(w, "4", 2.2, tsColors[3])
 
 	populate.RandomCircles(w, 2)
 	populate.RandomRectangles(w, 10)
@@ -156,7 +156,7 @@ func run() {
 	// populate.AddManualObject(w, 60, 60)
 	populate.AddGates(w)
 	// populate.AddFixture(w)
-	// populate.AddFixtures(w, 8)
+	populate.AddFixtures(w, 8)
 
 	cfg := pixelgl.WindowConfig{
 		Title:     "Play!",

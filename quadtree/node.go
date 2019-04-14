@@ -29,7 +29,6 @@ type Node struct {
 	bounds  pixel.Rect   // physical bounds of this node
 	objects []pixel.Rect // objects present in this node
 
-	// 0 or 4 subnodes
 	c []*Node // 0 or 4 subnodes
 
 	parent   *Node       // parent
@@ -229,32 +228,6 @@ func (n *Node) updateNeighbours() {
 		}
 	}
 }
-
-// forEachNeighbourInDirection calls fn on every neighbour of the current node in the given
-// direction.
-// func (n *Node) forEachNeighbourInDirection(dir Side, fn func(*Node)) {
-// 	// start from the cardinal neighbour on the given direction
-// 	N := n.cn[dir]
-// 	if N == nil {
-// 		return
-// 	}
-// 	fn(N)
-// 	if N.size >= n.size {
-// 		return
-// 	}
-
-// 	traversal := traversal(dir)
-// 	opposite := opposite(dir)
-// 	// perform cardinal neighbour traversal
-// 	for {
-// 		N = N.cn[traversal]
-// 		if N != nil && N.cn[opposite] == n {
-// 			fn(N)
-// 		} else {
-// 			return
-// 		}
-// 	}
-// }
 
 func (n *Node) forEachNeighbourInDirection(dir Side, fn func(*Node)) {
 	// start from the cardinal neighbour on the given direction

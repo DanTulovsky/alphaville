@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"image/color"
-	"log"
 	"math"
 
 	"github.com/faiface/pixel/imdraw"
@@ -12,8 +11,6 @@ import (
 	"github.com/faiface/pixel/text"
 
 	"github.com/faiface/pixel"
-	"github.com/google/uuid"
-	"gogs.wetsnow.com/dant/alphaville/graph"
 	"gogs.wetsnow.com/dant/alphaville/utils"
 	"golang.org/x/image/colornames"
 )
@@ -21,7 +18,7 @@ import (
 // Tree is a quadtree
 type Tree struct {
 	root   *Node
-	leaves NodeList
+	Leaves NodeList
 
 	minSize float64 // minimum size of a side of a square
 	nLevels uint    // maximum number of levels of the quadtree
@@ -93,7 +90,7 @@ func (qt *Tree) newNode(bounds pixel.Rect, parent *Node, location Quadrant) *Nod
 
 	// fills leaves slices
 	if n.color != colornames.Gray {
-		qt.leaves = append(qt.leaves, n)
+		qt.Leaves = append(qt.Leaves, n)
 	}
 	return n
 }
@@ -109,7 +106,7 @@ func (qt *Tree) String() string {
 	for _, o := range qt.root.objects {
 		fmt.Fprintf(output, "    %v\n", o)
 	}
-	fmt.Fprintf(output, "  Leaf Nodes: %v\n", len(qt.leaves))
+	fmt.Fprintf(output, "  Leaf Nodes: %v\n", len(qt.Leaves))
 
 	return output.String()
 }
@@ -245,7 +242,7 @@ func (qt *Tree) Locate(pt pixel.Vec) (*Node, error) {
 // NOTE: As by definition, colornames.Gray leaves do not exist, passing colornames.Gray to
 // ForEachLeaf should return all leaves, independently of their color.
 func (qt *Tree) ForEachLeaf(color color.Color, fn func(*Node)) {
-	for _, n := range qt.leaves {
+	for _, n := range qt.Leaves {
 		if color == colornames.Gray || n.Color() == color {
 			fn(n)
 		}
@@ -253,54 +250,54 @@ func (qt *Tree) ForEachLeaf(color color.Color, fn func(*Node)) {
 }
 
 // ToGraph converts this tree into a graph
-func (qt *Tree) ToGraph(start, target pixel.Rect) *graph.Graph {
-	defer utils.Elapsed("qt converted to graph")
+// func (qt *Tree) ToGraph(start, target pixel.Rect) *graph.Graph {
+// 	defer utils.Elapsed("qt converted to graph")
 
-	g := graph.New()
+// 	g := graph.New()
 
-	nodeNeighbors := make(map[*Node]NodeList)
+// 	nodeNeighbors := make(map[*Node]NodeList)
 
-	startNode, err := qt.Locate(start.Center())
-	if err != nil {
-		log.Fatalf("%v", err)
-	}
-	targetNode, err := qt.Locate(target.Center())
-	if err != nil {
-		log.Fatalf("%v", err)
-	}
+// 	startNode, err := qt.Locate(start.Center())
+// 	if err != nil {
+// 		log.Fatalf("%v", err)
+// 	}
+// 	targetNode, err := qt.Locate(target.Center())
+// 	if err != nil {
+// 		log.Fatalf("%v", err)
+// 	}
 
-	// must set this before calculating neighbors
-	startNode.SetColor(colornames.White)
-	targetNode.SetColor(colornames.White)
+// 	// must set this before calculating neighbors
+// 	startNode.SetColor(colornames.White)
+// 	targetNode.SetColor(colornames.White)
 
-	perNode := func(n *Node) {
-		neighbors := n.Neighbors()
-		nodeNeighbors[n] = neighbors
-	}
-	// get all the nodes + neighbors
-	qt.ForEachLeaf(colornames.Gray, perNode)
+// 	perNode := func(n *Node) {
+// 		neighbors := n.Neighbors()
+// 		nodeNeighbors[n] = neighbors
+// 	}
+// 	// get all the nodes + neighbors
+// 	qt.ForEachLeaf(colornames.Gray, perNode)
 
-	// TODO: Should be able to do this in one pass
-	for node := range nodeNeighbors {
-		gnode := graph.NewItemNode(uuid.New(), node.Bounds().Center(), 1)
-		g.AddNode(gnode)
-	}
+// 	// TODO: Should be able to do this in one pass
+// 	for node := range nodeNeighbors {
+// 		gnode := graph.NewItemNode(uuid.New(), node.Bounds().Center(), 1)
+// 		g.AddNode(gnode)
+// 	}
 
-	for node, neighbors := range nodeNeighbors {
-		gnode, _ := g.FindNode(node.Bounds().Center())
-		for _, n := range neighbors {
-			if gneighbor, err := g.FindNode(n.Bounds().Center()); err == nil {
-				g.AddEdge(gnode, gneighbor)
-			} else {
-				log.Println(err)
-			}
+// 	for node, neighbors := range nodeNeighbors {
+// 		gnode, _ := g.FindNode(node.Bounds().Center())
+// 		for _, n := range neighbors {
+// 			if gneighbor, err := g.FindNode(n.Bounds().Center()); err == nil {
+// 				g.AddEdge(gnode, gneighbor)
+// 			} else {
+// 				log.Println(err)
+// 			}
 
-		}
-		g.AddNode(gnode)
-	}
+// 		}
+// 		g.AddNode(gnode)
+// 	}
 
-	return g
-}
+// 	return g
+// }
 
 // Draw draws the quadtree
 // drawTree will draw the quadrants
@@ -366,4 +363,17 @@ func (qt *Tree) Draw(win *pixelgl.Window, drawTree, colorTree, drawText, drawObj
 		imd.Draw(win)
 	}
 
+}
+
+// DrawPath draws the path
+func DrawPath(win *pixelgl.Window, path []pixel.Vec, c color.Color) {
+
+	imd := imdraw.New(nil)
+	imd.Color = c
+	for _, p := range path {
+		imd.Push(p)
+	}
+	imd.Line(2)
+
+	imd.Draw(win)
 }

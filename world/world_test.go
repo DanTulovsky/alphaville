@@ -43,7 +43,7 @@ func TestNewWorld(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := NewWorld(tt.args.x, tt.args.y, tt.args.ground, tt.args.gravity, tt.args.maxSpeed)
+			got := NewWorld(tt.args.x, tt.args.y, tt.args.ground, tt.args.gravity, tt.args.maxSpeed, &DebugConfig{})
 			diff := deep.Equal(got, tt.want)
 			if len(diff) != 0 {
 				t.Errorf("NewWorld() = %v, want %v\nDiff: %v", got, tt.want, diff)

@@ -15,8 +15,8 @@ func qt() {
 	s := pixel.V(11, 11)
 	t := pixel.V(790, 790)
 
-	start := pixel.R(s.X, s.Y, s.X+1, s.Y+1)
-	target := pixel.R(t.X, t.Y, t.X+1, t.Y+1)
+	start := pixel.R(s.X, s.Y, s.X, s.Y)
+	target := pixel.R(t.X, t.Y, t.X, t.Y)
 
 	objects := []pixel.Rect{
 		start,
@@ -50,7 +50,7 @@ func qt() {
 		log.Fatalf("%v", err)
 	}
 
-	g := qt.ToGraph(s, t)
+	g := qt.ToGraph(start, target)
 
 	cfg := pixelgl.WindowConfig{
 		Title:  "Quadtree",
@@ -61,8 +61,8 @@ func qt() {
 		panic(err)
 	}
 
-	startNode := qt.Locate(start)
-	targetNode := qt.Locate(target)
+	startNode, _ := qt.Locate(start.Center())
+	targetNode, _ := qt.Locate(target.Center())
 	path, _, err := graph.DijkstraPath(g, startNode.Bounds().Center(), targetNode.Bounds().Center())
 	if err != nil {
 		log.Printf("%v", err)
@@ -78,7 +78,7 @@ func qt() {
 }
 
 func draw(win *pixelgl.Window, qt *quadtree.Tree, g *graph.Graph, path []*graph.Node) {
-	drawTree, drawText, drawObjects := true, false, true
-	qt.Draw(win, drawTree, drawText, drawObjects)
-	graph.DrawPath(win, path)
+	drawTree, drawColor, drawText, drawObjects := true, false, false, true
+	qt.Draw(win, drawTree, drawColor, drawText, drawObjects)
+	graph.DrawPath(win, path, colornames.Red)
 }

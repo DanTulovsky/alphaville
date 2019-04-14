@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"gogs.wetsnow.com/dant/alphaville/quadtree"
+	"golang.org/x/image/colornames"
 
 	"github.com/faiface/pixel/pixelgl"
 	"github.com/google/uuid"
@@ -309,15 +310,15 @@ func (b *ManualBehavior) Draw(win *pixelgl.Window) {
 // TargetSeekerBehavior moves in shortest path to the target
 type TargetSeekerBehavior struct {
 	DefaultBehavior
-	target          Target
-	moveGraph       *graph.Graph
-	qt              *quadtree.Tree
-	path            []*graph.Node
-	fullpath        []*graph.Node
-	cost            int
-	source          pixel.Vec
-	finder          graph.PathFinder // path finder function
-	turnsAtLocation int              // number of turns at current location
+	target   Target
+	qt       *quadtree.Tree
+	path     quadtree.NodeList
+	fullpath []pixel.Vec
+	cost     int
+	source   pixel.Vec
+	// finder          graph.PathFinder // path finder function
+	finder          quadtree.PathFinder // path finder function
+	turnsAtLocation int                 // number of turns at current location
 	targetsCaught   int64
 
 	// TODO: Change this to be based on expected steps rather than wall time
@@ -326,9 +327,8 @@ type TargetSeekerBehavior struct {
 }
 
 // NewTargetSeekerBehavior return a TargetSeekerBehavior
-func NewTargetSeekerBehavior(f graph.PathFinder) *TargetSeekerBehavior {
+func NewTargetSeekerBehavior(f quadtree.PathFinder) *TargetSeekerBehavior {
 	b := &TargetSeekerBehavior{
-		moveGraph:            nil,
 		finder:               f,
 		maxTargetAcquireTime: time.Second * time.Duration(utils.RandomInt(20, 60)),
 	}
@@ -362,6 +362,7 @@ Behavior
 	Turns At Location: {{.TurnsBlocked}}
 	Remaining Time to Reach Target: {{.RemainingTargetAcquireTime}} of {{.MaxTargetAcquireTime}}
 	Targets Caught: {{.TargetsCaught}}
+	Path to Target: {{.FullPath}}
 `)
 
 	if err != nil {
@@ -375,13 +376,18 @@ Behavior
 	return buf.String()
 }
 
-// populateMoveGraph creates a move graph by doing a
-// cell decomposition.  the nodes are cells between the fixtures, and the edges are
-// connections between them; from:
+// FullPath returns the full path to the current target
+func (b *TargetSeekerBehavior) FullPath() []pixel.Vec {
+	if b.target != nil {
+		return b.fullpath
+	}
+	return []pixel.Vec{}
+}
+
+// populateMoveGraph creates a quadtree of the current world used to find the path from o (the seeker) to target
 // https://cs.stanford.edu/people/eroberts/courses/soco/projects/1998-99/robotics/basicmotion.html
 // https://www.dis.uniroma1.it/~oriolo/amr/slides/MotionPlanning1_Slides.pdf
-// o is the target seeker
-func (b *TargetSeekerBehavior) populateMoveGraph(w *World) {
+func (b *TargetSeekerBehavior) populateMoveGraph(w *World) *quadtree.Tree {
 	// log.Printf("Populating move graph for %v", o.Name())
 
 	// augmented fixtures, these are what we check collisions against
@@ -395,11 +401,9 @@ func (b *TargetSeekerBehavior) populateMoveGraph(w *World) {
 		if b.parent.ID() == other.ID() {
 			continue
 		}
-		// TODO remove this buffer
-		var buffer float64 = 0 // must be larger than quadtree.NewTree( ... minSize), why?
 		c := other.Phys().Location().Center()
-		size := pixel.V(other.Phys().Location().W()+phys.Location().W()+buffer,
-			other.Phys().Location().H()+phys.Location().H()+buffer)
+		size := pixel.V(other.Phys().Location().W()+phys.Location().W(),
+			other.Phys().Location().H()+phys.Location().H())
 		scaled := other.Phys().Location().Resized(c, size)
 		fixtures = append(fixtures, scaled)
 	}
@@ -427,14 +431,24 @@ func (b *TargetSeekerBehavior) populateMoveGraph(w *World) {
 		log.Fatalf("error creating quadtree: %v", err)
 	}
 
-	b.qt = qt
-	b.moveGraph = qt.ToGraph(start, target)
+	startNode, err := qt.Locate(start.Center())
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
+	targetNode, err := qt.Locate(target.Center())
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
+
+	// flip the source and target nodes to be White so the path between them can be found
+	startNode.SetColor(colornames.White)
+	targetNode.SetColor(colornames.White)
 	/////////////////////////////////////////////
+
+	return qt
 
 	// Use world quadtree
 	// b.qt = w.QuadTree()
-	// b.moveGraph = b.qt.ToGraph(start, target)
-	// log.Printf(">> %v", b.moveGraph)
 }
 
 // SetTarget sets the target
@@ -480,10 +494,10 @@ func (b *TargetSeekerBehavior) Direction(w *World, o Object) (pixel.Vec, pixel.V
 	// circle := pixel.C(o.Phys().Location().Center(), o.Speed()*2)
 
 	// for len(b.path) > 0 && circle.Contains(b.path[0].Value().V) {
-	for len(b.path) > 0 && utils.VecLen(o.Phys().Location().Center(), b.path[0].Value().V) < o.Speed() {
+	for len(b.path) > 0 && utils.VecLen(o.Phys().Location().Center(), b.path[0].Bounds().Center()) < o.Speed() {
 		// if len(b.path) > 0 && o.Phys().Location().Contains(b.path[0].Value().V) {
 
-		b.source = b.path[0].Value().V
+		b.source = b.path[0].Bounds().Center()
 		b.path = append(b.path[:0], b.path[1:]...)
 	}
 
@@ -493,7 +507,7 @@ func (b *TargetSeekerBehavior) Direction(w *World, o Object) (pixel.Vec, pixel.V
 	}
 	source := b.source
 	// target is the next node in the path
-	target := b.path[0].Value().V
+	target := b.path[0].Bounds().Center()
 	// current location of target seeker
 	c := o.Phys().Location().Center()
 
@@ -603,16 +617,14 @@ func (b *TargetSeekerBehavior) Direction(w *World, o Object) (pixel.Vec, pixel.V
 }
 
 // FindPath returns the path and cost between start and target
-func (b *TargetSeekerBehavior) FindPath(start, target pixel.Vec) ([]*graph.Node, int, error) {
+func (b *TargetSeekerBehavior) FindPath(start, target pixel.Vec) (quadtree.NodeList, int, error) {
 
 	// log.Printf("looking for path from %v to %v", start, target)
-	path, cost, err := b.finder(b.moveGraph, start, target)
+	path, cost, err := b.finder(b.qt, start, target)
 	if err != nil {
+		log.Println(err)
 		return nil, 0, err
 	}
-
-	// add the path from the center of the quadrant to the target inside of it
-	path = append(path, graph.NewItemNode(uuid.New(), b.target.Location(), 0))
 
 	return path, cost, err
 }
@@ -658,7 +670,7 @@ func (b *TargetSeekerBehavior) processTargetEvent(e *TargetEvent) {
 func (b *TargetSeekerBehavior) recalculateMoveInfo(w *World, o Object) {
 	phys := o.NextPhys()
 
-	b.populateMoveGraph(w)
+	b.qt = b.populateMoveGraph(w)
 	var err error
 	startNode, err := b.qt.Locate(phys.Location().Center())
 	if err != nil {
@@ -674,12 +686,18 @@ func (b *TargetSeekerBehavior) recalculateMoveInfo(w *World, o Object) {
 		// log.Printf("error finding path: %v", err)
 	}
 
-	b.fullpath = []*graph.Node{}
+	b.fullpath = []pixel.Vec{}
 	for _, n := range b.path {
-		b.fullpath = append(b.fullpath, n)
+		b.fullpath = append(b.fullpath, n.Bounds().Center())
 	}
-	sn := graph.NewItemNode(uuid.New(), phys.Location().Center(), 0)
-	b.fullpath = append([]*graph.Node{sn}, b.fullpath...)
+
+	if len(b.fullpath) != 0 {
+		// add current location
+		b.fullpath = append([]pixel.Vec{phys.Location().Center()}, b.fullpath...)
+
+		// add target
+		b.fullpath = append(b.fullpath, b.target.Bounds().Center())
+	}
 	b.source = phys.Location().Center()
 }
 
@@ -769,12 +787,19 @@ func (b *TargetSeekerBehavior) Draw(win *pixelgl.Window) {
 	// b.qt.Draw(win, drawTree, colorTree, drawText, drawObjects)
 
 	pathColor := b.parent.Color()
-	// draw the path from current location
-	l := graph.NewItemNode(uuid.New(), b.parent.Phys().Location().Center(), 0)
-	graph.DrawPath(win, append([]*graph.Node{l}, b.path...), pathColor)
 
-	// draw the path full path
-	// graph.DrawPath(win, b.fullpath, pathColor)
+	// draw the path from current location
+	l := b.parent.Phys().Location().Center()
+	drawPath := make([]pixel.Vec, len(b.path)+2)
+	drawPath[0] = l
+	for i := 0; i < len(b.path); i++ {
+		drawPath[i+1] = b.path[i].Bounds().Center()
+	}
+	drawPath[len(drawPath)-1] = b.target.Bounds().Center()
+	quadtree.DrawPath(win, drawPath, pathColor)
+
+	// draw the full path
+	// quadtree.DrawPath(win, b.fullpath, pathColor)
 }
 
 // Implement the EventObserver interface

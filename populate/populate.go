@@ -9,7 +9,7 @@ import (
 
 	"github.com/faiface/pixel"
 	colorful "github.com/lucasb-eyer/go-colorful"
-	"gogs.wetsnow.com/dant/alphaville/graph"
+	"gogs.wetsnow.com/dant/alphaville/quadtree"
 	"gogs.wetsnow.com/dant/alphaville/utils"
 	"gogs.wetsnow.com/dant/alphaville/world"
 	"golang.org/x/image/colornames"
@@ -123,7 +123,7 @@ func AddTargetSeeker(w *world.World, name string, speed float64, c color.Color) 
 	}
 
 	// path finder algorithm
-	finder := graph.DijkstraPath
+	finder := quadtree.DijkstraPathTree
 
 	o := world.NewRectObject(
 		fmt.Sprintf("ts-%v", name),
@@ -132,7 +132,7 @@ func AddTargetSeeker(w *world.World, name string, speed float64, c color.Color) 
 		utils.RandomFloat64(minMass, maxMass)/10, // mass
 		width,  // width
 		height, // height
-		world.NewTargetSeekerBehavior(graph.PathFinder(finder)),
+		world.NewTargetSeekerBehavior(quadtree.PathFinder(finder)),
 	)
 
 	if err := w.AddObject(o); err != nil {
