@@ -330,7 +330,7 @@ type TargetSeekerBehavior struct {
 func NewTargetSeekerBehavior(f quadtree.PathFinder) *TargetSeekerBehavior {
 	b := &TargetSeekerBehavior{
 		finder:               f,
-		maxTargetAcquireTime: time.Second * time.Duration(utils.RandomInt(20, 60)),
+		maxTargetAcquireTime: time.Second * time.Duration(utils.RandomInt(10, 20)),
 	}
 	b.name = "target_seeker"
 	b.description = "Travels in shortest path to target, if given, otherwise stands still."
@@ -424,8 +424,8 @@ func (b *TargetSeekerBehavior) populateMoveGraph(w *World) *quadtree.Tree {
 
 	// quadtree
 	qtBounds := pixel.R(
-		w.Ground.Phys().Location().Min.X+phys.Location().W(), w.Ground.Phys().Location().Max.Y+phys.Location().H(),
-		w.X-phys.Location().W(), w.Y-phys.Location().H())
+		w.Ground.Phys().Location().Min.X+phys.Location().W()/2, w.Ground.Phys().Location().Max.Y+phys.Location().H()/2,
+		w.X-phys.Location().W()/2, w.Y-phys.Location().H()/2)
 	qt, err := quadtree.NewTree(qtBounds, fixtures, minSize)
 	if err != nil {
 		log.Fatalf("error creating quadtree: %v", err)
@@ -622,7 +622,7 @@ func (b *TargetSeekerBehavior) FindPath(start, target pixel.Vec) (quadtree.NodeL
 	// log.Printf("looking for path from %v to %v", start, target)
 	path, cost, err := b.finder(b.qt, start, target)
 	if err != nil {
-		log.Println(err)
+		// log.Println(err)
 		return nil, 0, err
 	}
 
@@ -788,16 +788,17 @@ func (b *TargetSeekerBehavior) Draw(win *pixelgl.Window) {
 
 	pathColor := b.parent.Color()
 
-	// draw the path from current location
-	l := b.parent.Phys().Location().Center()
-	drawPath := make([]pixel.Vec, len(b.path)+2)
-	drawPath[0] = l
-	for i := 0; i < len(b.path); i++ {
-		drawPath[i+1] = b.path[i].Bounds().Center()
+	if len(b.path) > 0 {
+		// draw the path from current location
+		l := b.parent.Phys().Location().Center()
+		drawPath := make([]pixel.Vec, len(b.path)+2)
+		drawPath[0] = l
+		for i := 0; i < len(b.path); i++ {
+			drawPath[i+1] = b.path[i].Bounds().Center()
+		}
+		drawPath[len(drawPath)-1] = b.target.Bounds().Center()
+		quadtree.DrawPath(win, drawPath, pathColor)
 	}
-	drawPath[len(drawPath)-1] = b.target.Bounds().Center()
-	quadtree.DrawPath(win, drawPath, pathColor)
-
 	// draw the full path
 	// quadtree.DrawPath(win, b.fullpath, pathColor)
 }

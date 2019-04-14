@@ -14,8 +14,6 @@ func run() {
 
 	rand.Seed(time.Now().UnixNano())
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
-	// draw quadtree
-	// qt()
 
 	r := pixel.R(10, 10, 10, 10)
 	r2 := pixel.R(10, 10, 20, 20)

@@ -29,7 +29,7 @@ var (
 
 	debug = &world.DebugConfig{
 		QT: world.QuadTreeDebug{
-			DrawTree:    true,
+			DrawTree:    false,
 			ColorTree:   false,
 			DrawText:    false,
 			DrawObjects: false,
@@ -46,7 +46,7 @@ const (
 	visibleWinMaxX, visibleWinMaxY = worldMaxX, worldMaxY
 	groundHeight                   = 40
 
-	maxTargets     = 3
+	maxTargets     = 20
 	maxObjectSpeed = 4
 )
 
@@ -149,13 +149,16 @@ func run() {
 	populate.AddTargetSeeker(w, "2", 4, tsColors[1])
 	populate.AddTargetSeeker(w, "3", 5, tsColors[2])
 	populate.AddTargetSeeker(w, "4", 2.2, tsColors[3])
+	populate.AddTargetSeeker(w, "5", 3, tsColors[4])
+	populate.AddTargetSeeker(w, "6", 4, tsColors[5])
+	populate.AddTargetSeeker(w, "7", 5, tsColors[6])
+	populate.AddTargetSeeker(w, "8", 2.2, tsColors[7])
 
 	populate.RandomCircles(w, 2)
 	populate.RandomRectangles(w, 10)
 	populate.RandomEllipses(w, 8)
-	// populate.AddManualObject(w, 60, 60)
+	populate.AddManualObject(w, 60, 60)
 	populate.AddGates(w)
-	// populate.AddFixture(w)
 	populate.AddFixtures(w, 8)
 
 	cfg := pixelgl.WindowConfig{
