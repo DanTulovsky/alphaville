@@ -228,15 +228,18 @@ func (o *BaseObjectPhys) LocationOf(other Object) string {
 // is a collision, otherwise ""
 func (o *BaseObjectPhys) HaveCollisionsAt(w *World) []string {
 	collisions := []string{}
-	// collisionObjects, err := w.CollisionObjects()
-	collisionObjects, err := w.CollisionObjectsWith(o.parentObject)
+	collisionObjects, err := w.CollisionObjects()
+	// collisionObjects, err := w.CollisionObjectsWith(o.parentObject)
 	if err != nil {
 		log.Fatalf("%v is not in the world qt", o.parentObject.Name())
 	}
 
+	// log.Printf("[%v] Checking collisions with %v objects", o.parentObject.Name(), len(collisionObjects))
 	// Check collisions only with objects that intersect the same quadrant that fully contains o
 	for _, other := range collisionObjects {
-		log.Printf("Checking collisions with %v objects", len(collisionObjects))
+		// for _, co := range collisionObjects {
+		// 	log.Printf("  %v", co.Name())
+		// }
 		if o.parentObject.ID() == other.ID() {
 			continue // skip yourself
 		}

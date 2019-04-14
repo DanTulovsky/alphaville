@@ -56,8 +56,8 @@ func (qt *Tree) newNode(bounds pixel.Rect, parent *Node, location Quadrant) *Nod
 		bounds:   bounds,
 		parent:   parent,
 		location: location,
-		c:        make([]*Node, 4),
-		level:    level,
+		// c:        make([]*Node, 4),
+		level: level,
 	}
 
 	if qt.nLevels < level {
@@ -106,6 +106,9 @@ func (qt *Tree) String() string {
 	fmt.Fprintf(output, "Quadtree: %v (levels: %v)\n", qt.root.bounds, qt.nLevels)
 	fmt.Fprintf(output, "  Bounds: %v\n", qt.root.bounds)
 	fmt.Fprintf(output, "  Objects: %v\n", len(qt.root.objects))
+	for _, o := range qt.root.objects {
+		fmt.Fprintf(output, "    %v\n", o)
+	}
 	fmt.Fprintf(output, "  Leaf Nodes: %v\n", len(qt.leaves))
 
 	return output.String()
@@ -129,6 +132,8 @@ func (qt *Tree) subdivide(p *Node) {
 	//     | SW |  SE   |
 	//  y2 '----'-------'
 	//
+
+	p.c = make([]*Node, 4)
 
 	x0 := p.bounds.Min.X
 	x1 := p.bounds.Min.X + p.bounds.W()/2
@@ -189,7 +194,6 @@ func (qt *Tree) subdivide(p *Node) {
 	if se.color == colornames.Gray {
 		qt.subdivide(se)
 	}
-	// p.color = colornames.Black
 }
 
 // Locate returns the Node that contains the given point, or nil.

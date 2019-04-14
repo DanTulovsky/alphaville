@@ -26,6 +26,15 @@ var (
 	updates = 0
 	second  = time.Tick(time.Second)
 	paused  = false
+
+	debug = &world.DebugConfig{
+		QT: world.QuadTreeDebug{
+			DrawTree:    false,
+			ColorTree:   false,
+			DrawText:    false,
+			DrawObjects: false,
+		},
+	}
 )
 
 const (
@@ -37,7 +46,7 @@ const (
 	visibleWinMaxX, visibleWinMaxY = worldMaxX, worldMaxY
 	groundHeight                   = 40
 
-	maxTargets     = 3
+	maxTargets     = 2
 	maxObjectSpeed = 4
 )
 
@@ -132,24 +141,22 @@ func run() {
 	ground.SetPhys(groundPhys)
 	ground.SetNextPhys(ground.Phys().Copy())
 
-	w := world.NewWorld(math.Min(mWidth, worldMaxX), math.Min(mHeight, worldMaxY), ground, gravity, maxObjectSpeed)
+	w := world.NewWorld(math.Min(mWidth, worldMaxX), math.Min(mHeight, worldMaxY), ground, gravity, maxObjectSpeed, debug)
 
 	// populate the world
 	tsColors := colorful.FastHappyPalette(10)
 	populate.AddTargetSeeker(w, "1", 3, tsColors[0])
-	populate.AddTargetSeeker(w, "2", 4, tsColors[1])
-	populate.AddTargetSeeker(w, "3", 5, tsColors[2])
+	// populate.AddTargetSeeker(w, "2", 4, tsColors[1])
+	// populate.AddTargetSeeker(w, "3", 5, tsColors[2])
 	// populate.AddTargetSeeker(w, "4", 2.2, tsColors[3])
 
-	// populate.RandomCircles(w, 2)
+	populate.RandomCircles(w, 2)
 	populate.RandomRectangles(w, 10)
-	// populate.RandomEllipses(w, 2)
+	populate.RandomEllipses(w, 8)
 	// populate.AddManualObject(w, 60, 60)
-	populate.AddGates(w, time.Second*10)
+	populate.AddGates(w)
 	// populate.AddFixture(w)
-	populate.AddFixtures(w, 8)
-	// add targets AFTER fixtures
-	populate.AddTarget(w, 10, maxTargets)
+	// populate.AddFixtures(w, 8)
 
 	cfg := pixelgl.WindowConfig{
 		Title:     "Play!",
@@ -192,13 +199,13 @@ func run() {
 
 		if !paused {
 			populate.AddTarget(w, 10, maxTargets)
-			// update(w)
-			// updates++
-			for lag >= MsPerUpdate {
-				update(w)
-				updates++
-				lag -= MsPerUpdate
-			}
+			update(w)
+			updates++
+			// for lag >= MsPerUpdate {
+			// 	update(w)
+			// 	updates++
+			// 	lag -= MsPerUpdate
+			// }
 		}
 
 		// // update the game state

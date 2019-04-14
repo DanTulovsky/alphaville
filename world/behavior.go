@@ -409,12 +409,14 @@ func (b *TargetSeekerBehavior) populateMoveGraph(w *World) {
 	t := b.target.Location()
 	start := pixel.R(s.X, s.Y, s.X, s.Y)
 	target := pixel.R(t.X, t.Y, t.X, t.Y)
+
+	// Use own quadtree
+	/////////////////////////////////////
 	fixtures = append(fixtures, start, target)
 
 	// minimum size of rectangle side at which we stop splitting
 	// based on the size of the target seeker
 	minSize := math.Min(phys.Location().W(), phys.Location().H())
-	// var minSize float64 = 300
 
 	// quadtree
 	qtBounds := pixel.R(
@@ -427,6 +429,12 @@ func (b *TargetSeekerBehavior) populateMoveGraph(w *World) {
 
 	b.qt = qt
 	b.moveGraph = qt.ToGraph(start, target)
+	/////////////////////////////////////////////
+
+	// Use world quadtree
+	// b.qt = w.QuadTree()
+	// b.moveGraph = b.qt.ToGraph(start, target)
+	// log.Printf(">> %v", b.moveGraph)
 }
 
 // SetTarget sets the target
@@ -757,8 +765,8 @@ func (b *TargetSeekerBehavior) Draw(win *pixelgl.Window) {
 	}
 
 	// draw the quadtree
-	drawTree, colorTree, drawText, drawObjects := false, false, false, false
-	b.qt.Draw(win, drawTree, colorTree, drawText, drawObjects)
+	// drawTree, colorTree, drawText, drawObjects := true, false, false, true
+	// b.qt.Draw(win, drawTree, colorTree, drawText, drawObjects)
 
 	pathColor := b.parent.Color()
 	// draw the path from current location

@@ -198,3 +198,8 @@ func IntersectAny(r1 pixel.Rect, r2 []pixel.Rect) bool {
 func VecLen(a, b pixel.Vec) float64 {
 	return a.Sub(b).Len()
 }
+
+// RectContains returns true if r1 fully encloses r2
+func RectContains(r1, r2 pixel.Rect) bool {
+	return r1.Min.X <= r2.Min.X && r1.Min.Y <= r2.Min.Y && r1.Max.X >= r2.Max.X && r1.Max.Y >= r2.Max.Y
+}

@@ -25,6 +25,12 @@ func run() {
 	log.Println(r2.Contains(r.Center()))
 
 	log.Println(time.Second * time.Duration(utils.RandomInt(5, 10)))
+
+	r3 := pixel.R(0, 0, 10, 20)
+	r4 := pixel.R(2, 2, 4, 4)
+
+	log.Println(r3.Intersect(r4))
+	log.Println(r4.Intersect(r3))
 }
 
 func main() {

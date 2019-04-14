@@ -162,15 +162,15 @@ func AddManualObject(w *world.World, width, height float64) {
 }
 
 // AddGates adds gates to the world
-func AddGates(w *world.World, coolDown time.Duration) {
+func AddGates(w *world.World) {
 
-	// var filterManualOnly world.GateFilter = func(o world.Object) bool {
-	// 	switch o.Behavior().(type) {
-	// 	case *world.ManualBehavior:
-	// 		return true
-	// 	}
-	// 	return false
-	// }
+	var filterManualOnly world.GateFilter = func(o world.Object) bool {
+		switch o.Behavior().(type) {
+		case *world.ManualBehavior:
+			return true
+		}
+		return false
+	}
 
 	// var filterTargetSeekerOnly world.GateFilter = func(o world.Object) bool {
 	// 	switch o.Behavior().(type) {
@@ -195,7 +195,7 @@ func AddGates(w *world.World, coolDown time.Duration) {
 			name:     "One",
 			location: pixel.V(600, 600),
 			status:   world.GateOpen,
-			coolDown: coolDown,
+			coolDown: time.Second * time.Duration(utils.RandomInt(2, 10)),
 			radius:   20,
 			// filters:  []world.GateFilter{filterTargetSeekerOnly},
 		},
@@ -203,16 +203,16 @@ func AddGates(w *world.World, coolDown time.Duration) {
 			name:     "Two",
 			location: pixel.V(200, 600),
 			status:   world.GateOpen,
-			coolDown: coolDown,
+			coolDown: time.Second * time.Duration(utils.RandomInt(2, 10)),
 			radius:   25,
 		},
 		{
 			name:     "manual only",
 			location: pixel.V(400, 600),
 			status:   world.GateOpen,
-			coolDown: coolDown,
+			coolDown: time.Second * time.Duration(utils.RandomInt(2, 10)),
 			radius:   25,
-			// filters:  []world.GateFilter{filterManualOnly},
+			filters:  []world.GateFilter{filterManualOnly},
 		},
 	}
 

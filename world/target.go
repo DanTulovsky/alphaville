@@ -63,6 +63,9 @@ func NewSimpleTarget(name string, l pixel.Vec, r float64, d string) Target {
 		available: true,
 	}
 	st.description = d
+	// Used for Location lookup in world quadtree
+	c := pixel.R(l.X, l.Y, l.X, l.Y)
+	st.phys = NewBaseObjectPhys(c, st)
 	return st
 }
 

@@ -39,10 +39,12 @@ type World struct {
 	MinObjectSide float64 // minimum side of any object in the world
 
 	observers []observer.EventObserver
+
+	debug *DebugConfig
 }
 
 // NewWorld returns a new world of size x, y
-func NewWorld(x, y float64, ground Object, gravity float64, maxSpeed float64) *World {
+func NewWorld(x, y float64, ground Object, gravity float64, maxSpeed float64, debug *DebugConfig) *World {
 
 	w := &World{
 		Objects: []Object{},
@@ -57,6 +59,7 @@ func NewWorld(x, y float64, ground Object, gravity float64, maxSpeed float64) *W
 		ManualControl:  NewNullObject(),
 		MaxObjectSpeed: maxSpeed,
 		MinObjectSide:  20,
+		debug:          debug,
 	}
 	qt, err := quadtree.NewTree(pixel.R(0, 0, x, y), []pixel.Rect{}, w.MinObjectSide)
 	if err != nil {
@@ -81,6 +84,11 @@ func (w *World) String() string {
 	fmt.Fprintln(output, "")
 
 	return output.String()
+}
+
+// QuadTree returns the world quadtree
+func (w *World) QuadTree() *quadtree.Tree {
+	return w.qt
 }
 
 // SpawnAllNew spawns all new objects
@@ -119,6 +127,8 @@ func (w *World) Draw(win *pixelgl.Window) {
 		t.Draw(win)
 	}
 
+	w.qt.Draw(win, w.debug.QT.DrawTree, w.debug.QT.ColorTree, w.debug.QT.DrawText, w.debug.QT.DrawObjects)
+
 }
 
 // Update updates all the objects in the world to their next state
@@ -154,6 +164,16 @@ func (w *World) NextTick() {
 // Targets returns all the targets in the world
 func (w *World) Targets() []Target {
 	var targets []Target
+
+	for _, t := range w.targets {
+		targets = append(targets, t)
+	}
+	return targets
+}
+
+// TargetObjects returns all the targets in the world as objects
+func (w *World) TargetObjects() []Object {
+	targets := []Object{}
 
 	for _, t := range w.targets {
 		targets = append(targets, t)
@@ -212,10 +232,12 @@ func (w *World) CollisionObjectsWith(o Object) ([]Object, error) {
 	// walk up the parent objects until node fully encloses o, with no intersections
 	isect := true
 
+	// TODO: But also need to account for objects that might go into the node...
 	for isect {
-		if utils.Intersect(node.Bounds(), o.Phys().Location()) {
-			node = node.Parent()
+		if utils.RectContains(node.Bounds(), o.Phys().Location()) {
 			isect = false
+		} else {
+			node = node.Parent()
 		}
 	}
 
@@ -238,10 +260,12 @@ func (w *World) CollisionObjectsWith(o Object) ([]Object, error) {
 func (w *World) CollisionObjectsRects() []pixel.Rect {
 
 	objects := append(w.SpawnedObjects(), w.Fixtures()...)
+	objects = append(objects, w.TargetObjects()...)
+
 	rects := make([]pixel.Rect, len(objects))
 
-	for _, o := range objects {
-		rects = append(rects, o.Phys().Location())
+	for i := 0; i < len(objects); i++ {
+		rects[i] = objects[i].Phys().Location()
 	}
 	return rects
 }
