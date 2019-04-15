@@ -139,7 +139,6 @@ func (g *Gate) Release() {
 
 // Draw draws the gate on the screen
 func (g *Gate) Draw(win *pixelgl.Window) {
-	// TODO: Probably best to create ahead of time
 	imd := imdraw.New(nil)
 
 	imd.Color = g.Color()
@@ -207,6 +206,11 @@ func (g *Gate) BoundingBox(v pixel.Vec) pixel.Rect {
 	max := pixel.V(g.Location.X+g.Radius, g.Location.Y+g.Radius)
 
 	return pixel.R(min.X, min.Y, max.X, max.Y)
+}
+
+// Size returns the size
+func (g *Gate) Size() pixel.Rect {
+	return g.BoundingBox(g.Location)
 }
 
 // ID returns the id

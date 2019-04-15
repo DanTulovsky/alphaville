@@ -59,7 +59,7 @@ func NewWorld(x, y float64, ground Object, gravity float64, maxSpeed float64, de
 		MinObjectSide:  20,
 		debug:          debug,
 	}
-	qt, err := NewTree(pixel.R(0, 0, x, y), []pixel.Rect{}, w.MinObjectSide)
+	qt, err := NewTree(pixel.R(0, 0, x, y), []Object{}, w.MinObjectSide, pixel.ZV)
 	if err != nil {
 		log.Fatalf("cannot create world: %v", err)
 	}
@@ -135,7 +135,8 @@ func (w *World) Update() {
 
 	// TODO: Replace with updating an existing tree when possible
 	var err error
-	w.qt, err = NewTree(pixel.R(0, 0, w.X, w.Y), w.CollisionObjectsRects(), w.MinObjectSide)
+	cobjects, _ := w.CollisionObjects()
+	w.qt, err = NewTree(pixel.R(0, 0, w.X, w.Y), cobjects, w.MinObjectSide, pixel.ZV)
 	if err != nil {
 		log.Fatalf("error creating world qt: %v", err)
 	}
@@ -214,10 +215,20 @@ func (w *World) CollisionObjects() ([]Object, error) {
 	return append(w.SpawnedObjects(), w.Fixtures()...), nil
 }
 
+// CollisionObjectsExclude returns all collission objects, excluding the passed in one
+func (w *World) CollisionObjectsExclude(o Object) ([]Object, error) {
+	objects := []Object{}
+	for _, other := range append(w.SpawnedObjects(), w.Fixtures()...) {
+		if o.ID() == other.ID() {
+			continue
+		}
+		objects = append(objects, other)
+	}
+	return objects, nil
+}
+
 // CollisionObjectsWith returns all objects for which to check collisions for the given object
 func (w *World) CollisionObjectsWith(o Object) ([]Object, error) {
-	cobjects := []Object{}
-
 	// Find the quadrant in w.qt that includes center of o
 	node, err := w.qt.Locate(o.Phys().Location().Center())
 	if err != nil {
@@ -235,19 +246,7 @@ func (w *World) CollisionObjectsWith(o Object) ([]Object, error) {
 		}
 	}
 
-	// convert pixel.Rect to object
-	// TODO: Make this faster
-
-	allCollissionObjects, _ := w.CollisionObjects()
-	for _, o := range allCollissionObjects {
-		for _, n := range node.Objects() {
-			if o.Phys().Location() == n {
-				cobjects = append(cobjects, o)
-			}
-		}
-	}
-
-	return cobjects, nil
+	return node.Objects(), nil
 }
 
 // CollisionRects returns all object rectangles for which to check collisions.

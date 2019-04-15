@@ -33,6 +33,7 @@ type Object interface {
 	NextPhys() ObjectPhys // returns the NextPhys object
 	Name() string
 	Phys() ObjectPhys // returns the Phys object
+	Size() pixel.Rect // size of bounding box
 	Speed() float64
 	SwapNextState()
 	Update(*World) // Updates the object for the next iteration
@@ -104,6 +105,14 @@ func NewBaseObject(name string, color color.Color, speed, mass float64) BaseObje
 // BoundingBox must be implemented by each concrete object type; returns the bounding box of the object
 func (o *BaseObject) BoundingBox(v pixel.Vec) pixel.Rect {
 	log.Fatalf("using BaseObject BoundingBox, please implement: \n%#+v", o)
+	return pixel.R(0, 0, 0, 0)
+}
+
+// Size returns the object's bounding box
+func (o *BaseObject) Size() pixel.Rect {
+	if o.Phys() != nil {
+		return o.Phys().Location()
+	}
 	return pixel.R(0, 0, 0, 0)
 }
 

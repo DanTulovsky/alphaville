@@ -385,21 +385,9 @@ func (b *TargetSeekerBehavior) populateMoveGraph(w *World) *Tree {
 
 	// augmented fixtures, these are what we check collisions against
 	// they are grown by 1/2 size of object on each side to account for movement
-	fixtures := []pixel.Rect{}
+	cobjects, _ := w.CollisionObjectsExclude(b.parent) // must be all for now
 
 	phys := b.parent.Phys()
-
-	cobjects, _ := w.CollisionObjects() // must be all for now
-	for _, other := range cobjects {
-		if b.parent.ID() == other.ID() {
-			continue
-		}
-		c := other.Phys().Location().Center()
-		size := pixel.V(other.Phys().Location().W()+phys.Location().W(),
-			other.Phys().Location().H()+phys.Location().H())
-		scaled := other.Phys().Location().Resized(c, size)
-		fixtures = append(fixtures, scaled)
-	}
 
 	// add start and target to the quadtree
 	s := phys.Location().Center()
@@ -407,9 +395,17 @@ func (b *TargetSeekerBehavior) populateMoveGraph(w *World) *Tree {
 	start := pixel.R(s.X, s.Y, s.X, s.Y)
 	target := pixel.R(t.X, t.Y, t.X, t.Y)
 
+	startObj := NewBaseObject("start", colornames.Yellow, 0, 1000)
+	startPhys := NewBaseObjectPhys(start, &startObj)
+	startObj.SetPhys(startPhys)
+
+	targetObj := NewBaseObject("target", colornames.Yellow, 0, 1000)
+	targetPhys := NewBaseObjectPhys(target, &targetObj)
+	targetObj.SetPhys(targetPhys)
+
 	// Use own quadtree
 	/////////////////////////////////////
-	fixtures = append(fixtures, start, target)
+	cobjects = append(cobjects, &startObj, &targetObj)
 
 	// minimum size of rectangle side at which we stop splitting
 	// based on the size of the target seeker
@@ -419,16 +415,16 @@ func (b *TargetSeekerBehavior) populateMoveGraph(w *World) *Tree {
 	qtBounds := pixel.R(
 		w.Ground.Phys().Location().Min.X+phys.Location().W()/2, w.Ground.Phys().Location().Max.Y+phys.Location().H()/2,
 		w.X-phys.Location().W()/2, w.Y-phys.Location().H()/2)
-	qt, err := NewTree(qtBounds, fixtures, minSize)
+	qt, err := NewTree(qtBounds, cobjects, minSize, phys.Location().Size())
 	if err != nil {
 		log.Fatalf("error creating quadtree: %v", err)
 	}
 
-	startNode, err := qt.Locate(start.Center())
+	startNode, err := qt.Locate(startObj.Phys().Location().Center())
 	if err != nil {
 		log.Fatalf("%v", err)
 	}
-	targetNode, err := qt.Locate(target.Center())
+	targetNode, err := qt.Locate(targetObj.Phys().Location().Center())
 	if err != nil {
 		log.Fatalf("%v", err)
 	}
@@ -779,7 +775,7 @@ func (b *TargetSeekerBehavior) Draw(win *pixelgl.Window) {
 	}
 
 	// draw the quadtree
-	// drawTree, colorTree, drawText, drawObjects := true, false, false, true
+	// drawTree, colorTree, drawText, drawObjects := true, true, false, true
 	// b.qt.Draw(win, drawTree, colorTree, drawText, drawObjects)
 
 	pathColor := b.parent.Color()

@@ -26,14 +26,21 @@ type Tree struct {
 
 // NewTree returns a new quadtree populated with the objects
 // Inserting new objects into the tree is not currently supported
-func NewTree(bounds pixel.Rect, objects []pixel.Rect, minSize float64) (*Tree, error) {
+func NewTree(bounds pixel.Rect, objects []Object, minSize float64, scale pixel.Vec) (*Tree, error) {
+
+	rectObjects := make([]pixel.Rect, len(objects))
+
+	for i := 0; i < len(objects); i++ {
+		rectObjects[i] = objects[i].Phys().Location()
+	}
 
 	root := &Node{
-		bounds:  bounds.Norm(),
-		color:   colornames.Gray,
-		objects: objects,
-		c:       make([]*Node, 4),
-		level:   0,
+		bounds:      bounds.Norm(),
+		color:       colornames.Gray,
+		objects:     objects,
+		rectObjects: rectObjects,
+		c:           make([]*Node, 4),
+		level:       0,
 	}
 
 	qt := &Tree{
@@ -41,6 +48,20 @@ func NewTree(bounds pixel.Rect, objects []pixel.Rect, minSize float64) (*Tree, e
 		minSize: minSize,
 	}
 
+	// scale objects for path finding
+	if scale != pixel.ZV {
+		for i := 0; i < len(qt.root.rectObjects)-2; i++ {
+			o := qt.root.rectObjects[i]
+			if o.Area() == 0 {
+				continue
+			}
+			c := o.Center()
+			// log.Printf("%#+v", o)
+			// log.Printf("%v", o.Phys())
+			size := pixel.V(o.W()+scale.X, o.H()+scale.Y)
+			qt.root.rectObjects[i] = o.Resized(c, size)
+		}
+	}
 	qt.subdivide(qt.root)
 	return qt, nil
 }
@@ -53,19 +74,16 @@ func (qt *Tree) newNode(bounds pixel.Rect, parent *Node, location Quadrant) *Nod
 		bounds:   bounds,
 		parent:   parent,
 		location: location,
-		// c:        make([]*Node, 4),
-		level: level,
+		level:    level,
 	}
 
 	if qt.nLevels < level {
 		qt.nLevels = level
 	}
 
-	// TODO: when inserting points, include if on left and bottom border, exclude otherwise
-	// Probably same for rectangles that intersect the border exactly?
 	// populate the objects of this node from the parent
-	for _, o := range parent.Objects() {
-
+	for i := 0; i < len(parent.RectObjects()); i++ {
+		o := parent.RectObjects()[i]
 		// This is a point posing as a rectangle
 		if o.Area() == 0 {
 			// If the intersection is on the top or right edge, do not count
@@ -82,7 +100,8 @@ func (qt *Tree) newNode(bounds pixel.Rect, parent *Node, location Quadrant) *Nod
 
 		// This is an actual rectangle
 		if utils.Intersect(n.bounds, o) || n.bounds.Contains(o.Center()) {
-			n.objects = append(n.objects, o)
+			n.objects = append(n.objects, parent.Objects()[i])
+			n.rectObjects = append(n.rectObjects, parent.RectObjects()[i])
 		}
 	}
 
@@ -305,7 +324,7 @@ func (qt *Tree) Draw(win *pixelgl.Window, drawTree, colorTree, drawText, drawObj
 		imd := imdraw.New(nil)
 		imd.Color = colornames.Yellow
 
-		for _, r := range qt.Root().Objects() {
+		for _, r := range qt.Root().RectObjects() {
 			imd.Push(r.Min)
 			imd.Push(r.Max)
 			imd.Rectangle(2)

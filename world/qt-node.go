@@ -26,8 +26,10 @@ type NodeList []*Node
 
 // Node is a node in the tree
 type Node struct {
-	bounds  pixel.Rect   // physical bounds of this node
-	objects []pixel.Rect // objects present in this node
+	bounds pixel.Rect // physical bounds of this node
+	// objects []pixel.Rect // objects present in this node
+	objects     []Object     // objects present in this node
+	rectObjects []pixel.Rect // as above, but only the rectangles, used to store augmented sizes
 
 	c []*Node // 0 or 4 subnodes
 
@@ -40,8 +42,13 @@ type Node struct {
 }
 
 // Objects returns the list of objects covered by this node
-func (n *Node) Objects() []pixel.Rect {
+func (n *Node) Objects() []Object {
 	return n.objects
+}
+
+// RectObjects returns the list of rect objects covered by this node
+func (n *Node) RectObjects() []pixel.Rect {
+	return n.rectObjects
 }
 
 // IsEmpty returns true if the node has no objects in it
@@ -63,7 +70,7 @@ func (n *Node) IsPartiallyFull() bool {
 	}
 
 	var areaSum float64
-	for _, o := range n.objects {
+	for _, o := range n.rectObjects {
 		areaSum += n.bounds.Intersect(o).Area()
 	}
 

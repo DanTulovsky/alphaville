@@ -27,6 +27,11 @@ func (o *NullObject) BoundingBox(c pixel.Vec) pixel.Rect {
 	return pixel.R(0, 0, 0, 0)
 }
 
+// Size always returns 0 rect
+func (o *NullObject) Size() pixel.Rect {
+	return pixel.R(0, 0, 0, 0)
+}
+
 // Draw does nothing
 func (o *NullObject) Draw(*pixelgl.Window) {}
 
