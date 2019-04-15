@@ -122,9 +122,9 @@ func (qt *Tree) String() string {
 	fmt.Fprintf(output, "Quadtree: %v (levels: %v)\n", qt.root.bounds, qt.nLevels)
 	fmt.Fprintf(output, "  Bounds: %v\n", qt.root.bounds)
 	fmt.Fprintf(output, "  Objects: %v\n", len(qt.root.objects))
-	for _, o := range qt.root.objects {
-		fmt.Fprintf(output, "    %v\n", o)
-	}
+	// for _, o := range qt.root.objects {
+	// 	fmt.Fprintf(output, "    %v\n", o)
+	// }
 	fmt.Fprintf(output, "  Leaf Nodes: %v\n", len(qt.Leaves))
 
 	return output.String()
