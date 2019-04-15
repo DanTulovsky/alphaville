@@ -76,9 +76,9 @@ func (w *World) String() string {
 	output := bytes.NewBufferString("")
 
 	fmt.Fprintln(output, "")
-	fmt.Fprintf(output, "World: %v", w.name)
-	fmt.Fprintf(output, "  Size: [%v, %v]", w.X, w.Y)
-	fmt.Fprintf(output, "  QT:\n  %v", w.qt)
+	fmt.Fprintf(output, "World: %v\n", w.name)
+	fmt.Fprintf(output, "  Size: [%v, %v]\n", w.X, w.Y)
+	fmt.Fprintf(output, "  QT:\n  %v\n", w.qt)
 	fmt.Fprintln(output, "")
 
 	return output.String()
