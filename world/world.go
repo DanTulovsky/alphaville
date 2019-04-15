@@ -216,6 +216,8 @@ func (w *World) CollisionObjects() ([]Object, error) {
 }
 
 // CollisionObjectsExclude returns all collission objects, excluding the passed in one
+// This is used in making QuadTrees for the TargetSeekers. Exclude the TS itself so it can move freely.
+// We add a point node in its place (the rest of the objects are augmented by its size).
 func (w *World) CollisionObjectsExclude(o Object) ([]Object, error) {
 	objects := []Object{}
 	for _, other := range append(w.SpawnedObjects(), w.Fixtures()...) {
