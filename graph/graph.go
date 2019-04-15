@@ -196,6 +196,7 @@ func OnSegment(p, q, r pixel.Vec) bool {
 }
 
 // EdgesIntersect returns true if l1 and l2 intersect at any point
+// Not used anymore since pixel library supports this now
 func EdgesIntersect(l1, l2 Edge) bool {
 
 	s1 := Orientation(l1.A, l1.B, l2.A)
