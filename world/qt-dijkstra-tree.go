@@ -1,20 +1,6 @@
-/*
-From: https://github.com/albertorestifo/dijkstra
+//  dijkstra is an highly optimized implementation of the Dijkstra
+// From: https://github.com/albertorestifo/dijkstra
 
-Package dijkstra is an highly optimized implementation of the Dijkstra
-algorithm, used for find the shortest path between points of a graph.
-
-A graph is a map of points and map to the neighboring points in the graph and
-the cost to reach them.
-A trivial example of a graph definition is:
-
-	Graph{
-		"a": {"b": 10, "c": 20},
-		"b": {"a": 50},
-		"c": {"b": 10, "a": 25},
-	}
-
-*/
 package world
 
 import (
@@ -33,6 +19,7 @@ type PathFinder interface {
 	Path(t *Tree, start, target pixel.Vec) (path NodeList, cost int, err error)
 }
 
+// DijkstraPathFinder implements Dijkstra path finding
 type DijkstraPathFinder struct {
 }
 
@@ -40,7 +27,7 @@ type DijkstraPathFinder struct {
 // between each other
 // type Graph map[string]map[string]int
 
-// DijkstraPath finds the shortest path between start and target, also returning the
+// Path finds the shortest path between start and target, also returning the
 // total cost of the found path.
 func (d *DijkstraPathFinder) Path(t *Tree, start, target pixel.Vec) (path NodeList, cost int, err error) {
 	if len(t.Leaves) == 0 {

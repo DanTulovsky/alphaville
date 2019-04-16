@@ -335,10 +335,12 @@ func NewTargetSeekerBehavior(f PathFinder) *TargetSeekerBehavior {
 	return b
 }
 
+// RemainingTargetAcquireTime returns the remaining time to catch a target
 func (b *TargetSeekerBehavior) RemainingTargetAcquireTime() time.Duration {
 	return (b.maxTargetAcquireTime - time.Since(b.targetAcquireTime)).Round(time.Millisecond)
 }
 
+// MaxTargetAcquireTime returns the max time allowed to catch a target
 func (b *TargetSeekerBehavior) MaxTargetAcquireTime() time.Duration {
 	return b.maxTargetAcquireTime.Round(time.Millisecond)
 }
@@ -796,6 +798,7 @@ func (b *TargetSeekerBehavior) Draw(win *pixelgl.Window) {
 }
 
 // Implement the EventObserver interface
+
 // OnNotify runs when a notification is received
 func (b *TargetSeekerBehavior) OnNotify(e observer.Event) {
 	switch event := e.(type) {

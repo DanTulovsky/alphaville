@@ -251,20 +251,6 @@ func (w *World) CollisionObjectsWith(o Object) ([]Object, error) {
 	return node.Objects(), nil
 }
 
-// CollisionRects returns all object rectangles for which to check collisions.
-func (w *World) CollisionObjectsRects() []pixel.Rect {
-
-	objects := append(w.SpawnedObjects(), w.Fixtures()...)
-	objects = append(objects, w.TargetObjects()...)
-
-	rects := make([]pixel.Rect, len(objects))
-
-	for i := 0; i < len(objects); i++ {
-		rects[i] = objects[i].Phys().Location()
-	}
-	return rects
-}
-
 // checkObjectValid checks if the object is valid to be added to the world
 func (w *World) checkObjectValid(o Object) error {
 	sizex, sizey := o.BoundingBox(pixel.ZV).Size().XY()
