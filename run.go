@@ -12,6 +12,7 @@ import (
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/pixelgl"
 	colorful "github.com/lucasb-eyer/go-colorful"
+	"gogs.wetsnow.com/dant/alphaville/console"
 	"gogs.wetsnow.com/dant/alphaville/observer"
 	"gogs.wetsnow.com/dant/alphaville/populate"
 	"gogs.wetsnow.com/dant/alphaville/world"
@@ -29,7 +30,7 @@ var (
 
 	debug = &world.DebugConfig{
 		QT: world.QuadTreeDebug{
-			DrawTree:    false,
+			DrawTree:    true,
 			ColorTree:   false,
 			DrawText:    false,
 			DrawObjects: false,
@@ -122,8 +123,6 @@ func draw(w *world.World, win *pixelgl.Window) {
 }
 
 func run() {
-	log.SetFlags(log.LstdFlags | log.Lshortfile)
-	rand.Seed(time.Now().UnixNano())
 
 	m := pixelgl.PrimaryMonitor()
 	mWidth, mHeight := m.Size()
@@ -146,8 +145,8 @@ func run() {
 	// populate the world
 	tsColors := colorful.FastHappyPalette(10)
 	populate.AddTargetSeeker(w, "1", 3, tsColors[0])
-	// populate.AddTargetSeeker(w, "2", 4, tsColors[1])
-	// populate.AddTargetSeeker(w, "3", 5, tsColors[2])
+	populate.AddTargetSeeker(w, "2", 4, tsColors[1])
+	populate.AddTargetSeeker(w, "3", 5, tsColors[2])
 	// populate.AddTargetSeeker(w, "4", 2.2, tsColors[3])
 	// populate.AddTargetSeeker(w, "5", 3, tsColors[4])
 	// populate.AddTargetSeeker(w, "6", 4, tsColors[5])
@@ -240,5 +239,27 @@ func run() {
 }
 
 func main() {
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+	rand.Seed(time.Now().UnixNano())
+	// text console
+	g := console.New()
+
+	console.CreateViews(g)
+
+	// if err := g.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, console.Quit); err != nil {
+	// 	log.Panicln(err)
+	// }
+	output, err := g.View("output")
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	fmt.Fprintln(output, "running loop")
+
+	g.SetCurrentView("input")
+	// if err := g.MainLoop(); err != nil && err != gocui.ErrQuit {
+	// 	// handle error
+	// 	log.Println(err)
+	// }
 	pixelgl.Run(run)
 }
