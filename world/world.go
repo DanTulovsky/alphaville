@@ -13,6 +13,7 @@ import (
 
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/pixelgl"
+	"github.com/jroimartin/gocui"
 )
 
 // World defines the world
@@ -38,11 +39,12 @@ type World struct {
 
 	observers []observer.EventObserver
 
-	debug *DebugConfig
+	debug   *DebugConfig
+	console *gocui.Gui
 }
 
 // NewWorld returns a new world of size x, y
-func NewWorld(x, y float64, ground Object, gravity float64, maxSpeed float64, debug *DebugConfig) *World {
+func NewWorld(x, y float64, ground Object, gravity float64, maxSpeed float64, debug *DebugConfig, console *gocui.Gui) *World {
 
 	w := &World{
 		Objects: []Object{},
@@ -52,12 +54,12 @@ func NewWorld(x, y float64, ground Object, gravity float64, maxSpeed float64, de
 		Y:       y,
 		Ground:  ground,
 		gravity: gravity,
-		Stats:   NewStats(),
 		// EventNotifier: observer.NewEventNotifier(),
 		ManualControl:  NewNullObject(),
 		MaxObjectSpeed: maxSpeed,
 		MinObjectSide:  20,
 		debug:          debug,
+		console:        console,
 	}
 	qt, err := NewTree(pixel.R(0, 0, x, y), []Object{}, w.MinObjectSide, pixel.ZV)
 	if err != nil {
@@ -65,6 +67,7 @@ func NewWorld(x, y float64, ground Object, gravity float64, maxSpeed float64, de
 	}
 
 	w.qt = qt
+	w.Stats = NewStats(w.ConsoleO())
 
 	w.Register(w.Stats)
 	w.Notify(w.NewWorldEvent(fmt.Sprintf("The world is created..."), time.Now()))
@@ -82,6 +85,21 @@ func (w *World) String() string {
 	fmt.Fprintln(output, "")
 
 	return output.String()
+}
+
+// ConsoleI returns the input console
+func (w *World) ConsoleI() *gocui.View {
+	v, _ := w.console.View("input")
+	return v
+}
+
+// ConsoleO returns the output console
+func (w *World) ConsoleO() *gocui.View {
+	v, err := w.console.View("output")
+	if err != nil {
+		log.Fatalln(err)
+	}
+	return v
 }
 
 // QuadTree returns the world quadtree
@@ -454,7 +472,7 @@ func (w *World) CheckIntersect() {
 				continue // skip yourself
 			}
 			if o.Phys().Location().Intersect(other.Phys().Location()) != pixel.R(0, 0, 0, 0) {
-				log.Printf("%#v intersects with %#v", o, other)
+				fmt.Fprintf(w.ConsoleO(), "%#v intersects with %#v", o, other)
 			}
 
 		}
@@ -469,7 +487,7 @@ func (w *World) End() {
 
 // ShowStats dumps the world stats to stdout
 func (w *World) ShowStats() {
-	fmt.Printf("%v\n", w.Stats)
+	fmt.Fprintf(w.ConsoleO(), "%v\n", w.Stats)
 }
 
 // ObjectClicked returns the object at coordinates v

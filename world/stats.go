@@ -6,6 +6,8 @@ import (
 	"html/template"
 	"log"
 
+	"github.com/jroimartin/gocui"
+
 	"gogs.wetsnow.com/dant/alphaville/observer"
 	"gogs.wetsnow.com/dant/alphaville/utils"
 )
@@ -16,11 +18,15 @@ type Stats struct {
 	Fps            int // frames per second
 	ObjectsSpawned int // number of spawned objects
 	Ups            int // updates (ticks) per second
+
+	console *gocui.View
 }
 
 // NewStats returns a Stats object
-func NewStats() *Stats {
-	return &Stats{}
+func NewStats(console *gocui.View) *Stats {
+	return &Stats{
+		console: console,
+	}
 }
 
 // String returns stats in a nice format
@@ -61,9 +67,9 @@ func (s *Stats) processGateEvent(e *GateEvent) {
 	for _, data := range e.Data() {
 		switch data.Key {
 		case "created":
-			log.Printf("gate [%v] created", data.Value)
+			fmt.Fprintf(s.console, "gate [%v] created\n", data.Value)
 		case "spawn":
-			log.Printf("gate spawned [%v]", data.Value)
+			fmt.Fprintf(s.console, "gate spawned [%v]\n", data.Value)
 			s.ObjectsSpawned++
 		}
 	}
@@ -84,9 +90,9 @@ func (s *Stats) processObjectEvent(e *ObjectEvent) {
 	for _, data := range e.Data() {
 		switch data.Key {
 		case "created":
-			log.Printf("object [%v] created", data.Value)
+			fmt.Fprintf(s.console, "object [%v] created\n", data.Value)
 		case "target_found":
-			log.Printf("target [%v] found", data.Value)
+			fmt.Fprintf(s.console, "target [%v] found\n", data.Value)
 		}
 	}
 }
@@ -95,7 +101,7 @@ func (s *Stats) processObjectEvent(e *ObjectEvent) {
 func (s *Stats) OnNotify(e observer.Event) {
 	switch event := e.(type) {
 	case nil:
-		log.Printf("nil notification")
+		fmt.Fprintf(s.console, "nil notification\n")
 	case *worldEvent:
 		s.processWorldEvent(event)
 	case *GateEvent:

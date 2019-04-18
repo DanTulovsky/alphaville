@@ -11,6 +11,7 @@ import (
 
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/pixelgl"
+	"github.com/jroimartin/gocui"
 	colorful "github.com/lucasb-eyer/go-colorful"
 	"gogs.wetsnow.com/dant/alphaville/console"
 	"gogs.wetsnow.com/dant/alphaville/observer"
@@ -124,6 +125,16 @@ func draw(w *world.World, win *pixelgl.Window) {
 
 func run() {
 
+	// text console
+	g := console.New()
+	console.CreateViews(g)
+	g.SetCurrentView("input")
+	go func() {
+		if err := g.MainLoop(); err != nil && err != gocui.ErrQuit {
+			log.Panicln(err)
+		}
+	}()
+
 	m := pixelgl.PrimaryMonitor()
 	mWidth, mHeight := m.Size()
 	mWidth = mWidth - 60
@@ -140,7 +151,8 @@ func run() {
 	ground.SetPhys(groundPhys)
 	ground.SetNextPhys(ground.Phys().Copy())
 
-	w := world.NewWorld(math.Min(mWidth, worldMaxX), math.Min(mHeight, worldMaxY), ground, gravity, maxObjectSpeed, debug)
+	w := world.NewWorld(math.Min(mWidth, worldMaxX), math.Min(mHeight, worldMaxY), ground, gravity, maxObjectSpeed, debug, g)
+	fmt.Fprintf(w.ConsoleO(), "The World is Born...\n")
 
 	// populate the world
 	tsColors := colorful.FastHappyPalette(10)
@@ -241,25 +253,6 @@ func run() {
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	rand.Seed(time.Now().UnixNano())
-	// text console
-	g := console.New()
 
-	console.CreateViews(g)
-
-	// if err := g.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, console.Quit); err != nil {
-	// 	log.Panicln(err)
-	// }
-	output, err := g.View("output")
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	fmt.Fprintln(output, "running loop")
-
-	g.SetCurrentView("input")
-	// if err := g.MainLoop(); err != nil && err != gocui.ErrQuit {
-	// 	// handle error
-	// 	log.Println(err)
-	// }
 	pixelgl.Run(run)
 }
