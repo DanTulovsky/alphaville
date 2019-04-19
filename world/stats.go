@@ -23,7 +23,7 @@ type Stats struct {
 }
 
 // NewStats returns a Stats object
-func NewStats(console io.Writer) *Stats {
+func NewStats(console io.ReadWriter) *Stats {
 	s := &Stats{}
 	if console != nil {
 		s.console = console

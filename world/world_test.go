@@ -39,6 +39,7 @@ func TestNewWorld(t *testing.T) {
 				Stats:          NewStats(nil),
 				ManualControl:  NewNullObject(),
 				console:        nil,
+				MinObjectSide:  20,
 			},
 		},
 	}
