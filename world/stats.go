@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"fmt"
 	"html/template"
+	"io"
 	"log"
-
-	"github.com/jroimartin/gocui"
+	"os"
 
 	"gogs.wetsnow.com/dant/alphaville/observer"
 	"gogs.wetsnow.com/dant/alphaville/utils"
@@ -19,14 +19,18 @@ type Stats struct {
 	ObjectsSpawned int // number of spawned objects
 	Ups            int // updates (ticks) per second
 
-	console *gocui.View
+	console io.ReadWriter
 }
 
 // NewStats returns a Stats object
-func NewStats(console *gocui.View) *Stats {
-	return &Stats{
-		console: console,
+func NewStats(console io.Writer) *Stats {
+	s := &Stats{}
+	if console != nil {
+		s.console = console
+	} else {
+		s.console = os.Stdout
 	}
+	return s
 }
 
 // String returns stats in a nice format

@@ -3,9 +3,11 @@ package world
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"log"
 	"math"
 	"math/rand"
+	"os"
 	"time"
 
 	"gogs.wetsnow.com/dant/alphaville/observer"
@@ -58,16 +60,23 @@ func NewWorld(x, y float64, ground Object, gravity float64, maxSpeed float64, de
 		ManualControl:  NewNullObject(),
 		MaxObjectSpeed: maxSpeed,
 		MinObjectSide:  20,
-		debug:          debug,
 		console:        console,
+		debug:          debug,
 	}
 	qt, err := NewTree(pixel.R(0, 0, x, y), []Object{}, w.MinObjectSide, pixel.ZV)
 	if err != nil {
 		log.Fatalf("cannot create world: %v", err)
 	}
 
+	var output io.ReadWriter
+	if console == nil {
+		output = os.Stdout
+	} else {
+		output = w.ConsoleO()
+	}
+
 	w.qt = qt
-	w.Stats = NewStats(w.ConsoleO())
+	w.Stats = NewStats(output)
 
 	w.Register(w.Stats)
 	w.Notify(w.NewWorldEvent(fmt.Sprintf("The world is created..."), time.Now()))
@@ -89,7 +98,10 @@ func (w *World) String() string {
 
 // ConsoleI returns the input console
 func (w *World) ConsoleI() *gocui.View {
-	v, _ := w.console.View("input")
+	v, err := w.console.View("input")
+	if err != nil {
+		log.Fatalln(err)
+	}
 	return v
 }
 

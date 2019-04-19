@@ -27,7 +27,7 @@ func TestNewGate(t *testing.T) {
 			args: args{
 				l: pixel.V(10, 10),
 				s: GateOpen,
-				w: NewWorld(768, 1024, nil, 2, 2, &DebugConfig{}),
+				w: NewWorld(768, 1024, nil, 2, 2, &DebugConfig{}, nil),
 				c: time.Minute * 1,
 				r: 20,
 			},
@@ -38,7 +38,7 @@ func TestNewGate(t *testing.T) {
 			args: args{
 				l: pixel.V(100, 100),
 				s: GateOpen,
-				w: NewWorld(68, 1024, nil, 2, 2, &DebugConfig{}),
+				w: NewWorld(68, 1024, nil, 2, 2, &DebugConfig{}, nil),
 				c: time.Minute * 1,
 				r: 20,
 			},
