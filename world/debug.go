@@ -22,7 +22,7 @@ type DebugConfig struct {
 }
 
 func (w *World) processDebugQTCommand(tokens []string, out *gocui.View) {
-	// debug qt variable value
+	// variable value
 	v := strings.TrimSpace(tokens[0])
 	b, _ := strconv.ParseBool(strings.TrimSpace(tokens[1]))
 
@@ -39,16 +39,25 @@ func (w *World) processDebugQTCommand(tokens []string, out *gocui.View) {
 
 }
 
-func (w *World) processDebugCommand(tokens []string, out *gocui.View) {
-	// debug world|qt variable value
+func (w *World) processWorldDebugCommand(tokens []string, out *gocui.View) {
+	// [type] variable value
 
 	switch tokens[0] {
-	case "world":
-		// nothing yet
 	case "qt":
 		if len(tokens) == 3 {
 			w.processDebugQTCommand(tokens[1:], out)
 		}
 	}
 
+}
+
+func (w *World) processDebugCommand(tokens []string, out *gocui.View) {
+	// world [type] variable value
+
+	switch tokens[0] {
+	case "world":
+		if len(tokens) == 4 {
+			w.processWorldDebugCommand(tokens[1:], out)
+		}
+	}
 }

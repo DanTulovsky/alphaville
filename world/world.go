@@ -121,11 +121,8 @@ func (w *World) processConsoleInput(in string, out *gocui.View) {
 	switch strings.TrimSpace(tokens[0]) {
 	case "help":
 		fmt.Fprint(out, ` 
-> debug world [var] [val]
->  var: 
->  val: 
->
-> debug qt [var] [val]
+> debug world [type] [var] [val]
+>  type: qt
 >  var: draw_tree, color_tree, draw_text, draw_objects
 >  val: true, false
 `)
