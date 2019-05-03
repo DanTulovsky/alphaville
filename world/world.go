@@ -8,6 +8,7 @@ import (
 	"math"
 	"math/rand"
 	"os"
+	"strings"
 	"time"
 
 	"gogs.wetsnow.com/dant/alphaville/observer"
@@ -112,6 +113,41 @@ func (w *World) ConsoleO() *gocui.View {
 		log.Fatalln(err)
 	}
 	return v
+}
+
+func (w *World) processConsoleInput(in string, out *gocui.View) {
+	tokens := strings.Split(strings.ToLower(in), " ")
+
+	switch strings.TrimSpace(tokens[0]) {
+	case "help":
+		fmt.Fprint(out, "help text")
+	}
+}
+
+// HandleConsoleInput process input provided on the text console
+func (w *World) HandleConsoleInput(g *gocui.Gui, v *gocui.View) error {
+
+	v.Rewind()
+
+	ov, e := g.View("output")
+	if e != nil {
+		log.Println("Cannot get output view:", e)
+		return e
+	}
+
+	// console input
+	input := v.Buffer()
+
+	_, e = fmt.Fprintf(ov, "> %v", input)
+	if e != nil {
+		log.Println("Cannot print to output view:", e)
+	}
+
+	v.Clear()
+	v.SetCursor(v.Origin())
+
+	w.processConsoleInput(input, ov)
+	return nil
 }
 
 // QuadTree returns the world quadtree

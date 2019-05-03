@@ -31,7 +31,7 @@ var (
 
 	debug = &world.DebugConfig{
 		QT: world.QuadTreeDebug{
-			DrawTree:    true,
+			DrawTree:    false,
 			ColorTree:   false,
 			DrawText:    false,
 			DrawObjects: false,
@@ -154,6 +154,10 @@ func run() {
 	w := world.NewWorld(math.Min(mWidth, worldMaxX), math.Min(mHeight, worldMaxY), ground, gravity, maxObjectSpeed, debug, g)
 	fmt.Fprintf(w.ConsoleO(), "The World is Born...\n")
 
+	if err := g.SetKeybinding("input", gocui.KeyEnter, gocui.ModNone, w.HandleConsoleInput); err != nil {
+		log.Panicln(err)
+	}
+
 	// populate the world
 	tsColors := colorful.FastHappyPalette(10)
 	populate.AddTargetSeeker(w, "1", 3, tsColors[0])
@@ -215,11 +219,6 @@ func run() {
 			populate.AddTarget(w, 10, maxTargets)
 			update(w)
 			updates++
-			// for lag >= MsPerUpdate {
-			// 	update(w)
-			// 	updates++
-			// 	lag -= MsPerUpdate
-			// }
 		}
 
 		// // update the game state

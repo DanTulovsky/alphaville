@@ -2,7 +2,6 @@
 package console
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/jroimartin/gocui"
@@ -53,26 +52,6 @@ func CreateViews(g *gocui.Gui) error {
 	return nil
 }
 
-func handleEnter(g *gocui.Gui, v *gocui.View) error {
-	v.Rewind()
-
-	ov, e := g.View("output")
-	if e != nil {
-		log.Println("Cannot get output view:", e)
-		return e
-	}
-
-	_, e = fmt.Fprint(ov, v.Buffer())
-	if e != nil {
-		log.Println("Cannot print to output view:", e)
-	}
-
-	v.Clear()
-	v.SetCursor(v.Origin())
-
-	return nil
-}
-
 // New returns a new text gui
 func New() *gocui.Gui {
 
@@ -84,10 +63,6 @@ func New() *gocui.Gui {
 
 	g.SetManagerFunc(Layout)
 	if err := g.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, Quit); err != nil {
-		log.Panicln(err)
-	}
-
-	if err := g.SetKeybinding("input", gocui.KeyEnter, gocui.ModNone, handleEnter); err != nil {
 		log.Panicln(err)
 	}
 
