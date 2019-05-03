@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/tevino/abool"
+
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/pixelgl"
 	"github.com/jroimartin/gocui"
@@ -31,10 +33,10 @@ var (
 
 	debug = &world.DebugConfig{
 		QT: world.QuadTreeDebug{
-			DrawTree:    false,
-			ColorTree:   false,
-			DrawText:    false,
-			DrawObjects: false,
+			DrawTree:    abool.NewBool(false),
+			ColorTree:   abool.NewBool(false),
+			DrawText:    abool.NewBool(false),
+			DrawObjects: abool.NewBool(false),
 		},
 	}
 )

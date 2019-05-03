@@ -9,6 +9,7 @@ import (
 	"github.com/faiface/pixel/imdraw"
 	"github.com/faiface/pixel/pixelgl"
 	"github.com/faiface/pixel/text"
+	"github.com/tevino/abool"
 
 	"github.com/faiface/pixel"
 	"gogs.wetsnow.com/dant/alphaville/utils"
@@ -272,7 +273,7 @@ func (qt *Tree) ForEachLeaf(color color.Color, fn func(*Node)) {
 // drawTree will draw the quadrants
 // drawText will label the centers of quadrants
 // drawObjects will draw the objects over the quadrants
-func (qt *Tree) Draw(win *pixelgl.Window, drawTree, colorTree, drawText, drawObjects bool) {
+func (qt *Tree) Draw(win *pixelgl.Window, drawTree, colorTree, drawText, drawObjects *abool.AtomicBool) {
 
 	// Grab all the nodes
 	rectangles := NodeList{}
@@ -283,7 +284,7 @@ func (qt *Tree) Draw(win *pixelgl.Window, drawTree, colorTree, drawText, drawObj
 
 	imd := imdraw.New(nil)
 
-	if colorTree {
+	if colorTree.IsSet() {
 		// rectangle itself
 		for _, r := range rectangles {
 			imd.Color = r.Color()
@@ -293,7 +294,7 @@ func (qt *Tree) Draw(win *pixelgl.Window, drawTree, colorTree, drawText, drawObj
 		}
 		imd.Draw(win)
 	}
-	if drawTree {
+	if drawTree.IsSet() {
 		// lines around it
 		imd := imdraw.New(nil)
 		for _, r := range rectangles {
@@ -307,7 +308,7 @@ func (qt *Tree) Draw(win *pixelgl.Window, drawTree, colorTree, drawText, drawObj
 		imd.Draw(win)
 	}
 
-	if drawText {
+	if drawText.IsSet() {
 		for _, r := range rectangles {
 			c := r.Bounds().Center().Floor()
 			txt := text.New(c, utils.Atlas())
@@ -319,7 +320,7 @@ func (qt *Tree) Draw(win *pixelgl.Window, drawTree, colorTree, drawText, drawObj
 		}
 	}
 
-	if drawObjects {
+	if drawObjects.IsSet() {
 		// draw the objects
 		imd := imdraw.New(nil)
 		imd.Color = colornames.Yellow

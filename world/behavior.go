@@ -715,9 +715,9 @@ func (b *TargetSeekerBehavior) Update(w *World, o Object) {
 
 	// If too much wall clock time has passed, give up on this target and find another one
 	if time.Since(b.targetAcquireTime) > b.maxTargetAcquireTime {
-		log.Printf("[%v] Time spent (%v) to catch [%v] expired (max %v), trying another target...", b.parent.Name(), time.Since(b.targetAcquireTime), b.target.Name(), b.maxTargetAcquireTime)
+		fmt.Fprintf(w.ConsoleO(), "[%v] Time spent (%v) to catch [%v] expired (max %v), trying another target...", b.parent.Name(), time.Since(b.targetAcquireTime), b.target.Name(), b.maxTargetAcquireTime)
 		if err := b.FindAndSetNewTarget(w, o); err != nil {
-			log.Printf("... but failed to find new target: %v", err)
+			fmt.Fprintf(w.ConsoleO(), "... but failed to find new target: %v", err)
 		}
 		return
 	}

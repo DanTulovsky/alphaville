@@ -120,7 +120,20 @@ func (w *World) processConsoleInput(in string, out *gocui.View) {
 
 	switch strings.TrimSpace(tokens[0]) {
 	case "help":
-		fmt.Fprint(out, "help text")
+		fmt.Fprint(out, ` 
+> debug world [var] [val]
+>  var: 
+>  val: 
+>
+> debug qt [var] [val]
+>  var: draw_tree, color_tree, draw_text, draw_objects
+>  val: true, false
+`)
+	case "debug":
+		if len(tokens) > 1 {
+			w.processDebugCommand(tokens[1:], out)
+		}
+
 	}
 }
 
@@ -138,7 +151,7 @@ func (w *World) HandleConsoleInput(g *gocui.Gui, v *gocui.View) error {
 	// console input
 	input := v.Buffer()
 
-	_, e = fmt.Fprintf(ov, "> %v", input)
+	_, e = fmt.Fprintf(ov, "> %v\n", input)
 	if e != nil {
 		log.Println("Cannot print to output view:", e)
 	}
