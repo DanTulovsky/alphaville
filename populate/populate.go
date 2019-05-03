@@ -107,15 +107,15 @@ func RandomRectangles(w *world.World, n int) {
 // AddTargetSeeker adds an object that seeks a target
 func AddTargetSeeker(w *world.World, name string, speed float64, c color.Color) {
 
-	var minWidth, maxWidth, minHeight, maxHeight, minMass, maxMass float64
+	var minMass, maxMass float64
 
-	minWidth, maxWidth = w.MinObjectSide+20, w.MinObjectSide+21
-	minHeight, maxHeight = w.MinObjectSide+20, w.MinObjectSide+21
+	// minWidth, maxWidth = w.MinObjectSide+20, w.MinObjectSide+21
+	// minHeight, maxHeight = w.MinObjectSide+20, w.MinObjectSide+21
 	minMass, maxMass = 6, 10
 	// minSpeed, maxSpeed = 2, w.MaxObjectSpeed
 
-	width := utils.RandomFloat64(minWidth, maxWidth)
-	height := utils.RandomFloat64(minHeight, maxHeight)
+	width := w.MinObjectSide * 2
+	height := w.MinObjectSide * 2
 
 	if c == nil {
 		c = colorful.FastWarmColor()
@@ -245,7 +245,6 @@ func AddTarget(w *world.World, radius float64, maxTargets int) error {
 		t = world.NewSimpleTarget("one", l, radius, "desc")
 		valid = true
 		for _, f := range w.Fixtures() {
-			// log.Printf("checking fixture: %v (target: %v)", f.Phys().Location(), t.Circle().Resized(20))
 			// for now assume seekers are always MinObjectSize, MinObjectSize rectangles, don't let targets end up inside
 			// augmented area of fixtures, do this by resizing the circle by half the width of the rect
 			if f.Phys().Location().IntersectCircle(t.Circle().Resized(w.MinObjectSide+4)) != pixel.ZV {
