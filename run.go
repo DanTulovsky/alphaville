@@ -31,7 +31,7 @@ var (
 
 	debug = &world.DebugConfig{
 		QT: world.QuadTreeDebug{
-			DrawTree:    true,
+			DrawTree:    false,
 			ColorTree:   false,
 			DrawText:    false,
 			DrawObjects: false,
