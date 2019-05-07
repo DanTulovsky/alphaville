@@ -37,13 +37,14 @@ type TargetSeekerBehavior struct {
 
 // NewTargetSeekerBehavior return a TargetSeekerBehavior
 func NewTargetSeekerBehavior(f PathFinder) *TargetSeekerBehavior {
-	b := &TargetSeekerBehavior{
+	return &TargetSeekerBehavior{
+		DefaultBehavior{
+			name: "target_seeker",
+			description: "Travels in shortest path to target, if given, otherwise stands still."
+		},
 		finder:               f,
 		maxTargetAcquireTime: time.Second * time.Duration(utils.RandomInt(10, 20)),
 	}
-	b.name = "target_seeker"
-	b.description = "Travels in shortest path to target, if given, otherwise stands still."
-	return b
 }
 
 // RemainingTargetAcquireTime returns the remaining time to catch a target

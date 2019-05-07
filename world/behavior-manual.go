@@ -12,10 +12,12 @@ type ManualBehavior struct {
 
 // NewManualBehavior return a ManualBehavior
 func NewManualBehavior() *ManualBehavior {
-	b := &ManualBehavior{}
-	b.name = "manual_behavior"
-	b.description = "Controlled by a human."
-	return b
+	return &ManualBehavior{
+		DefaultBehavior{
+			name:        "manual_behavior",
+			description: "Controlled by a human.",
+		},
+	}
 }
 
 // Update implements the Behavior Update method

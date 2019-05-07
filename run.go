@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/tevino/abool"
+
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/pixelgl"
 	"github.com/jroimartin/gocui"
@@ -31,10 +33,10 @@ var (
 
 	debug = &world.DebugConfig{
 		QT: world.QuadTreeDebug{
-			DrawTree:    false,
-			ColorTree:   false,
-			DrawText:    false,
-			DrawObjects: false,
+			DrawTree:    abool.NewBool(false),
+			ColorTree:   abool.NewBool(false),
+			DrawText:    abool.NewBool(false),
+			DrawObjects: abool.NewBool(false),
 		},
 	}
 )
@@ -154,19 +156,23 @@ func run() {
 	w := world.NewWorld(math.Min(mWidth, worldMaxX), math.Min(mHeight, worldMaxY), ground, gravity, maxObjectSpeed, debug, g)
 	fmt.Fprintf(w.ConsoleO(), "The World is Born...\n")
 
+	if err := g.SetKeybinding("input", gocui.KeyEnter, gocui.ModNone, w.HandleConsoleInput); err != nil {
+		log.Panicln(err)
+	}
+
 	// populate the world
 	tsColors := colorful.FastHappyPalette(10)
 	populate.AddTargetSeeker(w, "1", 3, tsColors[0])
-	populate.AddTargetSeeker(w, "2", 4, tsColors[1])
-	populate.AddTargetSeeker(w, "3", 5, tsColors[2])
+	// populate.AddTargetSeeker(w, "2", 4, tsColors[1])
+	// populate.AddTargetSeeker(w, "3", 5, tsColors[2])
 	// populate.AddTargetSeeker(w, "4", 2.2, tsColors[3])
 	// populate.AddTargetSeeker(w, "5", 3, tsColors[4])
 	// populate.AddTargetSeeker(w, "6", 4, tsColors[5])
 	// populate.AddTargetSeeker(w, "7", 5, tsColors[6])
 	// populate.AddTargetSeeker(w, "8", 2.2, tsColors[7])
 
-	populate.RandomCircles(w, 2)
-	populate.RandomRectangles(w, 10)
+	// populate.RandomCircles(w, 2)
+	// populate.RandomRectangles(w, 10)
 	// populate.RandomEllipses(w, 8)
 	// populate.AddManualObject(w, 60, 60)
 	populate.AddGates(w)
@@ -215,11 +221,6 @@ func run() {
 			populate.AddTarget(w, 10, maxTargets)
 			update(w)
 			updates++
-			// for lag >= MsPerUpdate {
-			// 	update(w)
-			// 	updates++
-			// 	lag -= MsPerUpdate
-			// }
 		}
 
 		// // update the game state
