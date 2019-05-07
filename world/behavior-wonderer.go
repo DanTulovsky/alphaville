@@ -69,6 +69,6 @@ func (b *WondererBehavior) Update(w *World, o Object) {
 }
 
 // Draw draws any artifacts of the behavior
-func (b *DefaultBehavior) Draw(win *pixelgl.Window) {
+func (b *WondererBehavior) Draw(win *pixelgl.Window) {
 
 }

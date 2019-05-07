@@ -154,7 +154,9 @@ func (w *World) HandleConsoleInput(g *gocui.Gui, v *gocui.View) error {
 	}
 
 	v.Clear()
-	v.SetCursor(v.Origin())
+	if err := v.SetCursor(v.Origin()); err != nil {
+		log.Print(err)
+	}
 
 	w.processConsoleInput(input, ov)
 	return nil
