@@ -14,7 +14,6 @@ import (
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/pixelgl"
 	"github.com/jroimartin/gocui"
-	colorful "github.com/lucasb-eyer/go-colorful"
 	"gogs.wetsnow.com/dant/alphaville/console"
 	"gogs.wetsnow.com/dant/alphaville/observer"
 	"gogs.wetsnow.com/dant/alphaville/populate"
@@ -161,8 +160,8 @@ func run() {
 	}
 
 	// populate the world
-	tsColors := colorful.FastHappyPalette(10)
-	populate.AddTargetSeeker(w, "1", 3, tsColors[0])
+	// tsColors := colorful.FastHappyPalette(10)
+	// populate.AddTargetSeeker(w, "1", 3, tsColors[0])
 	// populate.AddTargetSeeker(w, "2", 4, tsColors[1])
 	// populate.AddTargetSeeker(w, "3", 5, tsColors[2])
 	// populate.AddTargetSeeker(w, "4", 2.2, tsColors[3])
@@ -175,8 +174,9 @@ func run() {
 	// populate.RandomRectangles(w, 10)
 	// populate.RandomEllipses(w, 8)
 	// populate.AddManualObject(w, 60, 60)
+	populate.AddWonderer(w, "w", 3, colornames.Yellow)
 	populate.AddGates(w)
-	populate.AddFixtures(w, 6)
+	// populate.AddFixtures(w, 6)
 
 	cfg := pixelgl.WindowConfig{
 		Title:     "Play!",

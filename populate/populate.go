@@ -264,6 +264,41 @@ func AddTarget(w *world.World, radius float64, maxTargets int) error {
 	return nil
 }
 
+func AddWonderer(w *world.World, name string, speed float64, c color.Color) {
+
+	var minMass, maxMass float64
+
+	minMass, maxMass = 6, 10
+	// minSpeed, maxSpeed = 2, w.MaxObjectSpeed
+
+	width := w.MinObjectSide * 2
+	height := w.MinObjectSide * 2
+
+	// path finder algorithm
+	finder := &world.DijkstraPathFinder{}
+
+	if c == nil {
+		c = colorful.FastWarmColor()
+	}
+
+	o := world.NewRectObject(
+		fmt.Sprintf("%v", name),
+		c,
+		speed,
+		utils.RandomFloat64(minMass, maxMass)/10, // mass
+		width,  // width
+		height, // height
+		nil,    // behavior set later
+	)
+
+	b := world.NewWondererBehavior(finder, o)
+	o.SetBehavior(b)
+
+	if err := w.AddObject(o); err != nil {
+		log.Fatalf("cannot add object: %v", err)
+	}
+}
+
 // AddFixture adds one specific fixture to the world
 func AddFixture(w *world.World) error {
 

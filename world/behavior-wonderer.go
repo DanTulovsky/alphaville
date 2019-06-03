@@ -5,6 +5,12 @@ import (
 	"html/template"
 	"log"
 
+	behave "github.com/askft/go-behave"
+	"github.com/askft/go-behave/core"
+	"github.com/askft/go-behave/store"
+
+	. "github.com/askft/go-behave/common/decorator"
+
 	"github.com/faiface/pixel/pixelgl"
 )
 
@@ -13,14 +19,32 @@ type WondererBehavior struct {
 	description string
 	name        string
 	parent      Object
+	t           *behave.BehaviorTree
 }
 
 // NewWondererBehavior return a WondererBehavior
-func NewWondererBehavior(f PathFinder) *WondererBehavior {
+func NewWondererBehavior(f PathFinder, parent Object) *WondererBehavior {
 	b := &WondererBehavior{
 		name:        "wonderer_behavior",
 		description: "wonders aimlessly...",
+		parent:      parent,
 	}
+
+	// behavior tree itself
+	root := Repeater(core.Params{"n": 0}, nil)
+
+	cfg := behave.Config{
+		Owner: b.parent,
+		Data:  store.NewBlackboard(),
+		Root:  root,
+	}
+
+	t, err := behave.NewBehaviorTree(cfg)
+	if err != nil {
+		log.Fatalf("error creating behavior tree: %v", err)
+	}
+
+	b.t = t
 	return b
 }
 
