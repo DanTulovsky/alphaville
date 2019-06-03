@@ -9,7 +9,8 @@ import (
 	"github.com/askft/go-behave/core"
 	"github.com/askft/go-behave/store"
 
-	. "github.com/askft/go-behave/common/decorator"
+	action "github.com/askft/go-behave/common/action"
+	decorator "github.com/askft/go-behave/common/decorator"
 
 	"github.com/faiface/pixel/pixelgl"
 )
@@ -31,7 +32,7 @@ func NewWondererBehavior(f PathFinder, parent Object) *WondererBehavior {
 	}
 
 	// behavior tree itself
-	root := Repeater(core.Params{"n": 0}, nil)
+	root := decorator.Repeater(core.Params{"n": 0}, action.Succeed(nil, nil))
 
 	cfg := behave.Config{
 		Owner: b.parent,
@@ -90,6 +91,8 @@ func (b *WondererBehavior) Description() string {
 }
 
 func (b *WondererBehavior) Update(w *World, o Object) {
+	status := b.t.Update()
+	log.Printf("status: %v", status)
 }
 
 // Draw draws any artifacts of the behavior
