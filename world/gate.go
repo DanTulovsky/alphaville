@@ -273,3 +273,8 @@ func (g *Gate) SetPhys(ObjectPhys) {}
 
 // CheckIntersect does nothing
 func (g *Gate) CheckIntersect(*World) {}
+
+// SetName sets the object's name
+func (o *Gate) SetName(n string) {
+	o.name = n
+}

@@ -38,7 +38,8 @@ type Object interface {
 	SwapNextState()
 	Update(*World) // Updates the object for the next iteration
 
-	SetManualVelocity(v pixel.Vec)
+	SetName(string)
+	SetManualVelocity(pixel.Vec)
 	SetNextPhys(ObjectPhys)
 	SetPhys(ObjectPhys)
 }
@@ -124,6 +125,11 @@ func (o *BaseObject) Description() string {
 // Name returns the object's name
 func (o *BaseObject) Name() string {
 	return o.name
+}
+
+// SetName sets the object's name
+func (o *BaseObject) SetName(n string) {
+	o.name = n
 }
 
 // Color returns the object's color

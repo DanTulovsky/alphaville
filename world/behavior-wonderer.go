@@ -10,9 +10,20 @@ import (
 	"github.com/askft/go-behave/store"
 
 	action "github.com/askft/go-behave/common/action"
+	composite "github.com/askft/go-behave/common/composite"
 	decorator "github.com/askft/go-behave/common/decorator"
 
 	"github.com/faiface/pixel/pixelgl"
+)
+
+var (
+	// behavior tree itself
+	root core.Node = decorator.Repeater(core.Params{"n": 0},
+		composite.Sequence(
+			Delayer(core.Params{"ms": 300}, // think about what to do
+				action.Succeed(nil, nil))),
+		PickDestination
+			)
 )
 
 // WonderBehavior randomly wonders around the world. Uses Behavior Trees.
@@ -30,9 +41,6 @@ func NewWondererBehavior(f PathFinder, parent Object) *WondererBehavior {
 		description: "wonders aimlessly...",
 		parent:      parent,
 	}
-
-	// behavior tree itself
-	root := decorator.Repeater(core.Params{"n": 0}, action.Succeed(nil, nil))
 
 	cfg := behave.Config{
 		Owner: b.parent,
@@ -91,8 +99,8 @@ func (b *WondererBehavior) Description() string {
 }
 
 func (b *WondererBehavior) Update(w *World, o Object) {
-	status := b.t.Update()
-	log.Printf("status: %v", status)
+	b.t.Update()
+	// util.PrintTreeInColor(b.t.Root)
 }
 
 // Draw draws any artifacts of the behavior

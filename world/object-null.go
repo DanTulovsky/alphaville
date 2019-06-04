@@ -12,7 +12,8 @@ import (
 
 // NullObject implements the Object interface, but doesn't do anything
 type NullObject struct {
-	id uuid.UUID
+	id   uuid.UUID
+	name string
 }
 
 // NewNullObject returns a new null object
@@ -68,6 +69,11 @@ func (o *NullObject) NextPhys() ObjectPhys {
 // Name always returns 'null'
 func (o *NullObject) Name() string {
 	return "null"
+}
+
+// SetName sets the object's name
+func (o *NullObject) SetName(n string) {
+	o.name = n
 }
 
 // Phys always returns nil
