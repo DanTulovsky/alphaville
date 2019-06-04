@@ -3,10 +3,15 @@ package world
 import (
 	"fmt"
 	"image/color"
+	"io"
 	"log"
+	"strings"
 	"time"
 
 	"golang.org/x/image/colornames"
+
+	"github.com/askft/go-behave/core"
+	clr "github.com/fatih/color"
 
 	"gogs.wetsnow.com/dant/alphaville/observer"
 	"gogs.wetsnow.com/dant/alphaville/utils"
@@ -251,4 +256,27 @@ func (o *BaseObject) Notify(event observer.Event) {
 	for i := 0; i < len(o.observers); i++ {
 		o.observers[i].OnNotify(event)
 	}
+}
+
+// PrintTreeInColor prints the tree with colors representing node state.
+//
+// Red = Failure, Yellow = Running, Green = Success, Magenta = Invalid.
+func PrintTreeInColor(w io.Writer, node core.Node) {
+	printTreeInColor(w, node, 0)
+}
+
+func printTreeInColor(w io.Writer, node core.Node, level int) {
+	indent := strings.Repeat("    ", level)
+	c := clr.New(colorFor[node.GetStatus()])
+	c.Fprintln(w, indent+node.String())
+	for _, child := range node.GetChildren() {
+		printTreeInColor(w, child, level+1)
+	}
+}
+
+var colorFor = map[core.Status]clr.Attribute{
+	core.StatusFailure: clr.FgRed,
+	core.StatusRunning: clr.FgYellow,
+	core.StatusSuccess: clr.FgGreen,
+	core.StatusInvalid: clr.FgMagenta,
 }

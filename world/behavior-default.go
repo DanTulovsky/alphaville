@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"log"
 
+	behave "github.com/askft/go-behave"
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/pixelgl"
 	"gogs.wetsnow.com/dant/alphaville/utils"
@@ -15,6 +16,7 @@ type DefaultBehavior struct {
 	description string
 	name        string
 	parent      Object
+	t           *behave.BehaviorTree
 }
 
 // NewDefaultBehavior return a DefaultBehavior
@@ -76,7 +78,7 @@ func (b *DefaultBehavior) Update(w *World, o Object) {
 	// check if object should rise or fall, these checks not based on collisions
 	// if anything changes, leave actual movement until next turn, otherwise
 	// collision detection gets confused
-	if b.changeVerticalDirection(w, o) {
+	if b.ChangeVerticalDirection(w, o) {
 		return
 	}
 
@@ -90,8 +92,8 @@ func (b *DefaultBehavior) Update(w *World, o Object) {
 	b.Move(w, o, pixel.V(phys.Vel().X, phys.Vel().Y))
 }
 
-// changeVerticalDirection updates the vertical direction if needed
-func (b *DefaultBehavior) changeVerticalDirection(w *World, o Object) bool {
+// ChangeVerticalDirection updates the vertical direction if needed
+func (b *DefaultBehavior) ChangeVerticalDirection(w *World, o Object) bool {
 	phys := o.NextPhys()
 	currentY := phys.Vel().Y
 
@@ -251,5 +253,11 @@ func (b *DefaultBehavior) Move(w *World, o Object, v pixel.Vec) {
 
 // Draw draws any artifacts of the behavior
 func (b *DefaultBehavior) Draw(win *pixelgl.Window) {
+
+}
+
+// Tree returns the behavior tree of this behavior
+func (b *DefaultBehavior) Tree() *behave.BehaviorTree {
+	return b.t
 
 }

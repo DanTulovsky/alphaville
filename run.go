@@ -170,11 +170,10 @@ func run() {
 	// populate.AddTargetSeeker(w, "7", 5, tsColors[6])
 	// populate.AddTargetSeeker(w, "8", 2.2, tsColors[7])
 
-	// populate.RandomCircles(w, 2)
-	// populate.RandomRectangles(w, 10)
+	populate.RandomCircles(w, 2)
+	populate.RandomRectangles(w, 10)
 	// populate.RandomEllipses(w, 8)
 	// populate.AddManualObject(w, 60, 60)
-	populate.AddWonderer(w, "w", 3, colornames.Yellow)
 	populate.AddGates(w)
 	// populate.AddFixtures(w, 6)
 

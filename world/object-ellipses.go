@@ -63,6 +63,7 @@ Mass: {{.Mass}}
 
 	fmt.Fprintf(buf, "  %v", o.Phys())
 	fmt.Fprintf(buf, "  %v", o.Behavior())
+	PrintTreeInColor(buf, o.Behavior().Tree().Root)
 	fmt.Fprintf(buf, "----------------------------------------")
 	return buf.String()
 }

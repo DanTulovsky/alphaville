@@ -1,6 +1,7 @@
 package world
 
 import (
+	behave "github.com/askft/go-behave"
 	"github.com/faiface/pixel/pixelgl"
 )
 
@@ -11,5 +12,6 @@ type Behavior interface {
 	Name() string
 	Parent() Object
 	SetParent(Object)
+	Tree() *behave.BehaviorTree
 	Update(*World, Object)
 }
