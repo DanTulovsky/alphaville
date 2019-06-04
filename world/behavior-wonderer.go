@@ -21,9 +21,9 @@ var (
 	root core.Node = decorator.Repeater(core.Params{"n": 0},
 		composite.Sequence(
 			Delayer(core.Params{"ms": 300}, // think about what to do
-				action.Succeed(nil, nil))),
-		PickDestination
-			)
+				action.Succeed(nil, nil)),
+			PickDestination(core.Params{}, nil),
+		))
 )
 
 // WonderBehavior randomly wonders around the world. Uses Behavior Trees.
