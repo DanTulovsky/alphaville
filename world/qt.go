@@ -12,7 +12,7 @@ import (
 	"github.com/tevino/abool"
 
 	"github.com/faiface/pixel"
-	"gogs.wetsnow.com/dant/alphaville/utils"
+	"github.com/DanTulovsky/alphaville/utils"
 	"golang.org/x/image/colornames"
 )
 

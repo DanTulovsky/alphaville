@@ -10,9 +10,9 @@ import (
 
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/pixelgl"
-	"gogs.wetsnow.com/dant/alphaville/graph"
-	"gogs.wetsnow.com/dant/alphaville/observer"
-	"gogs.wetsnow.com/dant/alphaville/utils"
+	"github.com/DanTulovsky/alphaville/graph"
+	"github.com/DanTulovsky/alphaville/observer"
+	"github.com/DanTulovsky/alphaville/utils"
 	"golang.org/x/image/colornames"
 )
 

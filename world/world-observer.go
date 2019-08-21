@@ -4,7 +4,7 @@ import (
 	"log"
 	"time"
 
-	"gogs.wetsnow.com/dant/alphaville/observer"
+	"github.com/DanTulovsky/alphaville/observer"
 )
 
 func (w *World) processWorldEvent(e *worldEvent) {

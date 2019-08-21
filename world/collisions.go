@@ -2,7 +2,7 @@ package world
 
 import (
 	"github.com/faiface/pixel"
-	"gogs.wetsnow.com/dant/alphaville/utils"
+	"github.com/DanTulovsky/alphaville/utils"
 )
 
 // HaveCollisions returns true if r1 and r2 collide

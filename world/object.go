@@ -13,8 +13,8 @@ import (
 	"github.com/askft/go-behave/core"
 	clr "github.com/fatih/color"
 
-	"gogs.wetsnow.com/dant/alphaville/observer"
-	"gogs.wetsnow.com/dant/alphaville/utils"
+	"github.com/DanTulovsky/alphaville/observer"
+	"github.com/DanTulovsky/alphaville/utils"
 
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/imdraw"

@@ -7,7 +7,7 @@ import (
 	"image/color"
 	"log"
 
-	"gogs.wetsnow.com/dant/alphaville/utils"
+	"github.com/DanTulovsky/alphaville/utils"
 	"golang.org/x/image/colornames"
 
 	"github.com/faiface/pixel"

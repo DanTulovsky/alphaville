@@ -9,8 +9,8 @@ import (
 
 	"github.com/faiface/pixel"
 	colorful "github.com/lucasb-eyer/go-colorful"
-	"gogs.wetsnow.com/dant/alphaville/utils"
-	"gogs.wetsnow.com/dant/alphaville/world"
+	"github.com/DanTulovsky/alphaville/utils"
+	"github.com/DanTulovsky/alphaville/world"
 	"golang.org/x/image/colornames"
 )
 

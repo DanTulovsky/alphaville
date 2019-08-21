@@ -8,8 +8,8 @@ import (
 	"log"
 	"os"
 
-	"gogs.wetsnow.com/dant/alphaville/observer"
-	"gogs.wetsnow.com/dant/alphaville/utils"
+	"github.com/DanTulovsky/alphaville/observer"
+	"github.com/DanTulovsky/alphaville/utils"
 )
 
 // Stats keeps track of world wide stats

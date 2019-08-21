@@ -11,7 +11,7 @@ import (
 	"github.com/faiface/pixel/imdraw"
 	"github.com/faiface/pixel/pixelgl"
 	"github.com/google/uuid"
-	"gogs.wetsnow.com/dant/alphaville/observer"
+	"github.com/DanTulovsky/alphaville/observer"
 	"golang.org/x/image/colornames"
 )
 

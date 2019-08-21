@@ -8,7 +8,7 @@ import (
 	behave "github.com/askft/go-behave"
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/pixelgl"
-	"gogs.wetsnow.com/dant/alphaville/utils"
+	"github.com/DanTulovsky/alphaville/utils"
 )
 
 // DefaultBehavior is the default implementation of Behavior

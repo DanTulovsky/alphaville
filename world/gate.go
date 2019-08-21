@@ -8,8 +8,8 @@ import (
 	"github.com/faiface/pixel/pixelgl"
 	"github.com/faiface/pixel/text"
 	"github.com/google/uuid"
-	"gogs.wetsnow.com/dant/alphaville/observer"
-	"gogs.wetsnow.com/dant/alphaville/utils"
+	"github.com/DanTulovsky/alphaville/observer"
+	"github.com/DanTulovsky/alphaville/utils"
 	"golang.org/x/image/colornames"
 
 	"github.com/faiface/pixel/imdraw"
