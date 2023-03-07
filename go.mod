@@ -12,7 +12,7 @@ require (
 	github.com/jroimartin/gocui v0.5.0
 	github.com/lucasb-eyer/go-colorful v1.2.0
 	github.com/tevino/abool v1.2.0
-	golang.org/x/image v0.0.0-20210628002857-a66eb6448b8d
+	golang.org/x/image v0.5.0
 )
 
 require (
@@ -26,5 +26,5 @@ require (
 	github.com/mattn/go-runewidth v0.0.9 // indirect
 	github.com/nsf/termbox-go v1.1.1 // indirect
 	github.com/pkg/errors v0.8.1 // indirect
-	golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c // indirect
+	golang.org/x/sys v0.0.0-20220722155257-8c9f86f7a55f // indirect
 )
